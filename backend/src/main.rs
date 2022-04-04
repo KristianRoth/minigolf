@@ -1,11 +1,14 @@
-#[macro_use] extern crate rocket;
+use poem::{get, handler, listener::TcpListener, web::Path, IntoResponse, Route, Server};
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!\n"
+#[handler]
+fn hello(Path(name): Path<String>) -> String {
+    format!("hello: {}\n", name)
 }
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<(), std::io::Error> {
+    let app = Route::new().at("/hello/:name", get(hello));
+    Server::new(TcpListener::bind("127.0.0.1:3000"))
+        .run(app)
+        .await
 }
