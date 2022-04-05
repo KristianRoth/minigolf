@@ -1,4 +1,5 @@
 use poem::{get, handler, listener::TcpListener, web::Path, IntoResponse, Route, Server};
+use poem::endpoint::StaticFilesEndpoint;
 
 #[handler]
 fn hello(Path(name): Path<String>) -> String {
@@ -7,7 +8,12 @@ fn hello(Path(name): Path<String>) -> String {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), std::io::Error> {
-    let app = Route::new().at("/hello/:name", get(hello));
+    println!("Server has started");
+    let app = Route::new()
+        .at("/hello/:name", get(hello))
+        .at("/*",
+            StaticFilesEndpoint::new("../frontend/build").index_file("index.html")
+        );
     Server::new(TcpListener::bind("127.0.0.1:3000"))
         .run(app)
         .await
