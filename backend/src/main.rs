@@ -1,4 +1,4 @@
-use poem::{get, handler, listener::TcpListener, web::Path, IntoResponse, Route, Server};
+use poem::{get, handler, listener::TcpListener, web::Path, Route, Server};
 use poem::endpoint::StaticFilesEndpoint;
 
 #[handler]
@@ -11,10 +11,8 @@ async fn main() -> Result<(), std::io::Error> {
     println!("Server has started");
     let app = Route::new()
         .at("/hello/:name", get(hello))
-        .at("/*",
-            StaticFilesEndpoint::new("../frontend/build").index_file("index.html")
-        );
-    Server::new(TcpListener::bind("127.0.0.1:3000"))
+        .at("*", StaticFilesEndpoint::new("../frontend/build").index_file("index.html"));
+    Server::new(TcpListener::bind("0.0.0.0:3000"))
         .run(app)
         .await
 }
