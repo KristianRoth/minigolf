@@ -1,18 +1,22 @@
-use poem::{get, handler, listener::TcpListener, web::Path, Route, Server};
-use poem::endpoint::StaticFilesEndpoint;
+use warp::Filter;
 
-#[handler]
-fn hello(Path(name): Path<String>) -> String {
-    format!("hello: {}\n", name)
-}
+#[tokio::main]
+async fn main() {
+    println!("Server is running");
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), std::io::Error> {
-    println!("Server has started");
-    let app = Route::new()
-        .at("/hello/:name", get(hello))
-        .at("*", StaticFilesEndpoint::new("../frontend/build").index_file("index.html"));
-    Server::new(TcpListener::bind("0.0.0.0:3000"))
-        .run(app)
-        .await
+    // GET /hi
+    let hi = warp::path("hi").map(|| "Hello, World!");
+
+    // GET /hello/from/warp
+    let hello_from_warp = warp::path!("hello" / "from" / "warp").map(|| "Hello from warp!");
+    // GET /sum/:u32/:u32
+    let sum = warp::path!("sum" / u32 / u32).map(|a, b| format!("{} + {} = {}", a, b, a + b));
+
+    let index = warp::fs::file("../frontend/build/index.html");
+
+    let files = warp::fs::dir("../frontend/build/");
+
+    let routes = warp::get().and(hi.or(hello_from_warp).or(sum).or(files).or(index));
+
+    warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
 }
