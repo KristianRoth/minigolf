@@ -28,3 +28,5 @@ COPY --from=backend /usr/src/backend/target/release/backend ./backend/backend
 EXPOSE 3000
 
 ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
+
+CMD [ "cd backend && ./backend" ]
