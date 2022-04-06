@@ -25,7 +25,7 @@ WORKDIR /home/app
 COPY --from=frontend /app/build ./frontend/build
 COPY --from=backend /usr/src/backend/target/release/backend ./backend/backend
 
-EXPOSE 3000
+EXPOSE 8080
 
 ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
 
