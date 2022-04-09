@@ -11,6 +11,8 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 
+use serde::{Deserialize, Serialize};
+
 /// Our global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
@@ -19,6 +21,12 @@ static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 /// - Key is their id
 /// - Value is a sender of `warp::ws::Message`
 type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
+
+#[derive(Serialize, Deserialize)]
+struct Payload {
+    user: String,
+    value: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -86,6 +94,20 @@ async fn user_connected(ws: WebSocket, users: Users) {
         }
     });
 
+    // tokio::task::spawn(async move {
+    //     let interval = tokio::time::interval(std::time::Duration::from_millis(100));
+    //     loop {
+    //         interval.tick().await;
+    //             user_ws_tx
+    //             .send("INTERVAL")
+    //             .unwrap_or_else(|e| {
+    //                 eprintln!("websocket send error: {}", e);
+    //             })
+    //             .await;
+
+    //     }
+    // });
+
     // Save the sender in our list of connected users.
     users.write().await.insert(my_id, tx);
 
@@ -118,12 +140,17 @@ async fn user_message(my_id: usize, msg: Message, users: &Users) {
         return;
     };
 
-    let new_msg = format!("<User#{}>: {}", my_id, msg);
+    let payload = Payload {
+        user: my_id.to_string(),
+        value: msg.to_string(),
+    };
+
+    let json = serde_json::to_string(&payload).unwrap();
 
     // New message from this user, send it to everyone else (except same uid)...
     for (&uid, tx) in users.read().await.iter() {
         if my_id != uid {
-            if let Err(_disconnected) = tx.send(Message::text(new_msg.clone())) {
+            if let Err(_disconnected) = tx.send(Message::text(json.clone())) {
                 // The tx is disconnected, our `user_disconnected` code
                 // should be happening in another task, nothing more to
                 // do here.
