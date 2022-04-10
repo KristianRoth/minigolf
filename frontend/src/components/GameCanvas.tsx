@@ -143,11 +143,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ balls, sendAction }) => {
 
     const handleMouseUp = () => {
       if (shotLine && shotBallId) {
+        const ball = balls.find((b) => b.id === shotBallId) as Ball;
         const point = calcEndpoint(shotLine);
         sendAction({
           type: 'SHOT',
-          x: point.x,
-          y: point.y,
+          x: point.x - ball.x,
+          y: point.y - ball.y,
           id: shotBallId,
         });
       }
