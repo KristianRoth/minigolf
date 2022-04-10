@@ -34,6 +34,7 @@ version = "0.1.0"
 dependencies = [
  "futures-util",
  "pretty_env_logger",
+ "rand",
  "serde",
  "serde_json",
  "tokio",

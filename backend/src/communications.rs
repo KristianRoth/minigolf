@@ -3,8 +3,13 @@ use crate::Games;
 use crate::game::Game;
 
 pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
-    let (_tx, mut rx) = ws.split();
-    games.write().await.insert(game_id.clone(), Game::new(game_id.clone()));
+    let (tx, mut rx) = ws.split();
+    let mut game = match games.write().await.remove(&game_id) {
+        Some(found) => found,
+        None => Game::new(game_id.clone())
+    };
+    game.add_connection(tx);
+    games.write().await.insert(game_id.clone(), game);
     while let Some(result) = rx.next().await {
         let msg = match result {
             Ok(msg) => msg,
@@ -35,10 +40,15 @@ pub async fn start_loop(games: Games) {
         loop {
             interval.tick().await;
             println!("GameTick *** START ***");
-            for (game_id, _game) in games.read().await.iter() {
+            for (game_id, game) in games.write().await.iter_mut() {
                 println!("{}", game_id);
+                game.tick();
+                game.send_update().await;
             }
             println!("GameTick *** END  ***")
         }
     });
 }
+
+
+
