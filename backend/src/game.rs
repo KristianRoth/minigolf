@@ -79,8 +79,8 @@ impl Game {
   
   pub fn shot(&mut self, shot_event: ShotEvent) {
     let player = self.players.get_mut(&shot_event.id).unwrap();
-    player.vel.x = shot_event.x;
-    player.vel.y = shot_event.y;
+    player.vel.x = shot_event.x / 10.0;
+    player.vel.y = shot_event.y / 10.0;
   }
 }
 
@@ -89,8 +89,8 @@ impl Player {
     let radius = 50.0;
     self.pos.x += self.vel.x;
     self.pos.y += self.vel.y;
-    self.vel.x *= 0.95;
-    self.vel.y *= 0.95;
+    self.vel.x *= 0.99;
+    self.vel.y *= 0.99;
     if self.pos.x < radius || self.pos.x > 4900.0 - radius {
       self.vel.x = -self.vel.x
     }

@@ -41,7 +41,7 @@ impl PlayerDTO {
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct ShotEvent {
     r#type: String,
     pub id: u32,
