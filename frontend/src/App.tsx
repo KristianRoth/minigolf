@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import GameCanvas from './components/GameCanvas';
 import useWebsocket from './hooks/useWebsocket';
-
-type Message = {
-  user: string;
-  value: string;
-};
+import { GameEvent } from './types';
 
 const BASE_URL = (() => {
   if (process.env.NODE_ENV === 'development') {
@@ -13,123 +10,62 @@ const BASE_URL = (() => {
   return window.location.host;
 })();
 
-function App() {
-  const [connected, setConnected] = useState(false);
+const colors = ['red', 'blue', 'cyan', 'black', 'green', 'yellow', 'orange', 'maroon'];
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [users, setUsers] = useState<string[]>([]);
+function App() {
+  const [balls, setBalls] = useState<any[]>([]);
 
   const onOpen = useCallback(() => {
     console.log('Connected!');
-    setConnected(true);
   }, []);
 
-  const onMessage = useCallback(
-    (event: any) => {
-      try {
-        const message = JSON.parse(event.data);
-        console.log(message);
-        setMessages([...messages, message]);
-        if (!users.find((u) => message.user === u)) {
-          setUsers([...users, message.user]);
-        }
-      } catch (err) {
-        console.error(err);
+  const onMessage = useCallback((payload: any) => {
+    try {
+      const event: GameEvent = JSON.parse(payload.data as any);
+      if (event.type === 'UPDATE') {
+        const newBalls = event.playerStates.map((state) => {
+          return {
+            x: state.x,
+            y: state.y,
+            color: colors[state.id % colors.length],
+            id: state.id,
+          };
+        });
+        setBalls(newBalls);
       }
-    },
-    [messages, users]
-  );
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
 
   const onClose = useCallback(() => {
     console.log('Disconnected!');
-    setConnected(false);
   }, []);
 
-  const { connect, sendMessage, close } = useWebsocket({
-    url: `ws://${BASE_URL}/chat`,
+  const { connect, sendMessage } = useWebsocket({
+    url: `ws://${BASE_URL}/game/test`,
     onOpen,
     onMessage,
     onClose,
   });
 
-  const sendChatMessage = (message: string) => {
-    sendMessage(message);
-    setMessages([...messages, { user: '', value: message }]);
-  };
+  useEffect(() => {
+    if (connect) connect();
+  }, [connect]);
 
   return (
-    <div className='container mx-auto px-4'>
-      <h1 className='my-3'>Minigolf peli</h1>
-
-      {connected ? (
-        <Chat
-          messages={messages}
-          users={users}
-          sendChatMessage={sendChatMessage}
-          close={close}
-        />
-      ) : (
-        <button className='btn' onClick={() => connect()}>
-          Liity
-        </button>
-      )}
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'column',
+      }}
+    >
+      <h1>Minigolfpeli</h1>
+      <GameCanvas balls={balls} sendAction={(event: GameEvent) => sendMessage(JSON.stringify(event))} />
     </div>
   );
 }
-
-type ChatProps = {
-  messages: Message[];
-  users: string[];
-  sendChatMessage: (message: string) => void;
-  close: () => void;
-};
-const Chat: React.FC<ChatProps> = ({
-  messages,
-  users,
-  sendChatMessage,
-  close,
-}) => {
-  const [messageInput, setMessageInput] = useState('');
-  const [showUsers, setShowUsers] = useState(false);
-
-  const handleSendMessage = () => {
-    sendChatMessage(messageInput);
-    setMessageInput('');
-  };
-
-  return (
-    <div>
-      <p>Liitytty peliin</p>
-      <button className='btn' onClick={() => close()}>
-        Poistu
-      </button>
-      <h2>Keskustelu</h2>
-      {messages.map(({ user, value }, index) => (
-        <p key={index}>
-          {user ? `Käyttäjä ${user}` : 'Sinä'}: {value}
-        </p>
-      ))}
-      <input
-        value={messageInput}
-        onChange={({ target }) => setMessageInput(target.value)}
-        onKeyPress={(event) => {
-          if (event.key === 'Enter') {
-            handleSendMessage();
-          }
-        }}
-      />
-      <button className='btn' onClick={handleSendMessage}>
-        Lähetä
-      </button>
-
-      <div>
-        <button className='btn' onClick={() => setShowUsers((prev) => !prev)}>
-          {showUsers ? 'Piilota käyttäjät' : 'Näytä käyttäjät'}
-        </button>
-        {showUsers && users.map((user) => <p key={user}>{user}</p>)}
-      </div>
-    </div>
-  );
-};
 
 export default App;
