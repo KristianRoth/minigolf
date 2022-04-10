@@ -1,9 +1,9 @@
+use futures_util::{SinkExt, TryFutureExt};
+use rand::prelude::*;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
-use rand::prelude::*;
-use futures_util::{SinkExt, TryFutureExt};
 
-use crate::event::{UpdateEvent};
+use crate::event::{UpdateEvent, ShotEvent};
 
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
 
@@ -14,7 +14,7 @@ pub struct Vector<T> {
 
 pub struct Game {
   pub game_id: String,
-  pub players: HashMap<u32, Player>
+  pub players: HashMap<u32, Player>,
 }
 
 pub struct Player {
@@ -30,25 +30,28 @@ impl Game {
   pub fn new(game_id: String) -> Self {
     Self {
       game_id: game_id,
-      players: HashMap::default()
+      players: HashMap::default(),
     }
   }
 
   pub fn add_connection(&mut self, ws: WebSocketSender) {
     let mut rng = rand::thread_rng();
     let id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
-    self.players.insert(id, Player {
-      id: id,
-      pos: Vector {
-        x: rng.gen::<f64>() * 4900.0,
-        y: rng.gen::<f64>() * 2500.0,
+    self.players.insert(
+      id,
+      Player {
+        id: id,
+        pos: Vector {
+          x: rng.gen::<f64>() * 4900.0,
+          y: rng.gen::<f64>() * 2500.0,
+        },
+        vel: Vector {
+          x: (rng.gen::<f64>() - 0.5) * 10.0,
+          y: (rng.gen::<f64>() - 0.5) * 10.0,
+        },
+        ws: ws,
       },
-      vel: Vector {
-        x: (rng.gen::<f64>() - 0.5) * 10.0,
-        y: (rng.gen::<f64>() - 0.5) * 10.0,
-      },
-      ws: ws,
-    });
+    );
   }
 
   pub fn tick(&mut self) {
@@ -64,25 +67,35 @@ impl Game {
   pub async fn send_update(&mut self) {
     let game_state = serde_json::to_string(&self.get_game_state()).unwrap();
     for player in self.players.values_mut() {
-      player.ws
+      player
+        .ws
         .send(warp::ws::Message::text(game_state.clone()))
         .unwrap_or_else(|e| {
           eprintln!("websocket send error: {}", e);
-        }).await;
+        })
+        .await;
     }
+  }
+  
+  pub fn shot(&mut self, shot_event: ShotEvent) {
+    let player = self.players.get_mut(&shot_event.id).unwrap();
+    player.vel.x = shot_event.x;
+    player.vel.y = shot_event.y;
   }
 }
 
 impl Player {
-
   pub fn update(&mut self) {
+    let radius = 50.0;
     self.pos.x += self.vel.x;
     self.pos.y += self.vel.y;
-    if self.pos.x < 100.0 || self.pos.x > 4900.0 - 100.0 {
+    self.vel.x *= 0.95;
+    self.vel.y *= 0.95;
+    if self.pos.x < radius || self.pos.x > 4900.0 - radius {
       self.vel.x = -self.vel.x
     }
-    if self.pos.y < 100.0 || self.pos.y > 2500.0 - 100.0 {
+    if self.pos.y < radius || self.pos.y > 2500.0 - radius {
       self.vel.y = -self.vel.y
-    } 
+    }
   }
 }

@@ -4,8 +4,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::Filter;
 mod communications;
-mod game;
 mod event;
+mod game;
 
 pub type Games = Arc<RwLock<HashMap<String, Game>>>;
 

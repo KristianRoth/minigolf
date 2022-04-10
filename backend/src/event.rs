@@ -1,19 +1,21 @@
-use crate::game::{Player, Game};
-
-
+use crate::game::{Game, Player};
 
 #[derive(serde::Serialize)]
 pub struct UpdateEvent {
     r#type: String,
     #[serde(rename(serialize = "playerStates"))]
-    player_states: Vec<PlayerDTO>, 
+    player_states: Vec<PlayerDTO>,
 }
 
 impl UpdateEvent {
     pub fn from_game(game: &Game) -> Self {
         Self {
             r#type: "UPDATE".to_string(),
-            player_states: Vec::from_iter(game.players.values().map(|player| PlayerDTO::from_player(player))),
+            player_states: Vec::from_iter(
+                game.players
+                    .values()
+                    .map(|player| PlayerDTO::from_player(player)),
+            ),
         }
     }
 }
@@ -37,4 +39,12 @@ impl PlayerDTO {
             dy: player.vel.y,
         }
     }
+}
+
+#[derive(serde::Deserialize)]
+pub struct ShotEvent {
+    r#type: String,
+    pub id: u32,
+    pub x: f64,
+    pub y: f64,
 }
