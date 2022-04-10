@@ -32,7 +32,7 @@ async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &St
 }
 
 pub async fn start_loop(games: Games) {
-    const TICK_RATE: u64 = 1000/1;
+    const TICK_RATE: u64 = 1000/60;
     
     println!("Starting game loop");
     tokio::task::spawn(async move {

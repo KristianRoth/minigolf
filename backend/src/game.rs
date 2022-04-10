@@ -3,23 +3,25 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use rand::prelude::*;
 use futures_util::{SinkExt, TryFutureExt};
 
+use crate::event::{UpdateEvent};
+
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
 
 pub struct Vector<T> {
-  x: T,
-  y: T,
+  pub x: T,
+  pub y: T,
 }
 
 pub struct Game {
-  game_id: String,
-  players: HashMap<u32, Player>
+  pub game_id: String,
+  pub players: HashMap<u32, Player>
 }
 
 pub struct Player {
-  id: u32,
-  pos: Vector<f64>,
-  vel: Vector<f64>,
-  ws: WebSocketSender,
+  pub id: u32,
+  pub pos: Vector<f64>,
+  pub vel: Vector<f64>,
+  pub ws: WebSocketSender,
 }
 
 static NEXT_USER_ID: AtomicU32 = AtomicU32::new(1);
@@ -38,12 +40,12 @@ impl Game {
     self.players.insert(id, Player {
       id: id,
       pos: Vector {
-        x: rng.gen::<f64>() * 49000.0,
-        y: rng.gen::<f64>() * 25000.0,
+        x: rng.gen::<f64>() * 4900.0,
+        y: rng.gen::<f64>() * 2500.0,
       },
       vel: Vector {
-        x: (rng.gen::<f64>() - 0.5) * 100.0,
-        y: (rng.gen::<f64>() - 0.5) * 100.0,
+        x: (rng.gen::<f64>() - 0.5) * 10.0,
+        y: (rng.gen::<f64>() - 0.5) * 10.0,
       },
       ws: ws,
     });
@@ -56,25 +58,12 @@ impl Game {
   }
 
   fn get_game_state(&self) -> UpdateEvent {
-    let mut player_states = std::vec::Vec::new();
-    for (_id, player) in self.players.iter() {
-      player_states.push(PlayerDTO {
-        id: player.id,
-        x: player.pos.x,
-        y: player.pos.y,
-        dx: player.vel.x,
-        dy: player.vel.y,
-      })
-    }
-    UpdateEvent {
-      r#type: "UPDATE".to_string(),
-      playerStates: player_states,
-    }
+    UpdateEvent::from_game(self)
   }
 
   pub async fn send_update(&mut self) {
     let game_state = serde_json::to_string(&self.get_game_state()).unwrap();
-    for (_id, player) in self.players.iter_mut() {
+    for player in self.players.values_mut() {
       player.ws
         .send(warp::ws::Message::text(game_state.clone()))
         .unwrap_or_else(|e| {
@@ -89,20 +78,11 @@ impl Player {
   pub fn update(&mut self) {
     self.pos.x += self.vel.x;
     self.pos.y += self.vel.y;
+    if self.pos.x < 100.0 || self.pos.x > 4900.0 - 100.0 {
+      self.vel.x = -self.vel.x
+    }
+    if self.pos.y < 100.0 || self.pos.y > 2500.0 - 100.0 {
+      self.vel.y = -self.vel.y
+    } 
   }
-}
-
-#[derive(serde::Serialize)]
-struct UpdateEvent {
-    r#type: String,
-    playerStates: std::vec::Vec<PlayerDTO>, 
-}
-
-#[derive(serde::Serialize)]
-struct PlayerDTO {
-    id: u32,
-    x: f64,
-    y: f64,
-    dx: f64,
-    dy: f64,
 }
