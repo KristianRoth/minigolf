@@ -1,4 +1,4 @@
-FROM node:17-alpine as frontend
+FROM node:16-alpine as frontend
 ENV NODE_ENV production
 
 WORKDIR /app

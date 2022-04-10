@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import useWebsocket from "./hooks/useWebsocket";
+import React, { useState, useEffect, useCallback } from 'react';
+import useWebsocket from './hooks/useWebsocket';
 
 type Message = {
   user: string;
@@ -13,7 +13,7 @@ function App() {
   const [users, setUsers] = useState<string[]>([]);
 
   const onOpen = useCallback(() => {
-    console.log("Connected!");
+    console.log('Connected!');
     setConnected(true);
   }, []);
 
@@ -31,20 +31,20 @@ function App() {
   }, []);
 
   const onClose = useCallback(() => {
-    console.log("Disconnected!");
+    console.log('Disconnected!');
     setConnected(false);
   }, []);
 
   const { connect, sendMessage, close } = useWebsocket({
-    url: "ws://localhost:8080/chat",
+    url: 'ws://localhost:8080/chat',
     onOpen,
     onMessage,
     onClose,
   });
 
   return (
-    <div className="container mx-auto px-4">
-      <h1 className="my-3">Minigolf peli</h1>
+    <div className='container mx-auto px-4'>
+      <h1 className='my-3'>Minigolf peli</h1>
 
       {connected ? (
         <Chat
@@ -54,7 +54,7 @@ function App() {
           close={close}
         />
       ) : (
-        <button className="btn" onClick={() => connect()}>
+        <button className='btn' onClick={() => connect()}>
           Liity
         </button>
       )}
@@ -69,18 +69,18 @@ type ChatProps = {
   close: () => void;
 };
 const Chat: React.FC<ChatProps> = ({ messages, users, sendMessage, close }) => {
-  const [messageInput, setMessageInput] = useState("");
+  const [messageInput, setMessageInput] = useState('');
   const [showUsers, setShowUsers] = useState(false);
 
   const handleSendMessage = () => {
     sendMessage(messageInput);
-    setMessageInput("");
+    setMessageInput('');
   };
 
   return (
     <div>
       <p>Liitytty peliin</p>
-      <button className="btn" onClick={() => close()}>
+      <button className='btn' onClick={() => close()}>
         Poistu
       </button>
       <h2>Keskustelu</h2>
@@ -93,13 +93,13 @@ const Chat: React.FC<ChatProps> = ({ messages, users, sendMessage, close }) => {
         value={messageInput}
         onChange={({ target }) => setMessageInput(target.value)}
       />
-      <button className="btn" onClick={handleSendMessage}>
+      <button className='btn' onClick={handleSendMessage}>
         Lähetä
       </button>
 
       <div>
-        <button className="btn" onClick={() => setShowUsers((prev) => !prev)}>
-          {showUsers ? "Piilota käyttäjät" : "Näytä käyttäjät"}
+        <button className='btn' onClick={() => setShowUsers((prev) => !prev)}>
+          {showUsers ? 'Piilota käyttäjät' : 'Näytä käyttäjät'}
         </button>
         {showUsers && users.map((user) => <p key={user}>{user}</p>)}
       </div>
