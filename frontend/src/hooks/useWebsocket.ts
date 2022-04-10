@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 
 type EventHandler = (event: any) => void;
 
@@ -23,25 +23,25 @@ const useWebsocket = (params: UseWebsocketParams): UseWebsocketReturnType => {
 
   useEffect(() => {
     if (!socket) return;
-    socket.addEventListener("open", onOpen);
+    socket.addEventListener('open', onOpen);
     return () => {
-      socket.removeEventListener("open", onOpen);
+      socket.removeEventListener('open', onOpen);
     };
   }, [socket, onOpen]);
 
   useEffect(() => {
     if (!socket) return;
-    socket.addEventListener("message", onMessage);
+    socket.addEventListener('message', onMessage);
     return () => {
-      socket.removeEventListener("message", onMessage);
+      socket.removeEventListener('message', onMessage);
     };
   }, [socket, onMessage]);
 
   useEffect(() => {
     if (!socket) return;
-    socket.addEventListener("close", onClose);
+    socket.addEventListener('close', onClose);
     return () => {
-      socket.removeEventListener("close", onClose);
+      socket.removeEventListener('close', onClose);
     };
   }, [socket, onClose]);
 
@@ -52,7 +52,7 @@ const useWebsocket = (params: UseWebsocketParams): UseWebsocketReturnType => {
 
   const sendMessage = (value: string) => {
     if (!socket) return;
-    console.log("Sending message: ", value);
+    console.log('Sending message: ', value);
     socket.send(value);
   };
 

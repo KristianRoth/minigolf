@@ -24,18 +24,21 @@ function App() {
     setConnected(true);
   }, []);
 
-  const onMessage = useCallback((event: any) => {
-    try {
-      const message = JSON.parse(event.data);
-      console.log(message);
-      setMessages([...messages, message]);
-      if (!users.find((u) => message.user === u)) {
-        setUsers([...users, message.user]);
+  const onMessage = useCallback(
+    (event: any) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log(message);
+        setMessages([...messages, message]);
+        if (!users.find((u) => message.user === u)) {
+          setUsers([...users, message.user]);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
+    },
+    [messages, users]
+  );
 
   const onClose = useCallback(() => {
     console.log('Disconnected!');
@@ -49,6 +52,11 @@ function App() {
     onClose,
   });
 
+  const sendChatMessage = (message: string) => {
+    sendMessage(message);
+    setMessages([...messages, { user: '', value: message }]);
+  };
+
   return (
     <div className='container mx-auto px-4'>
       <h1 className='my-3'>Minigolf peli</h1>
@@ -57,7 +65,7 @@ function App() {
         <Chat
           messages={messages}
           users={users}
-          sendMessage={sendMessage}
+          sendChatMessage={sendChatMessage}
           close={close}
         />
       ) : (
@@ -72,15 +80,20 @@ function App() {
 type ChatProps = {
   messages: Message[];
   users: string[];
-  sendMessage: (message: string) => void;
+  sendChatMessage: (message: string) => void;
   close: () => void;
 };
-const Chat: React.FC<ChatProps> = ({ messages, users, sendMessage, close }) => {
+const Chat: React.FC<ChatProps> = ({
+  messages,
+  users,
+  sendChatMessage,
+  close,
+}) => {
   const [messageInput, setMessageInput] = useState('');
   const [showUsers, setShowUsers] = useState(false);
 
   const handleSendMessage = () => {
-    sendMessage(messageInput);
+    sendChatMessage(messageInput);
     setMessageInput('');
   };
 
@@ -91,14 +104,19 @@ const Chat: React.FC<ChatProps> = ({ messages, users, sendMessage, close }) => {
         Poistu
       </button>
       <h2>Keskustelu</h2>
-      {messages.map(({ user, value }) => (
-        <p key={user + value}>
-          {user}: {value}
+      {messages.map(({ user, value }, index) => (
+        <p key={index}>
+          {user ? `Käyttäjä ${user}` : 'Sinä'}: {value}
         </p>
       ))}
       <input
         value={messageInput}
         onChange={({ target }) => setMessageInput(target.value)}
+        onKeyPress={(event) => {
+          if (event.key === 'Enter') {
+            handleSendMessage();
+          }
+        }}
       />
       <button className='btn' onClick={handleSendMessage}>
         Lähetä
