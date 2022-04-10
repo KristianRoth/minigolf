@@ -6,6 +6,13 @@ type Message = {
   value: string;
 };
 
+const BASE_URL = (() => {
+  if (process.env.NODE_ENV === 'development') {
+    return 'localhost:8080';
+  }
+  return window.location.host;
+})();
+
 function App() {
   const [connected, setConnected] = useState(false);
 
@@ -36,7 +43,7 @@ function App() {
   }, []);
 
   const { connect, sendMessage, close } = useWebsocket({
-    url: 'ws://localhost:8080/chat',
+    url: `ws://${BASE_URL}/chat`,
     onOpen,
     onMessage,
     onClose,
