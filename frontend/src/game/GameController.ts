@@ -19,7 +19,7 @@ class GameController {
   private canvas: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
   private clickState: ClickState | null = null;
-  private mouseAt: any = null;
+  private mouseAt: Point | null = null;
   private onShot: OnShotHandler;
 
   constructor(canvas: HTMLCanvasElement, onShot: OnShotHandler) {
@@ -114,6 +114,15 @@ class GameController {
   private render() {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    if (this.clickState) {
+      const { ball, end } = { ...this.clickState };
+      const point = calcEndpoint({ x: ball.x, y: ball.y }, end, MAX_LINE_LEN);
+      this.context.beginPath();
+      this.context.moveTo(this.c(ball.x), this.c(ball.y));
+      this.context.lineTo(this.c(point.x), this.c(point.y));
+      this.context.stroke();
+    }
+
     for (const ball of this.balls) {
       this.context.beginPath();
       this.context.fillStyle = ball.color;
@@ -138,12 +147,13 @@ class GameController {
       this.context.lineWidth = 1;
     }
 
-    if (this.clickState) {
-      const { ball, end } = { ...this.clickState };
-      const point = calcEndpoint({ x: ball.x, y: ball.y }, end, MAX_LINE_LEN);
+    if (this.mouseAt) {
+      const { x, y } = this.mouseAt;
       this.context.beginPath();
-      this.context.moveTo(this.c(ball.x), this.c(ball.y));
-      this.context.lineTo(this.c(point.x), this.c(point.y));
+      this.context.moveTo(this.c(x), this.c(y - BALL_RADIUS));
+      this.context.lineTo(this.c(x), this.c(y + BALL_RADIUS));
+      this.context.moveTo(this.c(x - BALL_RADIUS), this.c(y));
+      this.context.lineTo(this.c(x + BALL_RADIUS), this.c(y));
       this.context.stroke();
     }
   }

@@ -62,7 +62,9 @@ const MapCanvas: React.FC = () => {
       const yCount = Math.round(canvas.height / brickSize);
       for (let x = 0; x < xCount; x += 1) {
         for (let y = 0; y < yCount; y += 1) {
-          if (x === 0 || y === 0 || x === xCount - 1 || y === yCount - 1) {
+          const isBorder = x === 0 || y === 0 || x === xCount - 1 || y === yCount - 1;
+          const isMiddleAndUp = Math.abs(x - xCount / 2) < 2 && y < 0.65 * yCount;
+          if (isBorder || isMiddleAndUp) {
             drawBrick(x * brickSize, y * brickSize);
           }
         }

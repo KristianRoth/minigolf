@@ -53,10 +53,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ balls, hasTurn, playerId, sendM
           // top: 100,
           gridColumn: 1,
           gridRow: 1,
+          cursor: 'none',
         }}
       ></canvas>
 
-      <pre style={{ textAlign: 'left', margin: 'auto' }}>{JSON.stringify(gameController?.debug, undefined, 2)}</pre>
+      <pre style={{ textAlign: 'left', marginLeft: window.innerWidth / 3 }}>
+        {JSON.stringify(gameController?.debug, undefined, 2)}
+      </pre>
     </>
   );
 };
