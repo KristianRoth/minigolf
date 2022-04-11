@@ -45,14 +45,25 @@ const MapCanvas: React.FC = () => {
       context.stroke();
     };
 
-    const drawBrick = (x: number, y: number) => {
+    const drawBrick = (x: number, y: number, color: string, isWall = false) => {
       const brickSize = canvas.width / (GAME_WIDTH / BLOCK_SIZE);
 
+      context.save();
+
+      if (isWall) {
+        context.strokeStyle = 'black';
+        context.shadowOffsetX = 5;
+        context.shadowOffsetY = 5;
+        context.shadowColor = 'black';
+        context.shadowBlur = 15;
+      }
       context.beginPath();
       context.rect(x, y, brickSize, brickSize);
-      context.fillStyle = '#787675';
+      context.fillStyle = color;
       context.fill();
       context.closePath();
+
+      context.restore();
     };
 
     const drawBricks = () => {
@@ -60,12 +71,24 @@ const MapCanvas: React.FC = () => {
 
       const xCount = Math.round(canvas.width / brickSize);
       const yCount = Math.round(canvas.height / brickSize);
-      for (let x = 0; x < xCount; x += 1) {
-        for (let y = 0; y < yCount; y += 1) {
+      for (let x = xCount - 1; x >= 0; x -= 1) {
+        for (let y = yCount - 1; y >= 0; y -= 1) {
           const isBorder = x === 0 || y === 0 || x === xCount - 1 || y === yCount - 1;
           const isMiddleAndUp = Math.abs(x - xCount / 2) < 2 && y < 0.65 * yCount;
           if (isBorder || isMiddleAndUp) {
-            drawBrick(x * brickSize, y * brickSize);
+            drawBrick(x * brickSize, y * brickSize, '#c6c6c6', true);
+          } else {
+            drawBrick(x * brickSize, y * brickSize, '#13a713');
+          }
+        }
+      }
+
+      for (let x = xCount - 1; x >= 0; x -= 1) {
+        for (let y = yCount - 1; y >= 0; y -= 1) {
+          const isBorder = x === 0 || y === 0 || x === xCount - 1 || y === yCount - 1;
+          const isMiddleAndUp = Math.abs(x - xCount / 2) < 2 && y < 0.65 * yCount;
+          if (isBorder || isMiddleAndUp) {
+            drawBrick(x * brickSize, y * brickSize, '#c6c6c6', false);
           }
         }
       }
