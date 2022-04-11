@@ -3,7 +3,7 @@ use rand::prelude::*;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use crate::event::{UpdateEvent, ShotEvent};
+use crate::event::{UpdateEvent, ShotEvent, Event};
 
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
 
@@ -60,7 +60,7 @@ impl Game {
     }
   }
 
-  fn get_game_state(&self) -> UpdateEvent {
+  fn get_game_state(&self) -> Event {
     UpdateEvent::from_game(self)
   }
 

@@ -1,6 +1,6 @@
 use crate::game::Game;
 use crate::Games;
-use crate::event::ShotEvent;
+use crate::event::{parse_event, Event};
 use futures_util::StreamExt;
 
 pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
@@ -26,29 +26,20 @@ pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
 async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &String) {
     println!("message received");
     println!("Gameid {}", game_id);
-    let mut game = match games.write().await.remove(game_id) {
-        Some(found) => found,
-        None => {
-            eprintln!("No game");
-            return;
-        },
-    };
-    let result = match event.to_str() {
-        Ok(str) => str,
-        Err(_) => {
-            eprintln!("no result");
+    let mut hash_map = games.write().await;
+    let game = match hash_map.get_mut(game_id) {
+        Some(game) => game,
+        _ => {
+            eprintln!("No game found with id {}", game_id);
             return;
         }
     };
-    let shot_event = match serde_json::from_str::<ShotEvent>(result) {
-        Ok(shot_event) => shot_event,
-        Err(_) => {
-            eprintln!("failed to parse");
-            return;
-        },
+
+    match parse_event(event) {
+        Ok(Event::SHOT(shot_event)) => game.shot(shot_event), 
+        e => eprintln!("for game '{game_id}', unexpected event: {:?}", e),
     };
-    game.shot(shot_event);
-    games.write().await.insert(game_id.clone(), game);
+    
 }
 
 pub async fn start_loop(games: Games) {
