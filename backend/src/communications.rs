@@ -51,7 +51,7 @@ pub async fn start_loop(games: Games) {
         loop {
             interval.tick().await;
             for (_game_id, game) in games.write().await.iter_mut() {
-                game.tick();
+                game.tick().await;
                 game.send_update().await;
             }
         }

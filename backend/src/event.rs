@@ -1,6 +1,6 @@
 use warp::ws::Message;
 use serde::Deserialize;
-use crate::game::{Game, Player, GameMap};
+use crate::game::{Game, Player};
 
 #[derive(serde::Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -8,6 +8,7 @@ pub enum Event {
     UPDATE(UpdateEvent),
     SHOT(ShotEvent),
     INIT(InitEvent),
+    TURN_BEGIN(TurnBeginEvent),
 }
 
 pub fn parse_event(message: Message) -> Result<Event, String> {
@@ -77,13 +78,15 @@ pub struct ShotEvent {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct InitEvent {
+    player_id: u32,
     players: Vec<PlayerUpdateDTO>,
     game_map: GameMapDTO,
 }
 
 impl InitEvent {
-    pub fn from_game(game: &Game) -> Event {
+    pub fn from_game(game: &Game, player_id: u32) -> Event {
         Event::INIT(InitEvent {
+            player_id: player_id,
             players: PlayerUpdateDTO::from_game(game),
             game_map: GameMapDTO::from_game(game),
         })
@@ -100,5 +103,18 @@ impl GameMapDTO {
         Self {
 
         }
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct TurnBeginEvent {
+    player_id: u32,
+}
+
+impl TurnBeginEvent {
+    pub fn new(player_id: u32) -> Event {
+        Event::TURN_BEGIN( TurnBeginEvent {
+            player_id: player_id,
+        })
     }
 }

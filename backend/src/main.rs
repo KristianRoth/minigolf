@@ -6,6 +6,7 @@ use warp::Filter;
 mod communications;
 mod event;
 mod game;
+mod math;
 
 pub type Games = Arc<RwLock<HashMap<String, Game>>>;
 

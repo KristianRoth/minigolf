@@ -4,14 +4,10 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 use warp::ws::Message;
 
-use crate::event::{Event, ShotEvent, UpdateEvent, InitEvent};
+use crate::event::{Event, ShotEvent, UpdateEvent, InitEvent, TurnBeginEvent};
+use crate::math::VectorF64;
 
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
-
-pub struct Vector<T> {
-    pub x: T,
-    pub y: T,
-}
 
 pub struct Game {
     pub game_id: String,
@@ -21,13 +17,19 @@ pub struct Game {
 
 pub struct GameMap {
     id: u32,
+    tiles: Vec<Vec<GameMapTile>>,
+}
+
+pub struct GameMapTile {
+
 }
 
 pub struct Player {
     pub id: u32,
-    pub pos: Vector<f64>,
-    pub vel: Vector<f64>,
+    pub pos: VectorF64,
+    pub vel: VectorF64,
     pub ws: WebSocketSender,
+    pub is_turn: bool,
 }
 
 static NEXT_USER_ID: AtomicU32 = AtomicU32::new(1);
@@ -37,7 +39,7 @@ impl Game {
         Self {
             game_id: game_id,
             players: HashMap::default(),
-            map: GameMap { id: 1 },
+            map: GameMap { id: 1, tiles: Vec::default() },
         }
     }
 
@@ -48,24 +50,25 @@ impl Game {
             id,
             Player {
                 id: id,
-                pos: Vector {
+                pos: VectorF64 {
                     x: rng.gen::<f64>() * 4900.0,
                     y: rng.gen::<f64>() * 2500.0,
                 },
-                vel: Vector {
+                vel: VectorF64 {
                     x: (rng.gen::<f64>() - 0.5) * 10.0,
                     y: (rng.gen::<f64>() - 0.5) * 10.0,
                 },
                 ws: ws,
+                is_turn: false
             },
         );
         return id;
     }
 
     
-    pub fn tick(&mut self) {
+    pub async fn tick(&mut self) {
         for (_id, player) in self.players.iter_mut() {
-            player.update()
+            player.update().await;
         }
     }
     
@@ -73,12 +76,12 @@ impl Game {
         UpdateEvent::from_game(self)
     }
 
-    fn get_init_message(&self) -> Event {
-        InitEvent::from_game(self)
+    fn get_init_message(&self, player_id: u32) -> Event {
+        InitEvent::from_game(self, player_id)
     }
     
     pub async fn send_init_message(&mut self, player_id: u32) {
-        let init_message = self.get_init_message();
+        let init_message = self.get_init_message(player_id);
         if let Some(player) = self.players.get_mut(&player_id) {
             player.send_event(&init_message).await
         }
@@ -92,17 +95,12 @@ impl Game {
     }
 
     pub fn shot(&mut self, shot_event: ShotEvent, player_id: u32) {
-        if player_id != shot_event.id {
-            return;
-        }
-        let player = self.players.get_mut(&shot_event.id).unwrap();
-        player.vel.x = shot_event.x / 10.0;
-        player.vel.y = shot_event.y / 10.0;
+        self.players.get_mut(&player_id).unwrap().shot(shot_event);
     }
 }
 
 impl Player {
-    pub fn update(&mut self) {
+    pub async fn update(&mut self) {
         let radius = 50.0;
         self.pos.x += self.vel.x;
         self.pos.y += self.vel.y;
@@ -114,6 +112,11 @@ impl Player {
         if self.pos.y < radius || self.pos.y > 2500.0 - radius {
             self.vel.y = -self.vel.y
         }
+        if !self.is_turn && self.vel.length() <= 0.1 {
+            self.vel = VectorF64::new(0.0, 0.0);
+            self.is_turn = true;
+            self.send_event(&TurnBeginEvent::new(self.id)).await;
+        }
     }
 
     pub async fn send_event(&mut self, event: &Event) {
@@ -124,5 +127,20 @@ impl Player {
                 eprintln!("websocket send error: {}", e);
             })
             .await;
+    }
+
+    pub fn shot(&mut self, shot_event: ShotEvent) {
+        if shot_event.id != self.id || !self.is_turn {
+            return;
+        }
+        self.vel.x = shot_event.x / 10.0;
+        self.vel.y = shot_event.y / 10.0;
+        self.is_turn = false;
+    }
+}
+
+impl GameMap {
+    pub fn new() {
+
     }
 }
