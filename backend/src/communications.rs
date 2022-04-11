@@ -9,7 +9,8 @@ pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
         Some(found) => found,
         None => Game::new(game_id.clone()),
     };
-    game.add_connection(tx);
+    let player_id = game.add_connection(tx);
+    game.send_init_message(player_id).await;
     games.write().await.insert(game_id.clone(), game);
     while let Some(result) = rx.next().await {
         let msg = match result {
@@ -19,11 +20,11 @@ pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
                 break;
             }
         };
-        process_user_event(msg, games.clone(), &game_id).await;
+        process_user_event(msg, games.clone(), &game_id, player_id).await;
     }
 }
 
-async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &String) {
+async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &String, player_id: u32) {
     println!("message received");
     println!("Gameid {}", game_id);
     let mut hash_map = games.write().await;
@@ -36,7 +37,7 @@ async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &St
     };
 
     match parse_event(event) {
-        Ok(Event::SHOT(shot_event)) => game.shot(shot_event), 
+        Ok(Event::SHOT(shot_event)) => game.shot(shot_event, player_id), 
         e => eprintln!("for game '{game_id}', unexpected event: {:?}", e),
     };
     
@@ -49,7 +50,7 @@ pub async fn start_loop(games: Games) {
         let mut interval = tokio::time::interval(std::time::Duration::from_millis(TICK_RATE));
         loop {
             interval.tick().await;
-            for (game_id, game) in games.write().await.iter_mut() {
+            for (_game_id, game) in games.write().await.iter_mut() {
                 game.tick();
                 game.send_update().await;
             }

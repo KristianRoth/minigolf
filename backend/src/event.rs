@@ -1,12 +1,13 @@
 use warp::ws::Message;
 use serde::Deserialize;
-use crate::game::{Game, Player};
+use crate::game::{Game, Player, GameMap};
 
 #[derive(serde::Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum Event {
     UPDATE(UpdateEvent),
     SHOT(ShotEvent),
+    INIT(InitEvent),
 }
 
 pub fn parse_event(message: Message) -> Result<Event, String> {
@@ -23,7 +24,7 @@ pub fn parse_event(message: Message) -> Result<Event, String> {
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct UpdateEvent {
     #[serde(rename(serialize = "playerStates"))]
-    player_states: Vec<PlayerDTO>,
+    player_states: Vec<PlayerUpdateDTO>,
 }
 
 impl UpdateEvent {
@@ -32,14 +33,14 @@ impl UpdateEvent {
             player_states: Vec::from_iter(
                 game.players
                     .values()
-                    .map(|player| PlayerDTO::from_player(player)),
+                    .map(|player| PlayerUpdateDTO::from_player(player)),
             ),
         })
     }
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
-pub struct PlayerDTO {
+pub struct PlayerUpdateDTO {
     id: u32,
     x: f64,
     y: f64,
@@ -47,7 +48,15 @@ pub struct PlayerDTO {
     dy: f64,
 }
 
-impl PlayerDTO {
+impl PlayerUpdateDTO {
+    pub fn from_game(game: &Game) -> Vec<Self> {
+        Vec::from_iter(
+            game.players
+                .values()
+                .map(|player| Self::from_player(player))
+        )
+    }
+
     pub fn from_player(player: &Player) -> Self {
         Self {
             id: player.id,
@@ -64,4 +73,32 @@ pub struct ShotEvent {
     pub id: u32,
     pub x: f64,
     pub y: f64,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct InitEvent {
+    players: Vec<PlayerUpdateDTO>,
+    game_map: GameMapDTO,
+}
+
+impl InitEvent {
+    pub fn from_game(game: &Game) -> Event {
+        Event::INIT(InitEvent {
+            players: PlayerUpdateDTO::from_game(game),
+            game_map: GameMapDTO::from_game(game),
+        })
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct GameMapDTO {
+
+}
+
+impl GameMapDTO {
+    pub fn from_game(game: &Game) -> Self {
+        Self {
+
+        }
+    }
 }
