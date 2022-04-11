@@ -19,8 +19,13 @@ export type GameEvent =
     }
   | {
       type: 'INIT';
-      mapId: GameMap['id'];
-      players: string[];
+      playerId: number;
+      // mapId: GameMap['id'];
+      // players: string[];
+    }
+  | {
+      type: 'TURN_BEGIN';
+      playerId: number;
     }
   | {
       type: 'JOIN';

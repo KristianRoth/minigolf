@@ -1,6 +1,6 @@
-use warp::ws::Message;
-use serde::Deserialize;
 use crate::game::{Game, Player};
+use serde::Deserialize;
+use warp::ws::Message;
 
 #[derive(serde::Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -17,9 +17,9 @@ pub fn parse_event(message: Message) -> Result<Event, String> {
         return match serde_json::from_str::<Event>(json) {
             Ok(event) => Ok(event),
             _ => Err(format!("Failed to parse json {:?}", json)),
-        }
+        };
     }
-    return Err("Failed nessage is not of type text".to_string())
+    return Err("Failed nessage is not of type text".to_string());
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
@@ -54,7 +54,7 @@ impl PlayerUpdateDTO {
         Vec::from_iter(
             game.players
                 .values()
-                .map(|player| Self::from_player(player))
+                .map(|player| Self::from_player(player)),
         )
     }
 
@@ -78,8 +78,11 @@ pub struct ShotEvent {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct InitEvent {
+    #[serde(rename(serialize = "playerId"))]
     player_id: u32,
+    #[serde(rename(serialize = "players"))]
     players: Vec<PlayerUpdateDTO>,
+    #[serde(rename(serialize = "gameMap"))]
     game_map: GameMapDTO,
 }
 
@@ -94,26 +97,23 @@ impl InitEvent {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
-pub struct GameMapDTO {
-
-}
+pub struct GameMapDTO {}
 
 impl GameMapDTO {
     pub fn from_game(game: &Game) -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct TurnBeginEvent {
+    #[serde(rename(serialize = "playerId"))]
     player_id: u32,
 }
 
 impl TurnBeginEvent {
     pub fn new(player_id: u32) -> Event {
-        Event::TURN_BEGIN( TurnBeginEvent {
+        Event::TURN_BEGIN(TurnBeginEvent {
             player_id: player_id,
         })
     }

@@ -1,4 +1,4 @@
-import { calcEndpoint, clamp, distanceSquared } from './helpers';
+import { calcEndpoint, clamp } from './helpers';
 import { Ball, GameEvent, Point } from '../types';
 
 const GAME_WIDTH = 4900;
@@ -13,6 +13,9 @@ type OnShotHandler = (action: GameEvent) => void;
 
 class GameController {
   private balls: Ball[] = [];
+  private hasTurn = false;
+  private playerId = 0;
+
   private canvas: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
   private clickState: ClickState | null = null;
@@ -50,16 +53,15 @@ class GameController {
 
     const clickedAt = this.getMousePosition(event);
 
-    for (const ball of this.balls) {
-      const isWithinBall = distanceSquared(clickedAt, ball) <= Math.pow(BALL_RADIUS, 2);
-      if (isWithinBall) {
-        this.setClickState({
-          ball: { ...ball },
-          end: clickedAt,
-        });
-        break;
-      }
-    }
+    const ball = this.balls.find((b) => b.id === this.playerId);
+
+    if (!ball || !this.hasTurn) return;
+
+    this.setClickState({
+      ball: { ...ball },
+      end: clickedAt,
+    });
+
     this.render();
   };
 
@@ -119,6 +121,21 @@ class GameController {
       this.context.fill();
       this.context.fillStyle = '#000';
       this.context.closePath();
+      if (ball.id === this.playerId) {
+        this.context.beginPath();
+        this.context.lineWidth = 2;
+        this.context.ellipse(
+          this.c(ball.x),
+          this.c(ball.y),
+          this.c(BALL_RADIUS + 10),
+          this.c(BALL_RADIUS + 10),
+          0,
+          Math.PI * 2,
+          0
+        );
+        this.context.stroke();
+      }
+      this.context.lineWidth = 1;
     }
 
     if (this.clickState) {
@@ -147,6 +164,16 @@ class GameController {
 
   setBalls(balls: Ball[]) {
     this.balls = balls;
+    this.render();
+  }
+
+  setHasTurn(hasTurn: boolean) {
+    this.hasTurn = hasTurn;
+    this.render();
+  }
+
+  setPlayerId(playerId: number) {
+    this.playerId = playerId;
     this.render();
   }
 
