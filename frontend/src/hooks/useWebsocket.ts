@@ -15,8 +15,6 @@ type UseWebsocketReturnType = {
   close: () => void;
 };
 
-// "http://localhost:8080/chat"
-
 const useWebsocket = (params: UseWebsocketParams): UseWebsocketReturnType => {
   const { onOpen, onMessage, onClose, url } = params;
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -50,11 +48,14 @@ const useWebsocket = (params: UseWebsocketParams): UseWebsocketReturnType => {
     setSocket(ws);
   }, [url]);
 
-  const sendMessage = (value: string) => {
-    if (!socket) return;
-    console.log('Sending message: ', value);
-    socket.send(value);
-  };
+  const sendMessage = useCallback(
+    (value: string) => {
+      if (!socket) return;
+      console.log('Sending message: ', value);
+      socket.send(value);
+    },
+    [socket]
+  );
 
   const close = useCallback(() => {
     if (!socket) return;

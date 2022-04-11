@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import GameCanvas from '../components/GameCanvas';
+import Canvas from '../components/Canvas';
 import useWebsocket from '../hooks/useWebsocket';
 import { GameEvent } from '../types';
 
@@ -56,7 +56,7 @@ function App() {
     if (connect) connect();
   }, [connect]);
 
-  return <GameCanvas balls={balls} sendAction={(event: GameEvent) => sendMessage(JSON.stringify(event))} />;
+  return <Canvas balls={balls} sendMessage={sendMessage} />;
 }
 
 export default App;
