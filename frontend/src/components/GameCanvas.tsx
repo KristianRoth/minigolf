@@ -107,6 +107,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ balls, sendAction }) => {
       context.closePath();
     }
 
+    // TODO: shotLine could be in this useEffect-deps.
+    //  - removed it so that it renders at the same tick as the game.
     if (shotLine) {
       const { start } = shotLine;
       const point = calcEndpoint(shotLine);
@@ -116,16 +118,17 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ balls, sendAction }) => {
       context.lineTo(c(point.x), c(point.y));
       context.stroke();
     }
-  }, [context, balls, shotLine]);
+  }, [balls]);
 
   useEffect(() => {
     if (!canvasRef.current || !context) return;
 
     const canvasElement = canvasRef.current;
-    const canvasOffsetLeft = canvasElement.offsetLeft;
-    const canvasOffsetTop = canvasElement.offsetTop;
+    const { left: canvasOffsetLeft, top: canvasOffsetTop } = canvasElement.getBoundingClientRect();
 
     const handleMouseDown = (evt: MouseEvent) => {
+      setShotBallId(null);
+      setShotLine(null);
       const clickedAt = {
         x: dc(evt.clientX - canvasOffsetLeft),
         y: dc(evt.clientY - canvasOffsetTop),
@@ -145,13 +148,16 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ balls, sendAction }) => {
       if (shotLine && shotBallId) {
         const ball = balls.find((b) => b.id === shotBallId) as Ball;
         const point = calcEndpoint(shotLine);
-        sendAction({
-          type: 'SHOT',
-          x: point.x - ball.x,
-          y: point.y - ball.y,
-          id: shotBallId,
-        });
+        setTimeout(() => {
+          sendAction({
+            type: 'SHOT',
+            x: point.x - ball.x,
+            y: point.y - ball.y,
+            id: shotBallId,
+          });
+        }, 5);
       }
+      // Not firing properly everytime. SetTimeout fixes this.
       setShotBallId(null);
       setShotLine(null);
     };
@@ -197,7 +203,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ balls, sendAction }) => {
           marginTop: 10,
         }}
       ></canvas>
-      <pre>{JSON.stringify(debug, undefined, 2)}</pre>
+      <pre>{JSON.stringify({ debug, shotLine, shotBallId }, undefined, 2)}</pre>
     </div>
   );
 };
