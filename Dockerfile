@@ -3,18 +3,18 @@ ENV NODE_ENV production
 
 WORKDIR /app
 
-COPY ./frontend/package*.json .
+COPY ./frontend/package*.json ./
 
 RUN npm install
 
-COPY ./frontend .
+COPY ./frontend ./
 
 RUN npm run build
 
 FROM rust:1.59 as backend
 
 WORKDIR /usr/src/backend
-COPY ./backend .
+COPY ./backend ./
 
 RUN cargo build --release
 
