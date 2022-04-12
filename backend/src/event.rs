@@ -8,7 +8,8 @@ pub enum Event {
     UPDATE(UpdateEvent),
     SHOT(ShotEvent),
     INIT(InitEvent),
-    TURN_BEGIN(TurnBeginEvent),
+    #[serde(rename(serialize = "TURN_BEGIN"))]
+    TURNBEGIN(TurnBeginEvent),
 }
 
 pub fn parse_event(message: Message) -> Result<Event, String> {
@@ -113,7 +114,7 @@ pub struct TurnBeginEvent {
 
 impl TurnBeginEvent {
     pub fn new(player_id: u32) -> Event {
-        Event::TURN_BEGIN(TurnBeginEvent {
+        Event::TURNBEGIN( TurnBeginEvent {
             player_id: player_id,
         })
     }

@@ -7,6 +7,7 @@ mod communications;
 mod event;
 mod game;
 mod math;
+mod game_map;
 
 pub type Games = Arc<RwLock<HashMap<String, Game>>>;
 

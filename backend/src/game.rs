@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use warp::ws::Message;
 
 use crate::event::{Event, ShotEvent, UpdateEvent, InitEvent, TurnBeginEvent};
+use crate::game_map::GameMap;
 use crate::math::VectorF64;
 
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
@@ -15,14 +16,6 @@ pub struct Game {
     pub map: GameMap,
 }
 
-pub struct GameMap {
-    id: u32,
-    tiles: Vec<Vec<GameMapTile>>,
-}
-
-pub struct GameMapTile {
-
-}
 
 pub struct Player {
     pub id: u32,
@@ -39,7 +32,7 @@ impl Game {
         Self {
             game_id: game_id,
             players: HashMap::default(),
-            map: GameMap { id: 1, tiles: Vec::default() },
+            map: GameMap::new(),
         }
     }
 
@@ -69,19 +62,16 @@ impl Game {
     pub async fn tick(&mut self) {
         for (_id, player) in self.players.iter_mut() {
             player.update().await;
+            self.map.collide(player)
         }
     }
     
     fn get_game_state(&self) -> Event {
         UpdateEvent::from_game(self)
     }
-
-    fn get_init_message(&self, player_id: u32) -> Event {
-        InitEvent::from_game(self, player_id)
-    }
     
     pub async fn send_init_message(&mut self, player_id: u32) {
-        let init_message = self.get_init_message(player_id);
+        let init_message = InitEvent::from_game(self, player_id);
         if let Some(player) = self.players.get_mut(&player_id) {
             player.send_event(&init_message).await
         }
@@ -104,15 +94,15 @@ impl Player {
         let radius = 50.0;
         self.pos.x += self.vel.x;
         self.pos.y += self.vel.y;
-        self.vel.x *= 0.99;
-        self.vel.y *= 0.99;
+        self.vel.x *= 0.95;
+        self.vel.y *= 0.95;
         if self.pos.x < radius || self.pos.x > 4900.0 - radius {
             self.vel.x = -self.vel.x
         }
         if self.pos.y < radius || self.pos.y > 2500.0 - radius {
             self.vel.y = -self.vel.y
         }
-        if !self.is_turn && self.vel.length() <= 0.1 {
+        if !self.is_turn && self.vel.length() <= 1.0 {
             self.vel = VectorF64::new(0.0, 0.0);
             self.is_turn = true;
             self.send_event(&TurnBeginEvent::new(self.id)).await;
@@ -136,11 +126,5 @@ impl Player {
         self.vel.x = shot_event.x / 10.0;
         self.vel.y = shot_event.y / 10.0;
         self.is_turn = false;
-    }
-}
-
-impl GameMap {
-    pub fn new() {
-
     }
 }
