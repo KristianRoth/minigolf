@@ -3,7 +3,7 @@ ENV NODE_ENV production
 
 WORKDIR /app
 
-COPY ./frontend/package.*json .
+COPY ./frontend/package*.json .
 
 RUN npm install
 
