@@ -11,3 +11,14 @@
 .btn-blue:hover {
   @apply bg-blue-700;
 } */
+
+.canvas-container {
+  border: 2px solid #000;
+  display: grid;
+}
+
+.canvas-layer {
+  grid-column: 1;
+  grid-row: 1;
+  cursor: none;
+}

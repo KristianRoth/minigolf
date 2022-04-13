@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import Canvas from './GameCanvas';
 import useWebsocket from '../hooks/useWebsocket';
 import { GameEvent } from '../types';
-import MapCanvas from './MapCanvas';
+import GameController from '../game/GameController';
+import MapController from '../game/MapController';
 
 const BASE_URL = (() => {
   if (process.env.NODE_ENV === 'development') {
@@ -14,22 +14,32 @@ const BASE_URL = (() => {
 
 const colors = ['red', 'blue', 'cyan', 'black', 'green', 'yellow', 'orange', 'maroon'];
 
+const ROOT_ID = 'game-root';
+
+const mapController = new MapController(ROOT_ID, 1);
+const gameController = new GameController(ROOT_ID, 2);
+
 function Game() {
-  const [balls, setBalls] = useState<any[]>([]);
+  const [debug, setDebug] = useState(false);
   const [playerId, setPlayerId] = useState(0);
-  const [hasTurn, setHasTurn] = useState(false);
+  const [balls, setBalls] = useState<any[]>([]);
+  const [connected, setConnected] = useState(false);
 
   const { gameId } = useParams();
 
   const onOpen = useCallback(() => {
-    console.log('Connected!');
+    console.log('connected');
+    setConnected(true);
+  }, []);
+
+  const onClose = useCallback(() => {
+    console.log('disconnected');
+    setConnected(false);
   }, []);
 
   const onMessage = useCallback((payload: any) => {
     try {
       const event: GameEvent = JSON.parse(payload.data as any);
-
-      // TODO: Move gamecontroller here.
       if (event.type === 'UPDATE') {
         const newBalls = event.playerStates.map((state) => {
           return {
@@ -39,41 +49,65 @@ function Game() {
             id: state.id,
           };
         });
+        gameController.setBalls(newBalls);
         setBalls(newBalls);
       } else if (event.type === 'INIT') {
+        gameController.setPlayerId(event.playerId);
         setPlayerId(event.playerId);
       } else if (event.type === 'TURN_BEGIN') {
-        setHasTurn(true);
+        gameController.setHasTurn(true);
       }
     } catch (err) {
       console.error(err);
     }
   }, []);
 
-  const onClose = useCallback(() => {
-    console.log('Disconnected!');
-  }, []);
-
-  const { connect, sendMessage } = useWebsocket({
+  const { connect, sendMessage, close } = useWebsocket({
     url: `ws://${BASE_URL}/game/${gameId}`,
     onOpen,
     onMessage,
     onClose,
   });
 
-  const switchTurn = useCallback(() => {
-    setHasTurn(false);
-  }, [setHasTurn]);
+  useEffect(() => {
+    if (connected) return;
+    connect();
+
+    return () => {
+      close();
+    };
+  }, []);
 
   useEffect(() => {
-    if (connect) connect();
-  }, [connect]);
+    const onShot = (value: GameEvent) => {
+      sendMessage(JSON.stringify(value));
+    };
+    gameController.setOnShot(onShot);
+
+    mapController.init();
+    gameController.init();
+
+    return () => {
+      mapController.destroy();
+      gameController.destroy();
+    };
+  }, [connected, sendMessage]);
 
   return (
-    <div style={{ display: 'grid' }}>
-      <MapCanvas />
-      <Canvas balls={balls} sendMessage={sendMessage} hasTurn={hasTurn} playerId={playerId} switchTurn={switchTurn} />
-    </div>
+    <>
+      <div id={ROOT_ID} className='canvas-container'></div>
+
+      <div style={{ width: '100%', marginTop: 10 }}>
+        <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
+          Toggle debug
+        </button>
+        {debug && (
+          <pre style={{ width: '50%', marginLeft: 10 }}>
+            {JSON.stringify({ playerId, len: balls.length, balls }, undefined, 2)}
+          </pre>
+        )}
+      </div>
+    </>
   );
 }
 

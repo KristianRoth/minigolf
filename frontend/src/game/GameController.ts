@@ -1,54 +1,30 @@
-import { calcEndpoint, clamp } from './helpers';
+import { calcEndpoint } from './helpers';
 import { Ball, GameEvent, Point } from '../types';
+import CanvasController from './CanvasController';
 
-const GAME_WIDTH = 4900;
-const GAME_HEIGHT = 2500;
 const BALL_RADIUS = 50;
 const MAX_LINE_LEN = 1000;
-
-const RATIO = GAME_HEIGHT / GAME_WIDTH;
 
 type ClickState = { ball: Ball; end: Point };
 type OnShotHandler = (action: GameEvent) => void;
 
-class GameController {
+class GameController extends CanvasController {
   private balls: Ball[] = [];
   private hasTurn = false;
   private playerId = 0;
 
-  private canvas: HTMLCanvasElement;
-  private context: CanvasRenderingContext2D;
   private clickState: ClickState | null = null;
-  private mouseAt: Point | null = null;
-  private onShot: OnShotHandler;
+  private onShot: OnShotHandler | null = null;
 
-  constructor(canvas: HTMLCanvasElement, onShot: OnShotHandler) {
-    this.canvas = canvas;
-    this.context = canvas.getContext('2d') as CanvasRenderingContext2D;
-    this.onShot = onShot;
-    this.onResize();
-  }
-
-  private c(value: number): number {
-    return clamp(value, 0, GAME_WIDTH, 0, this.canvas.width);
-  }
-
-  private dc(value: number): number {
-    return clamp(value, 0, this.canvas.width, 0, GAME_WIDTH);
-  }
-
-  private getMousePosition(event: MouseEvent) {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = this.dc(event.clientX - rect.left);
-    const y = this.dc(event.clientY - rect.top);
-    return { x, y };
+  constructor(rootId: string, index: number) {
+    super(rootId, index);
   }
 
   private setClickState(clickState: ClickState | null) {
     this.clickState = clickState;
   }
 
-  private onMouseDown = (event: MouseEvent) => {
+  protected onMouseDown(event: MouseEvent) {
     this.setClickState(null);
 
     const clickedAt = this.getMousePosition(event);
@@ -61,15 +37,13 @@ class GameController {
       ball: { ...ball },
       end: clickedAt,
     });
+  }
 
-    this.render();
-  };
-
-  private onMouseUp = () => {
+  protected onMouseUp() {
     const clickState = this.clickState;
     this.setClickState(null);
 
-    if (clickState) {
+    if (clickState && this.onShot) {
       const { ball, end } = clickState;
       const point = calcEndpoint({ x: ball.x, y: ball.y }, end, MAX_LINE_LEN);
 
@@ -79,39 +53,24 @@ class GameController {
         y: point.y - ball.y,
         id: ball.id,
       });
+      this.setHasTurn(false);
     }
+  }
 
-    this.render();
-  };
-
-  private onMouseMove = (event: MouseEvent) => {
-    const position = this.getMousePosition(event);
-
-    this.mouseAt = position;
+  protected onMouseMove(event: MouseEvent) {
+    super.onMouseMove(event);
 
     const clickState = this.clickState;
 
     if (clickState) {
       this.setClickState({
         ...clickState,
-        end: position,
+        end: this.mouseAt as Point,
       });
     }
+  }
 
-    if (this.clickState !== clickState) {
-      this.render();
-    }
-  };
-
-  private onResize = () => {
-    const width = window.innerWidth - 30;
-    const height = width * RATIO;
-
-    this.canvas.width = width;
-    this.canvas.height = height;
-  };
-
-  private render() {
+  protected render() {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     if (this.clickState) {
@@ -156,35 +115,30 @@ class GameController {
       this.context.lineTo(this.c(x + BALL_RADIUS), this.c(y));
       this.context.stroke();
     }
-  }
 
-  init() {
-    document.body.addEventListener('mousedown', this.onMouseDown);
-    document.body.addEventListener('mouseup', this.onMouseUp);
-    document.body.addEventListener('mousemove', this.onMouseMove);
-    window.addEventListener('resize', this.onResize);
-  }
-
-  destroy() {
-    document.body.removeEventListener('mousedown', this.onMouseDown);
-    document.body.removeEventListener('mouseup', this.onMouseUp);
-    document.body.removeEventListener('mousemove', this.onMouseMove);
-    window.removeEventListener('resize', this.onResize);
+    const { x, y } = this.mouseAt || { x: NaN, y: NaN };
+    this.context.font = `${0.8 * this.blockSize}px serif`;
+    this.context.fillText(
+      `x: ${Math.round(x)}, y: ${Math.round(y)}, Player: ${this.playerId}`,
+      7,
+      0.75 * this.blockSize
+    );
   }
 
   setBalls(balls: Ball[]) {
     this.balls = balls;
-    this.render();
   }
 
   setHasTurn(hasTurn: boolean) {
     this.hasTurn = hasTurn;
-    this.render();
   }
 
   setPlayerId(playerId: number) {
     this.playerId = playerId;
-    this.render();
+  }
+
+  setOnShot(onShot: OnShotHandler) {
+    this.onShot = onShot;
   }
 
   get debug() {
