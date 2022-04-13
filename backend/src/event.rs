@@ -1,14 +1,15 @@
-use crate::game::{Game, Player};
+use crate::{game::{Game, Player}, game_map::{GameMap, GameMapTile}};
 use serde::Deserialize;
 use warp::ws::Message;
 
-#[derive(serde::Serialize, Deserialize, Debug)]
+#[derive(serde::Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {
     UPDATE(UpdateEvent),
     SHOT(ShotEvent),
     INIT(InitEvent),
-    TURN_BEGIN(TurnBeginEvent),
+    #[serde(rename(serialize = "TURN_BEGIN"))]
+    TURNBEGIN(TurnBeginEvent),
 }
 
 pub fn parse_event(message: Message) -> Result<Event, String> {
@@ -76,7 +77,7 @@ pub struct ShotEvent {
     pub y: f64,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct InitEvent {
     #[serde(rename(serialize = "playerId"))]
     player_id: u32,
@@ -96,12 +97,16 @@ impl InitEvent {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
-pub struct GameMapDTO {}
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct GameMapDTO {
+    tiles: Vec<GameMapTile>,
+}
 
 impl GameMapDTO {
     pub fn from_game(game: &Game) -> Self {
-        Self {}
+        Self {
+            tiles: game.map.tiles.clone().into_iter().flatten().collect()
+        }
     }
 }
 
@@ -113,7 +118,7 @@ pub struct TurnBeginEvent {
 
 impl TurnBeginEvent {
     pub fn new(player_id: u32) -> Event {
-        Event::TURN_BEGIN(TurnBeginEvent {
+        Event::TURNBEGIN( TurnBeginEvent {
             player_id: player_id,
         })
     }
