@@ -1,6 +1,9 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::{game::Player, math::{VectorF64, Line}};
+use crate::{
+    game::Player,
+    math::{Line, VectorF64},
+};
 
 pub type GameTiles = Vec<Vec<GameMapTile>>;
 
@@ -9,11 +12,12 @@ pub struct GameMap {
     pub tiles: Vec<Vec<GameMapTile>>,
 }
 
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GameMapTile {
     pos: VectorF64,
+    #[serde(rename(serialize = "groundType"))]
     ground_type: GroundType,
+    #[serde(rename(serialize = "structureType"))]
     structure_type: StructureType,
 }
 
@@ -29,7 +33,7 @@ pub enum GroundType {
 #[derive(Clone, Serialize, Deserialize)]
 pub enum StructureType {
     Wall,
-    None
+    None,
 }
 
 impl Collision for StructureType {
@@ -80,14 +84,12 @@ pub trait Collision {
     fn collide(&self, pos: VectorF64, ball: &mut Player);
 }
 
-
 impl GameMap {
     pub fn new() -> Self {
         Self {
             id: 1,
             tiles: Self::create_map(),
         }
-
     }
 
     pub fn create_map() -> GameTiles {
@@ -99,13 +101,13 @@ impl GameMap {
                 let is_middle_map = (x - 10).abs() <= 2 && y < 1 * 25;
                 if is_border || is_middle_map {
                     tiles_column.push(GameMapTile {
-                        pos: VectorF64::new(x as f64*100.0, y as f64 * 100.0),
+                        pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
                         ground_type: GroundType::Grass,
                         structure_type: StructureType::Wall,
                     })
                 } else {
                     tiles_column.push(GameMapTile {
-                        pos: VectorF64::new(x as f64*100.0, y as f64 * 100.0),
+                        pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
                         ground_type: GroundType::Grass,
                         structure_type: StructureType::None,
                     })
@@ -126,7 +128,6 @@ impl GameMap {
 }
 
 impl GameMapTile {
-    
     pub fn collide(&self, ball: &mut Player) {
         self.structure_type.collide(self.pos, ball)
     }
