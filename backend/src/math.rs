@@ -1,4 +1,6 @@
-#[derive(Clone, Copy, Debug)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct VectorF64 {
     pub x: f64,
     pub y: f64,

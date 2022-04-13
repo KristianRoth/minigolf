@@ -1,8 +1,8 @@
-use crate::game::{Game, Player};
+use crate::{game::{Game, Player}, game_map::{GameMap, GameMapTile}};
 use serde::Deserialize;
 use warp::ws::Message;
 
-#[derive(serde::Serialize, Deserialize, Debug)]
+#[derive(serde::Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Event {
     UPDATE(UpdateEvent),
@@ -77,7 +77,7 @@ pub struct ShotEvent {
     pub y: f64,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct InitEvent {
     #[serde(rename(serialize = "playerId"))]
     player_id: u32,
@@ -97,12 +97,16 @@ impl InitEvent {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
-pub struct GameMapDTO {}
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct GameMapDTO {
+    tiles: Vec<GameMapTile>,
+}
 
 impl GameMapDTO {
     pub fn from_game(game: &Game) -> Self {
-        Self {}
+        Self {
+            tiles: game.map.tiles.clone().into_iter().flatten().collect()
+        }
     }
 }
 

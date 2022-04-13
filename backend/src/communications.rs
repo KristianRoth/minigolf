@@ -38,7 +38,7 @@ async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &St
 
     match parse_event(event) {
         Ok(Event::SHOT(shot_event)) => game.shot(shot_event, player_id), 
-        e => eprintln!("for game '{game_id}', unexpected event: {:?}", e),
+        e => return, //eprintln!("for game '{game_id}', unexpected event: {:?}", e),
     };
     
 }

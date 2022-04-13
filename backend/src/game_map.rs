@@ -1,21 +1,23 @@
+use serde::{Serialize, Deserialize};
+
 use crate::{game::Player, math::{VectorF64, Line}};
 
 pub type GameTiles = Vec<Vec<GameMapTile>>;
 
 pub struct GameMap {
     id: u32,
-    tiles: Vec<Vec<GameMapTile>>,
+    pub tiles: Vec<Vec<GameMapTile>>,
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct GameMapTile {
     pos: VectorF64,
     ground_type: GroundType,
     structure_type: StructureType,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum GroundType {
     Grass,
     Water,
@@ -24,7 +26,7 @@ pub enum GroundType {
     HeavyDirt,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum StructureType {
     Wall,
     None
