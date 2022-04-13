@@ -1,11 +1,10 @@
 import { calcEndpoint } from './helpers';
-import { Ball, GameEvent, Point } from '../types';
+import { Ball, GameEvent } from '../types';
 import CanvasController from './CanvasController';
 
 const BALL_RADIUS = 50;
 const MAX_LINE_LEN = 1000;
 
-type ClickState = { ball: Ball; end: Point };
 type OnShotHandler = (action: GameEvent) => void;
 
 class GameController extends CanvasController {
@@ -13,73 +12,49 @@ class GameController extends CanvasController {
   private hasTurn = false;
   private playerId = 0;
 
-  private clickState: ClickState | null = null;
   private onShot: OnShotHandler | null = null;
 
   constructor(rootId: string, index: number) {
     super(rootId, index);
   }
 
-  private setClickState(clickState: ClickState | null) {
-    this.clickState = clickState;
-  }
-
   protected onMouseDown(event: MouseEvent) {
-    this.setClickState(null);
-
     const clickedAt = this.getMousePosition(event);
-
     const ball = this.balls.find((b) => b.id === this.playerId);
 
-    if (!ball || !this.hasTurn) return;
+    if (!ball || !this.hasTurn || !this.onShot) return;
 
-    this.setClickState({
-      ball: { ...ball },
-      end: clickedAt,
+    const point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
+
+    this.onShot({
+      type: 'SHOT',
+      x: point.x - ball.x,
+      y: point.y - ball.y,
+      id: ball.id,
     });
+    this.setHasTurn(false);
   }
 
   protected onMouseUp() {
-    const clickState = this.clickState;
-    this.setClickState(null);
-
-    if (clickState && this.onShot) {
-      const { ball, end } = clickState;
-      const point = calcEndpoint({ x: ball.x, y: ball.y }, end, MAX_LINE_LEN);
-
-      this.onShot({
-        type: 'SHOT',
-        x: point.x - ball.x,
-        y: point.y - ball.y,
-        id: ball.id,
-      });
-      this.setHasTurn(false);
-    }
+    /* */
   }
 
   protected onMouseMove(event: MouseEvent) {
     super.onMouseMove(event);
-
-    const clickState = this.clickState;
-
-    if (clickState) {
-      this.setClickState({
-        ...clickState,
-        end: this.mouseAt as Point,
-      });
-    }
   }
 
   protected render() {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    if (this.clickState) {
-      const { ball, end } = { ...this.clickState };
-      const point = calcEndpoint({ x: ball.x, y: ball.y }, end, MAX_LINE_LEN);
-      this.context.beginPath();
-      this.context.moveTo(this.c(ball.x), this.c(ball.y));
-      this.context.lineTo(this.c(point.x), this.c(point.y));
-      this.context.stroke();
+    if (this.hasTurn && this.mouseAt) {
+      const ball = this.balls.find((b) => b.id === this.playerId);
+      if (ball) {
+        const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
+        this.context.beginPath();
+        this.context.moveTo(this.c(ball.x), this.c(ball.y));
+        this.context.lineTo(this.c(point.x), this.c(point.y));
+        this.context.stroke();
+      }
     }
 
     for (const ball of this.balls) {
@@ -135,6 +110,7 @@ class GameController extends CanvasController {
 
   setPlayerId(playerId: number) {
     this.playerId = playerId;
+    this.hasTurn = true;
   }
 
   setOnShot(onShot: OnShotHandler) {
@@ -144,7 +120,6 @@ class GameController extends CanvasController {
   get debug() {
     return {
       mouseAt: this.mouseAt,
-      ...this.clickState,
       balls: this.balls,
     };
   }

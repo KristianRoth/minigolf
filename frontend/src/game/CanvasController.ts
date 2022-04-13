@@ -9,8 +9,7 @@ const BLOCK_SIZE = BALL_RADIUS * 2;
 const RATIO = GAME_HEIGHT / GAME_WIDTH;
 
 class CanvasController {
-  protected frameCount = 0;
-  protected gameInterval: NodeJS.Timer | null = null;
+  protected animationReqId: number | null = null;
 
   protected tick = 0;
   protected rootId = '';
@@ -50,6 +49,7 @@ class CanvasController {
 
     this.canvas.width = width;
     this.canvas.height = height;
+    this.render();
   }
 
   protected onMouseMove(event: MouseEvent) {
@@ -75,34 +75,35 @@ class CanvasController {
   }
 
   init() {
-    document.body.addEventListener('mousedown', this.onMouseDown.bind(this));
-    document.body.addEventListener('mouseup', this.onMouseUp.bind(this));
-    document.body.addEventListener('mousemove', this.onMouseMove.bind(this));
+    this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+    this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+    this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
     window.addEventListener('resize', this.onResize.bind(this));
 
     document.getElementById(this.rootId)?.appendChild(this.canvas);
     this.onResize();
 
-    const callback = () => {
-      this.frameCount += 1;
-      this.render();
-    };
-    callback();
-    if (this.tick > 0) {
-      this.gameInterval = setInterval(callback, 1000 / this.tick);
+    if (this.tick === 0) {
+      return;
     }
+
+    const animate = () => {
+      this.render();
+      this.animationReqId = window.requestAnimationFrame(animate);
+    };
+    this.animationReqId = window.requestAnimationFrame(animate);
   }
 
   destroy() {
-    document.body.removeEventListener('mousedown', this.onMouseDown);
-    document.body.removeEventListener('mouseup', this.onMouseUp);
-    document.body.removeEventListener('mousemove', this.onMouseMove);
+    this.canvas.removeEventListener('mousedown', this.onMouseDown);
+    this.canvas.removeEventListener('mouseup', this.onMouseUp);
+    this.canvas.removeEventListener('mousemove', this.onMouseMove);
     window.removeEventListener('resize', this.onResize);
 
     this.canvas.remove();
 
-    if (this.gameInterval) {
-      clearInterval(this.gameInterval);
+    if (this.animationReqId) {
+      window.cancelAnimationFrame(this.animationReqId);
     }
   }
 }

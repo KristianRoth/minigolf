@@ -79,13 +79,14 @@ function Game() {
   }, []);
 
   useEffect(() => {
+    mapController.init();
+    gameController.init();
+
     const onShot = (value: GameEvent) => {
       sendMessage(JSON.stringify(value));
     };
     gameController.setOnShot(onShot);
-
-    mapController.init();
-    gameController.init();
+    gameController.setPlayerId(playerId);
 
     return () => {
       mapController.destroy();
