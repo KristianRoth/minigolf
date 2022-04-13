@@ -1,3 +1,5 @@
+import { Point } from './GameState';
+
 export type GameMap = {
   id: string;
   name: string;
@@ -7,19 +9,20 @@ export type GameMap = {
 };
 
 export type Tile = {
-  x: number;
-  y: number;
-  ground: Ground;
-  structure: Structure;
+  pos: Point;
+  groundType: GroundType;
+  structureType: StructureType;
 };
 
+type StructureType = 'Wall' | 'Portal' | 'None';
 export type Structure = {
-  type: 'WALL' | 'PORTAL';
+  type: StructureType;
   rotation: Rotation;
 };
 
+type GroundType = 'Sand' | 'Grass' | 'Water';
 export type Ground = {
-  type: 'SAND' | 'GRASS' | 'WATER';
+  type: GroundType;
   rotation: Rotation;
 };
 
@@ -31,9 +34,8 @@ export enum Rotation {
   'M-NORTH',
   'M-EAST',
   'M-SOUTH',
-  'M-WEST'
+  'M-WEST',
 }
 
-export type GroundType = 'SAND' | 'GRASS' | 'WATER';
 export type Score = any;
 export type Creator = any;

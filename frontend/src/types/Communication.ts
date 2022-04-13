@@ -20,7 +20,7 @@ export type GameEvent =
   | {
       type: 'INIT';
       playerId: number;
-      // mapId: GameMap['id'];
+      gameMap: GameMap;
       // players: string[];
     }
   | {

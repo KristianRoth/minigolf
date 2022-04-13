@@ -53,6 +53,7 @@ function Game() {
         setBalls(newBalls);
       } else if (event.type === 'INIT') {
         gameController.setPlayerId(event.playerId);
+        mapController.setGameMap(event.gameMap);
         setPlayerId(event.playerId);
       } else if (event.type === 'TURN_BEGIN') {
         gameController.setHasTurn(true);

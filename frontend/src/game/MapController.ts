@@ -1,6 +1,9 @@
+import { GameMap } from '../types';
 import CanvasController from './CanvasController';
 
 class MapController extends CanvasController {
+  protected gameMap: GameMap | null = null;
+
   constructor(rootId: string, index: number) {
     super(rootId, index, 0);
   }
@@ -72,11 +75,45 @@ class MapController extends CanvasController {
     }
   }
 
+  private draw() {
+    if (!this.gameMap) return;
+    const { tiles } = this.gameMap;
+
+    for (let i = tiles.length - 1; i >= 0; i -= 1) {
+      const tile = tiles[i];
+      const [x, y] = [this.c(tile.pos.x), this.c(tile.pos.y)];
+      if (tile.groundType === 'Grass') {
+        this.drawBrick(x, y, '#13a713');
+      }
+    }
+
+    for (let i = tiles.length - 1; i >= 0; i -= 1) {
+      const tile = tiles[i];
+      const [x, y] = [this.c(tile.pos.x), this.c(tile.pos.y)];
+      if (tile.structureType === 'Wall') {
+        this.drawBrick(x, y, '#c6c6c6', true);
+      }
+    }
+
+    for (let i = tiles.length - 1; i >= 0; i -= 1) {
+      const tile = tiles[i];
+      const [x, y] = [this.c(tile.pos.x), this.c(tile.pos.y)];
+      if (tile.structureType === 'Wall') {
+        this.drawBrick(x, y, '#c6c6c6', false);
+      }
+    }
+  }
+
   protected render() {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.drawGrid();
-    this.drawBricks();
+    this.draw();
+  }
+
+  setGameMap(gameMap: GameMap) {
+    this.gameMap = gameMap;
+    this.render();
   }
 }
 
