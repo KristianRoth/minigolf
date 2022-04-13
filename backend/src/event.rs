@@ -62,10 +62,10 @@ impl PlayerUpdateDTO {
     pub fn from_player(player: &Player) -> Self {
         Self {
             id: player.id,
-            x: player.pos.x,
-            y: player.pos.y,
-            dx: player.vel.x,
-            dy: player.vel.y,
+            x: player.ball.pos.x,
+            y: player.ball.pos.y,
+            dx: player.ball.vel.x,
+            dy: player.ball.vel.y,
         }
     }
 }

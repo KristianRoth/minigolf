@@ -1,12 +1,15 @@
+use std::{cmp::Ordering, io};
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game::Player,
+    game::{Ball},
     math::{Line, VectorF64},
 };
 
 pub type GameTiles = Vec<Vec<GameMapTile>>;
 
+type Point = VectorF64;
 pub struct GameMap {
     id: u32,
     pub tiles: Vec<Vec<GameMapTile>>,
@@ -36,52 +39,52 @@ pub enum StructureType {
     None,
 }
 
-impl Collision for StructureType {
-    fn collide(&self, pos: VectorF64, ball: &mut Player) {
+pub enum Collider {
+    Point((f64,f64)),
+    Line((f64, f64),(f64, f64)),
+}
+
+const BOX_COLLIDERS: [Collider; 8] = [
+    Collider::Line((0.0,0.0),(100.0,0.0)),
+    Collider::Line((100.0,0.0), (0.0,100.0)),
+    Collider::Line((100.0,100.0), (-100.0,0.0)),
+    Collider::Line((0.0,100.0),(0.0, -100.0)),
+    Collider::Point((0.0,0.0)),
+    Collider::Point((100.0, 0.0)),
+    Collider::Point((100.0,100.0)),
+    Collider::Point((0.0, 100.0)),
+];
+
+impl Collider {
+    pub fn get_project_point(&self, position: &VectorF64, ball: &Point) -> Option<Point> {
         match self {
-            StructureType::Wall => self.box_collide(pos, ball),
-            StructureType::None => return,
+            Collider::Point((x, y)) => return Some(position.add(&Point::new(*x, *y))),
+            Collider::Line(pos, dir) => return Line::new(&position.add(&Point::from_tuple(*pos)), &Point::from_tuple(*dir)).project_point(ball),
         }
     }
 }
+
 
 impl StructureType {
-    fn box_collide(&self, pos: VectorF64, ball: &mut Player) {
-        let circle_pos = ball.pos.clone();
-        let dir_h = VectorF64::new(100.0, 0.0);
-        let dir_v = VectorF64::new(0.0, 100.0);
 
-        let line1 = Line::new(pos, dir_h);
-        let line3 = Line::new(pos, dir_v);
-
-        let line2 = Line::new(pos.add(&dir_v), dir_h);
-        let line4 = Line::new(pos.add(&dir_h), dir_v);
-
-        if let Some(projected_point) = line1.project_point(circle_pos) {
-            if projected_point.dist(&circle_pos) < 50.0 {
-                ball.vel.y = -ball.vel.y
-            }
-        }
-        if let Some(projected_point) = line2.project_point(circle_pos) {
-            if projected_point.dist(&circle_pos) < 50.0 {
-                ball.vel.x = -ball.vel.x
-            }
-        }
-        if let Some(projected_point) = line3.project_point(circle_pos) {
-            if projected_point.dist(&circle_pos) < 50.0 {
-                ball.vel.y = -ball.vel.y
-            }
-        }
-        if let Some(projected_point) = line4.project_point(circle_pos) {
-            if projected_point.dist(&circle_pos) < 50.0 {
-                ball.vel.x = -ball.vel.x
-            }
+    fn get_collision_points(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
+        match self {
+            StructureType::Wall => self.box_collide(pos, ball),
+            StructureType::None => Vec::<Point>::default(),
         }
     }
-}
+    
+    fn box_collide(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
+        let colliders = BOX_COLLIDERS;
+        
+        let projection_points: Vec<Point> = colliders.iter()
+            .map(|collider| collider.get_project_point(&pos, &ball.pos))
+            .filter(|point| point.is_some()).map(|point| point.unwrap()).collect();
 
-pub trait Collision {
-    fn collide(&self, pos: VectorF64, ball: &mut Player);
+        projection_points
+        //let closest = projection_points.iter()
+        //    .min_by(|a, b| a.dist(&ball.pos).partial_cmp(&b.dist(&ball.pos)).unwrap_or(Ordering::Equal)).unwrap();
+    }
 }
 
 impl GameMap {
@@ -98,7 +101,7 @@ impl GameMap {
             let mut tiles_column: Vec<GameMapTile> = Vec::default();
             for y in 0..25i32 {
                 let is_border = x == 0 || y == 0 || x == 49 - 1 || y == 25 - 1;
-                let is_middle_map = (x - 10).abs() <= 2 && y < 1 * 25;
+                let is_middle_map = (x - 10).abs() <= 2 && 4 < y && y < 14;
                 if is_border || is_middle_map {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
@@ -118,17 +121,87 @@ impl GameMap {
         return tiles;
     }
 
-    pub fn collide(&self, player: &mut Player) {
-        for ele in self.tiles.clone() {
-            for tile in ele {
-                tile.collide(player)
-            }
+    pub fn collide(&self, ball: &mut Ball) {
+        let mut d_pos = ball.vel.length();
+        if d_pos < 1.0 {
+            return;
         }
+        loop {
+            let x_start = (((ball.pos.x - 100.0 )/100.0) as usize).max(0);
+            let y_start = (((ball.pos.y - 100.0 )/100.0) as usize).max(0);
+    
+            let close_tiles = self.tiles
+                .iter()
+                .skip(x_start)
+                .take(5)
+                .map(|s| s.iter().skip(y_start).take(5))
+                .flatten()
+                .collect::<Vec<_>>();
+            
+            let points = close_tiles
+                .iter()
+                .map(|tile| tile.structure_type.get_collision_points(tile.pos, ball))
+                .flatten()
+                .collect::<Vec<_>>();
+            let closest = points.iter()
+                .min_by(|a, b| a.dist(&ball.pos).partial_cmp(&b.dist(&ball.pos)).unwrap_or(Ordering::Equal));
+            
+            if let Some(closest) = closest {
+                let distance_to_wall = closest.dist(&ball.pos);
+                //let mut answer = String::new();
+                //io::stdin().read_line(&mut answer)
+                //.ok()
+                //.expect("Failed to read line");
+                if distance_to_wall < 50.0 {
+                    println!("Seinä {:?}", closest);
+                    println!("Pallo {:?}", ball.pos);
+                    self.do_collision(closest, ball)
+                }
+                let to_move = d_pos.min(distance_to_wall-49.9).max(1.0);
+                ball.pos = ball.pos.add(&ball.vel.get_unit().multi(to_move));
+                println!("adding some: {}/{}", to_move, ball.vel.length());
+
+                d_pos -= to_move;
+            } else {
+                ball.pos = ball.pos.add(&ball.vel.get_unit().multi(d_pos));
+                return;
+            }
+            if d_pos < 0.0001 { return };
+
+        }
+        
+        
+    }
+
+    pub fn do_collision(&self, projection_point: &Point, ball: &mut Ball) {
+        let basis = &ball.pos.sub(&projection_point).get_unit();
+        let mut basis_chaged = ball.vel.change_base(basis);
+        basis_chaged.x = -basis_chaged.x;
+        ball.vel = basis_chaged.change_to_normal_base(basis);
+        ball.pos = projection_point.add(&basis.multi(50.1));
     }
 }
 
-impl GameMapTile {
-    pub fn collide(&self, ball: &mut Player) {
-        self.structure_type.collide(self.pos, ball)
+
+#[cfg(test)]
+mod tests {
+    use crate::{game::Ball, math::VectorF64};
+
+    use super::{GameMap, Point};
+
+    
+
+    // add
+    #[test]
+    fn test_add() {
+        let projection_point = Point::new(100.0, 100.0);
+        let mut ball = Ball {
+            pos: VectorF64::new(0.0, 0.0),
+            vel: VectorF64::new(1.0, 1.0),
+        };
+        let game_map = GameMap::new();
+        game_map.do_collision(&projection_point, &mut ball);
+        println!("{:?}", ball);
+        
     }
 }

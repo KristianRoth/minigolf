@@ -16,11 +16,16 @@ pub struct Game {
     pub map: GameMap,
 }
 
+#[derive(Debug)]
+pub struct Ball {
+    pub pos: VectorF64,
+    pub vel: VectorF64,
+}
+
 
 pub struct Player {
     pub id: u32,
-    pub pos: VectorF64,
-    pub vel: VectorF64,
+    pub ball: Ball,
     pub ws: WebSocketSender,
     pub is_turn: bool,
 }
@@ -43,13 +48,15 @@ impl Game {
             id,
             Player {
                 id: id,
-                pos: VectorF64 {
-                    x: rng.gen::<f64>() * 4900.0,
-                    y: rng.gen::<f64>() * 2500.0,
-                },
-                vel: VectorF64 {
-                    x: (rng.gen::<f64>() - 0.5) * 10.0,
-                    y: (rng.gen::<f64>() - 0.5) * 10.0,
+                ball: Ball { 
+                    pos: VectorF64 {
+                        x: rng.gen::<f64>() * 4900.0,
+                        y: rng.gen::<f64>() * 2500.0,
+                    },
+                    vel: VectorF64 {
+                        x: (rng.gen::<f64>() - 0.5) * 10.0,
+                        y: (rng.gen::<f64>() - 0.5) * 10.0,
+                    },
                 },
                 ws: ws,
                 is_turn: false
@@ -62,7 +69,7 @@ impl Game {
     pub async fn tick(&mut self) {
         for (_id, player) in self.players.iter_mut() {
             player.update().await;
-            self.map.collide(player)
+            self.map.collide(&mut player.ball)
         }
     }
     
@@ -91,19 +98,9 @@ impl Game {
 
 impl Player {
     pub async fn update(&mut self) {
-        let radius = 50.0;
-        self.pos.x += self.vel.x;
-        self.pos.y += self.vel.y;
-        self.vel.x *= 0.95;
-        self.vel.y *= 0.95;
-        if self.pos.x < radius || self.pos.x > 4900.0 - radius {
-            self.vel.x = -self.vel.x
-        }
-        if self.pos.y < radius || self.pos.y > 2500.0 - radius {
-            self.vel.y = -self.vel.y
-        }
-        if !self.is_turn && self.vel.length() <= 1.0 {
-            self.vel = VectorF64::new(0.0, 0.0);
+        self.ball.vel = self.ball.vel.multi(0.97);
+        if !self.is_turn && self.ball.vel.length() <= 1.0 {
+            self.ball.vel = VectorF64::new(0.0, 0.0);
             self.is_turn = true;
             self.send_event(&TurnBeginEvent::new(self.id)).await;
         }
@@ -123,8 +120,8 @@ impl Player {
         if shot_event.id != self.id || !self.is_turn {
             return;
         }
-        self.vel.x = shot_event.x / 10.0;
-        self.vel.y = shot_event.y / 10.0;
+        self.ball.vel.x = shot_event.x / 10.0;
+        self.ball.vel.y = shot_event.y / 10.0;
         self.is_turn = false;
     }
 }
