@@ -36,11 +36,13 @@ pub enum GroundType {
 #[derive(Clone, Serialize, Deserialize)]
 pub enum StructureType {
     Wall,
+    Circle,
     None,
 }
 
 pub enum Collider {
     Point((f64, f64)),
+    Circle((f64, f64), f64),
     Line((f64, f64), (f64, f64)),
 }
 
@@ -55,6 +57,10 @@ const BOX_COLLIDERS: [Collider; 8] = [
     Collider::Point((0.0, 100.0)),
 ];
 
+const CIRCLE_COLLIDERS: [Collider; 1] = [
+    Collider::Circle((50.0, 50.0), 24.0),
+];
+
 impl Collider {
     pub fn get_project_point(&self, position: &VectorF64, ball: &Point) -> Option<Point> {
         match self {
@@ -66,6 +72,10 @@ impl Collider {
                 )
                 .project_point(ball)
             }
+            Collider::Circle(pos, radius) => {
+                let circle_centre = position.add(&Point::from_tuple(*pos));
+                return Some(circle_centre.add(&ball.sub(&circle_centre).get_unit().multi(*radius)))
+            }
         }
     }
 }
@@ -74,6 +84,7 @@ impl StructureType {
     fn get_collision_points(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
         match self {
             StructureType::Wall => self.box_collide(pos, ball),
+            StructureType::Circle => self.circle_collide(pos, ball),
             StructureType::None => Vec::<Point>::default(),
         }
     }
@@ -91,6 +102,18 @@ impl StructureType {
         //let closest = projection_points.iter()
         //    .min_by(|a, b| a.dist(&ball.pos).partial_cmp(&b.dist(&ball.pos)).unwrap_or(Ordering::Equal)).unwrap();
     }
+
+    fn circle_collide(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
+        let colliders = CIRCLE_COLLIDERS;
+        let projection_points: Vec<Point> = colliders
+            .iter()
+            .map(|collider| collider.get_project_point(&pos, &ball.pos))
+            .filter(|point| point.is_some())
+            .map(|point| point.unwrap())
+            .collect();
+
+        projection_points
+    }
 }
 
 impl GameMap {
@@ -107,12 +130,18 @@ impl GameMap {
             let mut tiles_column: Vec<GameMapTile> = Vec::default();
             for y in 0..25i32 {
                 let is_border = x == 0 || y == 0 || x == 49 - 1 || y == 25 - 1;
-                let is_middle_map = (x - 10).abs() <= 2 && 4 < y && y < 14;
-                if is_border || is_middle_map {
+                let is_middle_map = y % 2 == 0 && x % 2 == 0;
+                if is_border {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
                         ground_type: GroundType::Grass,
                         structure_type: StructureType::Wall,
+                    })
+                } else if is_middle_map {
+                    tiles_column.push(GameMapTile {
+                        pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
+                        ground_type: GroundType::Grass,
+                        structure_type: StructureType::Circle,
                     })
                 } else {
                     tiles_column.push(GameMapTile {

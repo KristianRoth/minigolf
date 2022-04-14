@@ -58,7 +58,7 @@ impl VectorF64 {
         self.sub(b).length()
     }
 
-    pub fn change_base(&self, new_base: &VectorF64) -> VectorF64 {
+    pub fn change_to_normal_base(&self, new_base: &VectorF64) -> VectorF64 {
         let normal = new_base.get_normal();
         // | new_base.x, normal.x | x | self.x | = | new_base.x*self.x + normal.x*self.y |
         // | new_base.y, normal.y |   | self.y |   | new_base.y*self.x + normal.y*self.y |
@@ -68,7 +68,7 @@ impl VectorF64 {
         }
     }
 
-    pub fn change_to_normal_base(&self, new_base: &VectorF64) -> VectorF64 {
+    pub fn change_base(&self, new_base: &VectorF64) -> VectorF64 {
         let normal = new_base.get_normal();
         let scale = 1.0/(normal.y*new_base.x - normal.x*new_base.y);
         let new_base = new_base.multi(scale);
