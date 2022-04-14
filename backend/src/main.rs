@@ -6,8 +6,8 @@ use warp::Filter;
 mod communications;
 mod event;
 mod game;
-mod math;
 mod game_map;
+mod math;
 
 pub type Games = Arc<RwLock<HashMap<String, Game>>>;
 
@@ -30,9 +30,12 @@ async fn main() {
     let websocket = warp::path!("game" / String)
         .and(warp::ws())
         .and(games_filter)
-        .map(|game_id: String, ws: warp::ws::Ws, games| {
-            ws.on_upgrade(move |socket| communications::connect(socket, games, game_id))
-        });
+        .and(warp::query::<communications::ConnectionParams>())
+        .map(
+            |game_id: String, ws: warp::ws::Ws, games, params: communications::ConnectionParams| {
+                ws.on_upgrade(move |socket| communications::connect(socket, games, game_id, params))
+            },
+        );
 
     let index = warp::fs::file("../frontend/build/index.html");
 

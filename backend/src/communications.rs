@@ -1,17 +1,27 @@
-use std::io;
-
+use crate::event::{parse_event, Event};
 use crate::game::Game;
 use crate::Games;
-use crate::event::{parse_event, Event};
 use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
 
-pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
+#[derive(Deserialize, Serialize, Debug)]
+pub struct ConnectionParams {
+    pub id: Option<u32>,
+    pub name: String,
+}
+
+pub async fn connect(
+    ws: warp::ws::WebSocket,
+    games: Games,
+    game_id: String,
+    params: ConnectionParams,
+) {
     let (tx, mut rx) = ws.split();
     let mut game = match games.write().await.remove(&game_id) {
         Some(found) => found,
         None => Game::new(game_id.clone()),
     };
-    let player_id = game.add_connection(tx);
+    let player_id = game.add_connection(tx, params.name, params.id);
     game.send_init_message(player_id).await;
     games.write().await.insert(game_id.clone(), game);
     while let Some(result) = rx.next().await {
@@ -24,9 +34,17 @@ pub async fn connect(ws: warp::ws::WebSocket, games: Games, game_id: String) {
         };
         process_user_event(msg, games.clone(), &game_id, player_id).await;
     }
+    if let Some(game) = games.write().await.get_mut(&game_id) {
+        game.remove_connection(player_id);
+    }
 }
 
-async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &String, player_id: u32) {
+async fn process_user_event(
+    event: warp::ws::Message,
+    games: Games,
+    game_id: &String,
+    player_id: u32,
+) {
     println!("message received");
     println!("Gameid {}", game_id);
     let mut hash_map = games.write().await;
@@ -39,10 +57,9 @@ async fn process_user_event(event: warp::ws::Message, games: Games, game_id: &St
     };
 
     match parse_event(event) {
-        Ok(Event::SHOT(shot_event)) => game.shot(shot_event, player_id), 
+        Ok(Event::SHOT(shot_event)) => game.shot(shot_event, player_id),
         e => return, //eprintln!("for game '{game_id}', unexpected event: {:?}", e),
     };
-    
 }
 
 pub async fn start_loop(games: Games) {
@@ -59,4 +76,3 @@ pub async fn start_loop(games: Games) {
         }
     });
 }
-
