@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 use warp::ws::Message;
 
-use crate::event::{Event, ShotEvent, UpdateEvent, InitEvent, TurnBeginEvent};
+use crate::event::{Event, InitEvent, ShotEvent, TurnBeginEvent, UpdateEvent};
 use crate::game_map::GameMap;
 use crate::math::VectorF64;
 
@@ -22,9 +22,9 @@ pub struct Ball {
     pub vel: VectorF64,
 }
 
-
 pub struct Player {
     pub id: u32,
+    pub name: String,
     pub ball: Ball,
     pub ws: WebSocketSender,
     pub is_turn: bool,
@@ -41,14 +41,27 @@ impl Game {
         }
     }
 
-    pub fn add_connection(&mut self, ws: WebSocketSender) -> u32 {
+    pub fn add_connection(
+        &mut self,
+        ws: WebSocketSender,
+        name: String,
+        reconnect_id: Option<u32>,
+    ) -> u32 {
+        if let Some(possible_id) = reconnect_id {
+            if let Some(player) = self.players.get_mut(&possible_id) {
+                println!("Reconnecting player {}, {}", possible_id, player.name);
+                player.ws = ws;
+                return player.id;
+            }
+        }
         let mut rng = rand::thread_rng();
         let id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
         self.players.insert(
             id,
             Player {
-                id: id,
-                ball: Ball { 
+                id,
+                name,
+                ball: Ball {
                     pos: VectorF64 {
                         x: rng.gen::<f64>() * 4900.0,
                         y: rng.gen::<f64>() * 2500.0,
@@ -59,24 +72,21 @@ impl Game {
                     },
                 },
                 ws: ws,
-                is_turn: false
+                is_turn: false,
             },
         );
         return id;
     }
 
-    
     pub async fn tick(&mut self) {
         for (_id, player) in self.players.iter_mut() {
             player.update().await;
             self.map.collide(&mut player.ball)
         }
     }
-    
     fn get_game_state(&self) -> Event {
         UpdateEvent::from_game(self)
     }
-    
     pub async fn send_init_message(&mut self, player_id: u32) {
         let init_message = InitEvent::from_game(self, player_id);
         if let Some(player) = self.players.get_mut(&player_id) {
@@ -107,8 +117,7 @@ impl Player {
     }
 
     pub async fn send_event(&mut self, event: &Event) {
-        self
-            .ws
+        self.ws
             .send(Message::text(serde_json::to_string(&event).unwrap()))
             .unwrap_or_else(|e| {
                 eprintln!("websocket send error: {}", e);

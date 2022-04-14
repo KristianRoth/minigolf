@@ -1,4 +1,7 @@
-use crate::{game::{Game, Player}, game_map::{GameMap, GameMapTile}};
+use crate::{
+    game::{Game, Player},
+    game_map::GameMapTile,
+};
 use serde::Deserialize;
 use warp::ws::Message;
 
@@ -44,6 +47,7 @@ impl UpdateEvent {
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct PlayerUpdateDTO {
     id: u32,
+    name: String,
     x: f64,
     y: f64,
     dx: f64,
@@ -62,6 +66,7 @@ impl PlayerUpdateDTO {
     pub fn from_player(player: &Player) -> Self {
         Self {
             id: player.id,
+            name: player.name.to_string(),
             x: player.ball.pos.x,
             y: player.ball.pos.y,
             dx: player.ball.vel.x,
@@ -105,7 +110,7 @@ pub struct GameMapDTO {
 impl GameMapDTO {
     pub fn from_game(game: &Game) -> Self {
         Self {
-            tiles: game.map.tiles.clone().into_iter().flatten().collect()
+            tiles: game.map.tiles.clone().into_iter().flatten().collect(),
         }
     }
 }
@@ -118,7 +123,7 @@ pub struct TurnBeginEvent {
 
 impl TurnBeginEvent {
     pub fn new(player_id: u32) -> Event {
-        Event::TURNBEGIN( TurnBeginEvent {
+        Event::TURNBEGIN(TurnBeginEvent {
             player_id: player_id,
         })
     }

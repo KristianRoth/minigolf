@@ -9,6 +9,7 @@ export type GameEvent =
         dx: number;
         dy: number;
         id: number;
+        name: string;
       }[];
     }
   | {

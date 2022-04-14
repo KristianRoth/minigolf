@@ -16,6 +16,22 @@ const colors = ['red', 'blue', 'cyan', 'black', 'green', 'yellow', 'orange', 'ma
 
 const ROOT_ID = 'game-root';
 
+const getUrl = (gameId: string) => {
+  let name = localStorage.getItem(`game-${gameId}-name`);
+  if (!name) {
+    name = `Anon-${(Date.now() + '').slice(-7)}`;
+    localStorage.setItem(`game-${gameId}-name`, name);
+  }
+
+  const id = localStorage.getItem(`game-${gameId}-id`);
+
+  let url = `ws://${BASE_URL}/game/${gameId}?name=${name}`;
+  if (id) {
+    url = `${url}&id=${id}`;
+  }
+  return url;
+};
+
 const mapController = new MapController(ROOT_ID, 1);
 const gameController = new GameController(ROOT_ID, 2);
 
@@ -25,7 +41,7 @@ function Game() {
   const [balls, setBalls] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
 
-  const { gameId } = useParams();
+  const { gameId = '' } = useParams();
 
   const onOpen = useCallback(() => {
     console.log('connected');
@@ -41,17 +57,19 @@ function Game() {
     try {
       const event: GameEvent = JSON.parse(payload.data as any);
       if (event.type === 'UPDATE') {
-        const newBalls = event.playerStates.map((state) => {
+        const newBalls = event.playerStates.map(({ id, x, y, name }) => {
           return {
-            x: state.x,
-            y: state.y,
-            color: colors[state.id % colors.length],
-            id: state.id,
+            id,
+            x,
+            y,
+            name,
+            color: colors[id % colors.length],
           };
         });
         gameController.setBalls(newBalls);
         setBalls(newBalls);
       } else if (event.type === 'INIT') {
+        localStorage.setItem(`game-${gameId}-id`, event.playerId + '');
         gameController.setPlayerId(event.playerId);
         mapController.setGameMap(event.gameMap);
         setPlayerId(event.playerId);
@@ -64,7 +82,7 @@ function Game() {
   }, []);
 
   const { connect, sendMessage, close } = useWebsocket({
-    url: `ws://${BASE_URL}/game/${gameId}`,
+    url: getUrl(gameId),
     onOpen,
     onMessage,
     onClose,
@@ -95,14 +113,27 @@ function Game() {
     };
   }, [connected, sendMessage]);
 
+  const disconnect = () => {
+    close();
+    localStorage.removeItem(`game-${gameId}-id`);
+    localStorage.removeItem(`game-${gameId}-name`);
+    window.location.reload();
+  };
+
   return (
     <>
       <div id={ROOT_ID} className='canvas-container'></div>
 
       <div style={{ width: '100%', marginTop: 10 }}>
-        <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
-          Toggle debug
-        </button>
+        <div style={{ display: 'inline-block' }}>
+          <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
+            Toggle debug
+          </button>
+          <button style={{ marginLeft: 10 }} onClick={() => disconnect()}>
+            Disconnect
+          </button>
+        </div>
+
         {debug && (
           <pre style={{ width: '50%', marginLeft: 10 }}>
             {JSON.stringify({ playerId, len: balls.length, balls }, undefined, 2)}

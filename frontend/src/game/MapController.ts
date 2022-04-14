@@ -47,34 +47,6 @@ class MapController extends CanvasController {
     context.restore();
   };
 
-  private drawBricks() {
-    const { canvas, blockSize } = this;
-
-    const xCount = Math.round(canvas.width / blockSize);
-    const yCount = Math.round(canvas.height / blockSize);
-    for (let x = xCount - 1; x >= 0; x -= 1) {
-      for (let y = yCount - 1; y >= 0; y -= 1) {
-        const isBorder = x === 0 || y === 0 || x === xCount - 1 || y === yCount - 1;
-        const isMiddleAndUp = Math.abs(x - xCount / 2) < 2 && y < 0.65 * yCount;
-        if (isBorder || isMiddleAndUp) {
-          this.drawBrick(x * blockSize, y * blockSize, '#c6c6c6', true);
-        } else {
-          this.drawBrick(x * blockSize, y * blockSize, '#13a713');
-        }
-      }
-    }
-
-    for (let x = xCount - 1; x >= 0; x -= 1) {
-      for (let y = yCount - 1; y >= 0; y -= 1) {
-        const isBorder = x === 0 || y === 0 || x === xCount - 1 || y === yCount - 1;
-        const isMiddleAndUp = Math.abs(x - xCount / 2) < 2 && y < 0.65 * yCount;
-        if (isBorder || isMiddleAndUp) {
-          this.drawBrick(x * blockSize, y * blockSize, '#c6c6c6', false);
-        }
-      }
-    }
-  }
-
   private draw() {
     if (!this.gameMap) return;
     const { tiles } = this.gameMap;

@@ -11,6 +11,7 @@ class GameController extends CanvasController {
   private balls: Ball[] = [];
   private hasTurn = false;
   private playerId = 0;
+  private playerName = '';
 
   private onShot: OnShotHandler | null = null;
 
@@ -93,14 +94,13 @@ class GameController extends CanvasController {
 
     const { x, y } = this.mouseAt || { x: NaN, y: NaN };
     this.context.font = `${0.8 * this.blockSize}px serif`;
-    this.context.fillText(
-      `x: ${Math.round(x)}, y: ${Math.round(y)}, Player: ${this.playerId}`,
-      7,
-      0.75 * this.blockSize
-    );
+    this.context.fillText(`x: ${Math.round(x)}, y: ${Math.round(y)}, ${this.playerName}`, 7, 0.75 * this.blockSize);
   }
 
   setBalls(balls: Ball[]) {
+    if (!this.playerName && this.playerId) {
+      this.playerName = balls.find((b) => b.id === this.playerId)?.name || '';
+    }
     this.balls = balls;
   }
 
