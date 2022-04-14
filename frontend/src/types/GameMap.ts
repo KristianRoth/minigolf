@@ -14,7 +14,7 @@ export type Tile = {
   structureType: StructureType;
 };
 
-type StructureType = 'Wall' | 'Portal' | 'None';
+type StructureType = 'Wall' | 'Portal' | 'Circle' | 'None';
 export type Structure = {
   type: StructureType;
   rotation: Rotation;

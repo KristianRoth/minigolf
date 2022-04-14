@@ -26,58 +26,36 @@ class MapController extends CanvasController {
     context.stroke();
   }
 
-  private drawBrick = (x: number, y: number, color: string, isWall = false) => {
-    const { context, blockSize } = this;
-
-    context.save();
-
-    if (isWall) {
-      context.strokeStyle = 'black';
-      context.shadowOffsetX = 5;
-      context.shadowOffsetY = 5;
-      context.shadowColor = 'black';
-      context.shadowBlur = 15;
-    }
-    context.beginPath();
-    context.rect(x, y, blockSize, blockSize);
-    context.fillStyle = color;
-    context.fill();
-    context.closePath();
-
-    context.restore();
-  };
-
   private draw() {
     if (!this.gameMap) return;
     const { tiles } = this.gameMap;
 
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      const [x, y] = [this.c(tile.pos.x), this.c(tile.pos.y)];
       if (tile.groundType === 'Grass') {
-        this.drawBrick(x, y, '#13a713');
+        this.renderGrass(tile.pos);
       }
     }
 
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      const [x, y] = [this.c(tile.pos.x), this.c(tile.pos.y)];
       if (tile.structureType === 'Wall') {
-        this.drawBrick(x, y, '#c6c6c6', true);
+        this.renderWall(tile.pos);
+      } else if (tile.structureType === 'Circle') {
+        this.renderCircleWall(tile.pos);
       }
     }
 
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      const [x, y] = [this.c(tile.pos.x), this.c(tile.pos.y)];
       if (tile.structureType === 'Wall') {
-        this.drawBrick(x, y, '#c6c6c6', false);
+        this.renderWall(tile.pos, false);
       }
     }
   }
 
   protected render() {
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.clear();
 
     this.drawGrid();
     this.draw();

@@ -2,7 +2,6 @@ import { calcEndpoint } from './helpers';
 import { Ball, GameEvent } from '../types';
 import CanvasController from './CanvasController';
 
-const BALL_RADIUS = 50;
 const MAX_LINE_LEN = 1000;
 
 type OnShotHandler = (action: GameEvent) => void;
@@ -12,6 +11,7 @@ class GameController extends CanvasController {
   private hasTurn = false;
   private playerId = 0;
   private playerName = '';
+  private playerColor = '';
 
   private onShot: OnShotHandler | null = null;
 
@@ -44,62 +44,43 @@ class GameController extends CanvasController {
     super.onMouseMove(event);
   }
 
-  protected render() {
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
+  protected renderShotLine() {
     if (this.hasTurn && this.mouseAt) {
       const ball = this.balls.find((b) => b.id === this.playerId);
       if (ball) {
         const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
-        this.context.beginPath();
-        this.context.moveTo(this.c(ball.x), this.c(ball.y));
-        this.context.lineTo(this.c(point.x), this.c(point.y));
-        this.context.stroke();
+        this.renderLine(ball, point);
       }
     }
+  }
 
-    for (const ball of this.balls) {
-      this.context.beginPath();
-      this.context.fillStyle = ball.color;
-      this.context.arc(this.c(ball.x), this.c(ball.y), this.c(BALL_RADIUS), 0, Math.PI * 2, true);
-      this.context.fill();
-      this.context.fillStyle = '#000';
-      this.context.closePath();
-      if (ball.id === this.playerId) {
-        this.context.beginPath();
-        this.context.lineWidth = 2;
-        this.context.ellipse(
-          this.c(ball.x),
-          this.c(ball.y),
-          this.c(BALL_RADIUS + 10),
-          this.c(BALL_RADIUS + 10),
-          0,
-          Math.PI * 2,
-          0
-        );
-        this.context.stroke();
-      }
-      this.context.lineWidth = 1;
-    }
-
-    if (this.mouseAt) {
-      const { x, y } = this.mouseAt;
-      this.context.beginPath();
-      this.context.moveTo(this.c(x), this.c(y - BALL_RADIUS));
-      this.context.lineTo(this.c(x), this.c(y + BALL_RADIUS));
-      this.context.moveTo(this.c(x - BALL_RADIUS), this.c(y));
-      this.context.lineTo(this.c(x + BALL_RADIUS), this.c(y));
-      this.context.stroke();
-    }
-
+  protected renderStatus() {
+    this.context.save();
     const { x, y } = this.mouseAt || { x: NaN, y: NaN };
     this.context.font = `${0.8 * this.blockSize}px serif`;
+    this.context.fillStyle = this.playerColor;
     this.context.fillText(`x: ${Math.round(x)}, y: ${Math.round(y)}, ${this.playerName}`, 7, 0.75 * this.blockSize);
+    this.context.restore();
+  }
+
+  protected render() {
+    this.clear();
+
+    this.renderShotLine();
+
+    for (const ball of this.balls) {
+      this.renderBall(ball);
+    }
+
+    this.renderCursor();
+    this.renderStatus();
   }
 
   setBalls(balls: Ball[]) {
     if (!this.playerName && this.playerId) {
-      this.playerName = balls.find((b) => b.id === this.playerId)?.name || '';
+      const ball = balls.find((b) => b.id === this.playerId);
+      this.playerName = ball?.name || '';
+      this.playerColor = ball?.color || '';
     }
     this.balls = balls;
   }
