@@ -33,7 +33,6 @@ async fn main() {
         .and(warp::query::<communications::ConnectionParams>())
         .map(
             |game_id: String, ws: warp::ws::Ws, games, params: communications::ConnectionParams| {
-                println!("URL params {:?}", params);
                 ws.on_upgrade(move |socket| communications::connect(socket, games, game_id, params))
             },
         );

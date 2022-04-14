@@ -34,6 +34,9 @@ pub async fn connect(
         };
         process_user_event(msg, games.clone(), &game_id, player_id).await;
     }
+    if let Some(game) = games.write().await.get_mut(&game_id) {
+        game.remove_connection(player_id);
+    }
 }
 
 async fn process_user_event(

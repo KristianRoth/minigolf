@@ -26,7 +26,7 @@ pub struct Player {
     pub id: u32,
     pub name: String,
     pub ball: Ball,
-    pub ws: WebSocketSender,
+    pub ws: Option<WebSocketSender>,
     pub is_turn: bool,
 }
 
@@ -50,7 +50,7 @@ impl Game {
         if let Some(possible_id) = reconnect_id {
             if let Some(player) = self.players.get_mut(&possible_id) {
                 println!("Reconnecting player {}, {}", possible_id, player.name);
-                player.ws = ws;
+                player.ws = Some(ws);
                 return player.id;
             }
         }
@@ -71,11 +71,18 @@ impl Game {
                         y: (rng.gen::<f64>() - 0.5) * 10.0,
                     },
                 },
-                ws: ws,
+                ws: Some(ws),
                 is_turn: false,
             },
         );
         return id;
+    }
+
+    pub fn remove_connection(&mut self, player_id: u32) {
+        if let Some(player) = self.players.get_mut(&player_id) {
+            println!("Disconnecting player {}", player_id);
+            player.ws = None;
+        }
     }
 
     pub async fn tick(&mut self) {
@@ -117,12 +124,17 @@ impl Player {
     }
 
     pub async fn send_event(&mut self, event: &Event) {
-        self.ws
-            .send(Message::text(serde_json::to_string(&event).unwrap()))
-            .unwrap_or_else(|e| {
-                eprintln!("websocket send error: {}", e);
-            })
-            .await;
+        match &mut self.ws {
+            Some(socket) => {
+                socket
+                    .send(Message::text(serde_json::to_string(&event).unwrap()))
+                    .unwrap_or_else(|e| {
+                        eprintln!("websocket send error: {}", e);
+                    })
+                    .await
+            }
+            None => (),
+        }
     }
 
     pub fn shot(&mut self, shot_event: ShotEvent) {
