@@ -124,16 +124,13 @@ impl Player {
     }
 
     pub async fn send_event(&mut self, event: &Event) {
-        match &mut self.ws {
-            Some(socket) => {
-                socket
-                    .send(Message::text(serde_json::to_string(&event).unwrap()))
-                    .unwrap_or_else(|e| {
-                        eprintln!("websocket send error: {}", e);
-                    })
-                    .await
-            }
-            None => (),
+        if let Some(socket) = &mut self.ws {
+            socket
+                .send(Message::text(serde_json::to_string(&event).unwrap()))
+                .unwrap_or_else(|e| {
+                    eprintln!("websocket send error: {}", e);
+                })
+                .await
         }
     }
 
