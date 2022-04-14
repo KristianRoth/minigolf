@@ -95,6 +95,7 @@ class CanvasController {
 
   protected renderBall(ball: Ball) {
     this.context.save();
+    this.setShadowOpts();
     this.context.fillStyle = ball.color;
     this.renderCircle(ball, BALL_RADIUS);
     this.context.restore();
