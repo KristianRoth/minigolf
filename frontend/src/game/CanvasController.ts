@@ -6,7 +6,6 @@ const GAME_HEIGHT = 2500;
 const BALL_RADIUS = 50;
 const CIRCLE_RADIUS = 24;
 const BLOCK_SIZE = BALL_RADIUS * 2;
-
 const RATIO = GAME_HEIGHT / GAME_WIDTH;
 
 class CanvasController {
@@ -112,6 +111,7 @@ class CanvasController {
     this.context.beginPath();
     this.context.rect(this.c(point.x), this.c(point.y), this.blockSize, this.blockSize);
     this.context.fill();
+    this.context.stroke();
     this.context.closePath();
   }
 
@@ -131,7 +131,9 @@ class CanvasController {
       this.setShadowOpts();
     }
 
-    this.context.fillStyle = '#c6c6c6';
+    this.context.lineWidth = 0.3;
+    this.context.fillStyle = '#b8b8b8';
+    this.context.strokeStyle = '#ededed';
     this.renderBrick(point);
     this.context.restore();
   }
@@ -139,6 +141,7 @@ class CanvasController {
   protected renderGrass(point: Point) {
     this.context.save();
     this.context.fillStyle = '#13a713';
+    this.context.strokeStyle = '#13a713';
     this.renderBrick(point);
     this.context.restore();
   }
@@ -160,10 +163,15 @@ class CanvasController {
     return this.c(BLOCK_SIZE);
   }
 
+  private disableContextMenu(event: Event) {
+    event.preventDefault();
+  }
+
   init() {
     this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
     this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
     this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+    this.canvas.addEventListener('contextmenu', this.disableContextMenu);
     window.addEventListener('resize', this.onResize.bind(this));
 
     document.getElementById(this.rootId)?.appendChild(this.canvas);
@@ -184,6 +192,7 @@ class CanvasController {
     this.canvas.removeEventListener('mousedown', this.onMouseDown);
     this.canvas.removeEventListener('mouseup', this.onMouseUp);
     this.canvas.removeEventListener('mousemove', this.onMouseMove);
+    this.canvas.removeEventListener('contextmenu', this.disableContextMenu);
     window.removeEventListener('resize', this.onResize);
 
     this.canvas.remove();

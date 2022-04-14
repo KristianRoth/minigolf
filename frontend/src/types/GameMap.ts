@@ -14,17 +14,17 @@ export type Tile = {
   structureType: StructureType;
 };
 
-type StructureType = 'Wall' | 'Portal' | 'Circle' | 'None';
-export type Structure = {
-  type: StructureType;
-  rotation: Rotation;
-};
+export type StructureType = 'Wall' | 'Portal' | 'Circle' | 'None';
+export type GroundType = 'Sand' | 'Grass' | 'Water';
 
-type GroundType = 'Sand' | 'Grass' | 'Water';
-export type Ground = {
-  type: GroundType;
-  rotation: Rotation;
-};
+// export type Structure = {
+//   type: StructureType;
+//   rotation: Rotation;
+// };
+// export type Ground = {
+//   type: GroundType;
+//   rotation: Rotation;
+// };
 
 export enum Rotation {
   'NORTH',
