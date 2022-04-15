@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { MouseEventHandler, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useWebsocket from '../hooks/useWebsocket';
-import { GameEvent } from '../types';
+import { CanvasMouseEvent, GameEvent } from '../types';
 import GameController from '../game/GameController';
 import MapController from '../game/MapController';
+import Canvas from './Canvas';
+import useCanvasController from '../hooks/useCanvasController';
 
 const BASE_URL = (() => {
   if (process.env.NODE_ENV === 'development') {
@@ -32,16 +34,26 @@ const getUrl = (gameId: string) => {
   return url;
 };
 
-const mapController = new MapController(ROOT_ID, 1);
-const gameController = new GameController(ROOT_ID, 2);
-
 function Game() {
   const [debug, setDebug] = useState(false);
   const [playerId, setPlayerId] = useState(0);
   const [balls, setBalls] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
 
+  const [mapRef, mapController] = useCanvasController(MapController);
+  const [gameRef, gameController] = useCanvasController(GameController);
+
   const { gameId = '' } = useParams();
+
+  const onMouseDown = (event: CanvasMouseEvent) => {
+    const onShot = (value: GameEvent) => {
+      sendMessage(JSON.stringify(value));
+    };
+    gameController?.handleMouseDown(event, onShot);
+  };
+  const onMouseMove = (event: CanvasMouseEvent) => {
+    gameController?.handleMouseMove(event);
+  };
 
   const onOpen = useCallback(() => {
     console.log('connected');
@@ -53,33 +65,36 @@ function Game() {
     setConnected(false);
   }, []);
 
-  const onMessage = useCallback((payload: any) => {
-    try {
-      const event: GameEvent = JSON.parse(payload.data as any);
-      if (event.type === 'UPDATE') {
-        const newBalls = event.playerStates.map(({ id, x, y, name }) => {
-          return {
-            id,
-            x,
-            y,
-            name,
-            color: colors[id % colors.length],
-          };
-        });
-        gameController.setBalls(newBalls);
-        setBalls(newBalls);
-      } else if (event.type === 'INIT') {
-        localStorage.setItem(`game-${gameId}-id`, event.playerId + '');
-        gameController.setPlayerId(event.playerId);
-        mapController.setGameMap(event.gameMap);
-        setPlayerId(event.playerId);
-      } else if (event.type === 'TURN_BEGIN') {
-        gameController.setHasTurn(true);
+  const onMessage = useCallback(
+    (payload: any) => {
+      try {
+        const event: GameEvent = JSON.parse(payload.data as any);
+        if (event.type === 'UPDATE') {
+          const newBalls = event.playerStates.map(({ id, x, y, name }) => {
+            return {
+              id,
+              x,
+              y,
+              name,
+              color: colors[id % colors.length],
+            };
+          });
+          gameController?.setBalls(newBalls);
+          setBalls(newBalls);
+        } else if (event.type === 'INIT') {
+          localStorage.setItem(`game-${gameId}-id`, event.playerId + '');
+          gameController?.setPlayerId(event.playerId);
+          mapController?.setGameMap(event.gameMap);
+          setPlayerId(event.playerId);
+        } else if (event.type === 'TURN_BEGIN') {
+          gameController?.setHasTurn(true);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
+    },
+    [gameController, mapController, gameId]
+  );
 
   const { connect, sendMessage, close } = useWebsocket({
     url: getUrl(gameId),
@@ -97,22 +112,6 @@ function Game() {
     };
   }, []);
 
-  useEffect(() => {
-    mapController.init();
-    gameController.init();
-
-    const onShot = (value: GameEvent) => {
-      sendMessage(JSON.stringify(value));
-    };
-    gameController.setOnShot(onShot);
-    gameController.setPlayerId(playerId);
-
-    return () => {
-      mapController.destroy();
-      gameController.destroy();
-    };
-  }, [connected, sendMessage]);
-
   const disconnect = () => {
     close();
     localStorage.removeItem(`game-${gameId}-id`);
@@ -122,7 +121,10 @@ function Game() {
 
   return (
     <>
-      <div id={ROOT_ID} tabIndex={-1} className='canvas-container'></div>
+      <div id={ROOT_ID} tabIndex={-1} className='canvas-container'>
+        <Canvas index={1} ref={mapRef} />
+        <Canvas index={2} ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
+      </div>
 
       <div style={{ width: '100%', marginTop: 10 }}>
         <div style={{ display: 'inline-block' }}>

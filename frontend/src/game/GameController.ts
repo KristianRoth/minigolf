@@ -1,5 +1,5 @@
 import { calcEndpoint } from './helpers';
-import { Ball, GameEvent } from '../types';
+import { Ball, CanvasMouseEvent, GameEvent } from '../types';
 import CanvasController from './CanvasController';
 
 const MAX_LINE_LEN = 1000;
@@ -13,21 +13,19 @@ class GameController extends CanvasController {
   private playerName = '';
   private playerColor = '';
 
-  private onShot: OnShotHandler | null = null;
-
-  constructor(rootId: string, index: number) {
-    super(rootId, index);
+  constructor(canvas: HTMLCanvasElement) {
+    super(canvas);
   }
 
-  protected onMouseDown(event: MouseEvent) {
+  handleMouseDown(event: CanvasMouseEvent, onShot: OnShotHandler) {
     const clickedAt = this.getMousePosition(event);
     const ball = this.balls.find((b) => b.id === this.playerId);
 
-    if (!ball || !this.hasTurn || !this.onShot) return;
+    if (!ball || !this.hasTurn) return;
 
     const point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
 
-    this.onShot({
+    onShot({
       type: 'SHOT',
       x: point.x - ball.x,
       y: point.y - ball.y,
@@ -36,12 +34,8 @@ class GameController extends CanvasController {
     this.setHasTurn(false);
   }
 
-  protected onMouseUp() {
-    /* */
-  }
-
-  protected onMouseMove(event: MouseEvent) {
-    super.onMouseMove(event);
+  handleMouseMove(event: CanvasMouseEvent) {
+    super.setMouseAt(event);
   }
 
   protected renderShotLine() {
@@ -92,10 +86,6 @@ class GameController extends CanvasController {
   setPlayerId(playerId: number) {
     this.playerId = playerId;
     this.hasTurn = true;
-  }
-
-  setOnShot(onShot: OnShotHandler) {
-    this.onShot = onShot;
   }
 
   get debug() {

@@ -1,58 +1,37 @@
-import { GameMap, Point, StructureType, Tile } from '../types';
+import { GameMap, Point, StructureType, CanvasMouseEvent } from '../types';
 import CanvasController from './CanvasController';
 
 const BLOCK_SIZE = 100;
 
-type SetTilesHandler = (tiles: Tile[]) => void;
+type SetTileHandler = (struct: StructureType, point: Point) => void;
 
 class EditorController extends CanvasController {
   protected gameMap: GameMap | null = null;
-
-  private setTiles: SetTilesHandler | null = null;
-
   private structureType: StructureType = 'None';
   private tilePosition: Point | null = null;
   private mouseButtonElement: StructureType | null = null;
 
-  constructor(rootId: string, index: number) {
-    super(rootId, index);
+  constructor(canvas: HTMLCanvasElement) {
+    super(canvas);
   }
 
-  protected setTile(structure: StructureType) {
-    if (!this.gameMap || !this.tilePosition || !this.setTiles) return;
-    const { x, y } = this.tilePosition;
-    const newTiles: Tile[] = this.gameMap.tiles.map((tile) => {
-      if (tile.pos.x === x && tile.pos.y === y) {
-        return {
-          ...tile,
-          pos: {
-            x,
-            y,
-          },
-          structureType: structure,
-        };
-      }
-      return tile;
-    });
-    this.setTiles(newTiles);
-  }
-
-  protected onMouseDown(event: MouseEvent) {
+  handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
+    if (!this.tilePosition) return;
     if (event.button === 0) {
-      this.setTile(this.structureType);
+      setTile(this.structureType, this.tilePosition);
       this.mouseButtonElement = this.structureType;
     } else if (event.button === 2) {
       this.mouseButtonElement = 'None';
-      this.setTile('None');
+      setTile('None', this.tilePosition);
     }
   }
 
-  protected onMouseUp() {
+  handleMouseUp() {
     this.mouseButtonElement = null;
   }
 
-  protected onMouseMove(event: MouseEvent) {
-    super.onMouseMove(event);
+  handleMouseMove(event: CanvasMouseEvent, setTile: SetTileHandler) {
+    super.setMouseAt(event);
 
     const { x, y } = this.tilePosition || { x: -1, y: -1 };
     if (this.mouseAt) {
@@ -63,7 +42,7 @@ class EditorController extends CanvasController {
 
     if (this.mouseButtonElement && this.tilePosition) {
       if (x !== this.tilePosition.x || y !== this.tilePosition.y) {
-        this.setTile(this.mouseButtonElement);
+        setTile(this.mouseButtonElement, this.tilePosition);
       }
     }
   }
@@ -93,10 +72,6 @@ class EditorController extends CanvasController {
     }
     this.renderCursor();
     this.renderStatus();
-  }
-
-  setTileHandler(setTiles: SetTilesHandler) {
-    this.setTiles = setTiles;
   }
 
   setGameMap(gameMap: GameMap) {

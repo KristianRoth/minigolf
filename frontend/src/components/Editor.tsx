@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import EditorController from '../game/EditorController';
 import MapController from '../game/MapController';
-import { GameMap, StructureType, Tile } from '../types';
-
-const ROOT_ID = 'editor-root';
-
-const mapController = new MapController(ROOT_ID, 1);
-const editorController = new EditorController(ROOT_ID, 2);
+import useCanvasController from '../hooks/useCanvasController';
+import useUndoRedo from '../hooks/useUndoRedo';
+import { CanvasMouseEvent, GameMap, Point, StructureType, Tile } from '../types';
+import Canvas from './Canvas';
 
 const structureTypes: StructureType[] = ['Wall', 'Circle', 'None'];
 
@@ -16,10 +14,50 @@ function Editor() {
   const [mapName, setMapName] = useState<string>('');
   const [creator, setCreator] = useState<string>('');
   const [structureIdx, setStructureIdx] = useState<number>(0);
-  const [tiles, setTiles] = useState<Tile[]>([]);
+
+  const {
+    state: tiles,
+    setState: setTiles,
+    index: undoIndex,
+    maxIndex: maxUndoIndex,
+    goBack,
+    goForward,
+  } = useUndoRedo<Tile[]>([]);
 
   const { gameId } = useParams();
   const navigate = useNavigate();
+  const [mapRef, mapController] = useCanvasController(MapController);
+  const [editorRef, editorController] = useCanvasController(EditorController);
+
+  const setTile = (struct: StructureType, position: Point) => {
+    if (!position) return;
+    const { x, y } = position;
+    const newTiles: Tile[] = tiles.map((tile) => {
+      if (tile.pos.x === x && tile.pos.y === y) {
+        return {
+          ...tile,
+          pos: {
+            x,
+            y,
+          },
+          structureType: struct,
+        };
+      }
+      return tile;
+    });
+    setTiles(newTiles);
+  };
+
+  const onMouseDown = (event: CanvasMouseEvent) => {
+    editorController?.handleMouseDown(event, setTile);
+  };
+  const onMouseMove = (event: CanvasMouseEvent) => {
+    editorController?.handleMouseMove(event, setTile);
+  };
+
+  const onMouseUp = () => {
+    editorController?.handleMouseUp();
+  };
 
   const getMapFromState = (): GameMap => {
     return {
@@ -40,8 +78,9 @@ function Editor() {
   };
 
   useEffect(() => {
+    if (!editorController) return;
     const structure = structureTypes[structureIdx];
-    editorController.setStructureType(structure);
+    editorController?.setStructureType(structure);
 
     const wheelHandler = (event: WheelEvent) => {
       event.preventDefault();
@@ -54,7 +93,7 @@ function Editor() {
     return () => {
       document.body.removeEventListener('wheel', wheelHandler);
     };
-  }, [structureIdx]);
+  }, [structureIdx, editorController]);
 
   useEffect(() => {
     const savedMapString = gameId ? localStorage.getItem(`gameMap-${gameId}`) : '';
@@ -78,21 +117,12 @@ function Editor() {
       setId(Date.now() + '');
       setTiles(tiles);
     }
-
-    mapController.init();
-    editorController.init();
-
-    editorController.setTileHandler(setTiles);
-    return () => {
-      mapController.destroy();
-      editorController.destroy();
-    };
   }, [gameId]);
 
   useEffect(() => {
     const map = getMapFromState();
-    mapController.setGameMap(map);
-    editorController.setGameMap(map);
+    mapController?.setGameMap(map);
+    editorController?.setGameMap(map);
   }, [tiles]);
 
   const save = () => {
@@ -110,6 +140,9 @@ function Editor() {
 
   const startGame = () => {
     console.log('TODO: START GAME CALLED');
+    const newMap = getMapFromState();
+    localStorage.setItem(`gameMap-${newMap.id}`, JSON.stringify(newMap));
+    navigate(`/${newMap.id}`);
     // TODO: Post the game map to backend.
     //  -> on success navigate to the game-page.
   };
@@ -117,7 +150,10 @@ function Editor() {
   // TODO: Refactor everything. Remove copy-paste shit.
   return (
     <>
-      <div id={ROOT_ID} tabIndex={-1} className='canvas-container'></div>
+      <div tabIndex={-1} className='canvas-container'>
+        <Canvas index={1} ref={mapRef} />
+        <Canvas index={2} ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
+      </div>
 
       <div style={{ width: '100%', marginTop: 10 }}>
         <div style={{ display: 'inline-block' }}>
@@ -138,6 +174,13 @@ function Editor() {
             onClick={() => setStructureIdx(2)}
           >
             Pyyhi
+          </button>
+
+          <button style={{ marginLeft: 50 }} disabled={undoIndex === 1} onClick={() => goBack(1)}>
+            Undo
+          </button>
+          <button style={{ marginLeft: 1 }} disabled={undoIndex === maxUndoIndex} onClick={() => goForward(2)}>
+            Redo
           </button>
         </div>
       </div>

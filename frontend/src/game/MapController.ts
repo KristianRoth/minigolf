@@ -4,8 +4,8 @@ import CanvasController from './CanvasController';
 class MapController extends CanvasController {
   protected gameMap: GameMap | null = null;
 
-  constructor(rootId: string, index: number) {
-    super(rootId, index, 0);
+  constructor(canvas: HTMLCanvasElement) {
+    super(canvas, 0);
   }
 
   private draw() {

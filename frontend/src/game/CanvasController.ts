@@ -1,5 +1,5 @@
 import { clamp } from './helpers';
-import { Ball, Point } from '../types';
+import { Ball, CanvasMouseEvent, Point } from '../types';
 
 const GAME_WIDTH = 4900;
 const GAME_HEIGHT = 2500;
@@ -10,21 +10,14 @@ const RATIO = GAME_HEIGHT / GAME_WIDTH;
 
 class CanvasController {
   protected animationReqId: number | null = null;
-
   protected tick = 0;
-  protected rootId = '';
-  protected index = -1;
   protected canvas: HTMLCanvasElement;
   protected context: CanvasRenderingContext2D;
   protected mouseAt: Point | null = null;
 
-  constructor(rootId: string, index: number, tick = 60) {
-    this.canvas = document.createElement('canvas');
-    this.canvas.classList.add('canvas-layer');
-    this.canvas.style.zIndex = index + '';
-    this.context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-    this.rootId = rootId;
-    this.index = index;
+  constructor(canvas: HTMLCanvasElement, tick = 60) {
+    this.canvas = canvas;
+    this.context = canvas.getContext('2d') as CanvasRenderingContext2D;
     this.tick = tick;
   }
 
@@ -36,7 +29,7 @@ class CanvasController {
     return clamp(value, 0, this.canvas.width, 0, GAME_WIDTH);
   }
 
-  protected getMousePosition(event: MouseEvent) {
+  protected getMousePosition(event: CanvasMouseEvent) {
     const rect = this.canvas.getBoundingClientRect();
     const x = this.dc(event.clientX - rect.left);
     const y = this.dc(event.clientY - rect.top);
@@ -52,18 +45,8 @@ class CanvasController {
     this.render();
   }
 
-  protected onMouseMove(event: MouseEvent) {
+  protected setMouseAt(event: CanvasMouseEvent) {
     this.mouseAt = this.getMousePosition(event);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onMouseUp(_event: MouseEvent) {
-    // console.log('MouseUp at: %s', event);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected onMouseDown(_event: MouseEvent) {
-    // console.log('MouseDown at: %s', event);
   }
 
   protected render() {
@@ -164,20 +147,9 @@ class CanvasController {
     return this.c(BLOCK_SIZE);
   }
 
-  private disableContextMenu(event: Event) {
-    event.preventDefault();
-  }
-
   init() {
-    this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-    this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
-    this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-    this.canvas.addEventListener('contextmenu', this.disableContextMenu);
-    window.addEventListener('resize', this.onResize.bind(this));
-
-    document.getElementById(this.rootId)?.appendChild(this.canvas);
     this.onResize();
-
+    window.addEventListener('resize', this.onResize.bind(this));
     if (this.tick === 0) {
       return;
     }
@@ -190,14 +162,7 @@ class CanvasController {
   }
 
   destroy() {
-    this.canvas.removeEventListener('mousedown', this.onMouseDown);
-    this.canvas.removeEventListener('mouseup', this.onMouseUp);
-    this.canvas.removeEventListener('mousemove', this.onMouseMove);
-    this.canvas.removeEventListener('contextmenu', this.disableContextMenu);
     window.removeEventListener('resize', this.onResize);
-
-    this.canvas.remove();
-
     if (this.animationReqId) {
       window.cancelAnimationFrame(this.animationReqId);
     }

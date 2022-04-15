@@ -6,3 +6,5 @@ export type Message = {
   user: string;
   value: string;
 };
+
+export type CanvasMouseEvent = React.MouseEvent<HTMLCanvasElement, MouseEvent>;
