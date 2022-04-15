@@ -108,7 +108,7 @@ class CanvasController {
     this.context.stroke();
   }
 
-  private renderBrick(point: Point) {
+  protected renderSquare(point: Point) {
     this.context.beginPath();
     this.context.rect(this.c(point.x), this.c(point.y), this.blockSize, this.blockSize);
     this.context.fill();
@@ -116,7 +116,7 @@ class CanvasController {
     this.context.closePath();
   }
 
-  private renderCircle(point: Point, radius: number) {
+  protected renderCircle(point: Point, radius: number) {
     this.context.beginPath();
 
     this.context.ellipse(this.c(point.x), this.c(point.y), this.c(radius), this.c(radius), 0, Math.PI * 2, 0);
@@ -135,7 +135,7 @@ class CanvasController {
     this.context.lineWidth = 0.3;
     this.context.fillStyle = '#b8b8b8';
     this.context.strokeStyle = '#ededed';
-    this.renderBrick(point);
+    this.renderSquare(point);
     this.context.restore();
   }
 
@@ -143,7 +143,7 @@ class CanvasController {
     this.context.save();
     this.context.fillStyle = '#13a713';
     this.context.strokeStyle = '#13a713';
-    this.renderBrick(point);
+    this.renderSquare(point);
     this.context.restore();
   }
 

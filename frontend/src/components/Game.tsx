@@ -122,7 +122,7 @@ function Game() {
 
   return (
     <>
-      <div id={ROOT_ID} className='canvas-container'></div>
+      <div id={ROOT_ID} tabIndex={-1} className='canvas-container'></div>
 
       <div style={{ width: '100%', marginTop: 10 }}>
         <div style={{ display: 'inline-block' }}>

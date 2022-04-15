@@ -79,7 +79,13 @@ class EditorController extends CanvasController {
 
     if (this.tilePosition) {
       const type = this.structureType;
-      if (type === 'Wall') {
+      if (type === 'None' || this.mouseButtonElement === 'None') {
+        this.context.save();
+        this.context.fillStyle = '#fff';
+        this.context.strokeStyle = '#fff';
+        this.renderSquare(this.tilePosition);
+        this.context.restore();
+      } else if (type === 'Wall') {
         this.renderWall(this.tilePosition);
       } else if (type === 'Circle') {
         this.renderCircleWall(this.tilePosition);

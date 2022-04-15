@@ -15,7 +15,8 @@ function App() {
     >
       <h1>Minigolfpeli</h1>
       <Routes>
-        <Route path='editor' element={<Editor />} />
+        <Route path='/editor' element={<Editor />} />
+        <Route path='/editor/:gameId' element={<Editor />} />
         <Route path='/:gameId' element={<Game />} />
         <Route path='*' element={<RootPage />} />
       </Routes>
