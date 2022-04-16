@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use warp::ws::Message;
 
 use crate::event::{Event, GameMapDTO, InitEvent, ShotEvent, TurnBeginEvent, UpdateEvent};
-use crate::game_map::GameMap;
+use crate::game_map::{GameMap, SpecialEffect};
 use crate::math::VectorF64;
 
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
@@ -17,7 +17,7 @@ pub struct Game {
     pub map: GameMap,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ball {
     pub pos: VectorF64,
     pub vel: VectorF64,
@@ -67,7 +67,6 @@ impl Game {
                 return player.id;
             }
         }
-        let mut rng = rand::thread_rng();
         let id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
         self.players.insert(
             id,
@@ -75,13 +74,10 @@ impl Game {
                 id,
                 name,
                 ball: Ball {
-                    pos: VectorF64 {
-                        x: rng.gen::<f64>() * 4900.0,
-                        y: rng.gen::<f64>() * 2500.0,
-                    },
+                    pos: self.map.get_start_location(),
                     vel: VectorF64 {
-                        x: (rng.gen::<f64>() - 0.5) * 10.0,
-                        y: (rng.gen::<f64>() - 0.5) * 10.0,
+                        x: 0.0,
+                        y: 0.0,
                     },
                 },
                 ws: Some(ws),
@@ -101,7 +97,10 @@ impl Game {
     pub async fn tick(&mut self) {
         for (_id, player) in self.players.iter_mut() {
             player.update().await;
-            self.map.collide(&mut player.ball)
+            match self.map.collide(&mut player.ball) {
+                Some(SpecialEffect::Hole) => player.hole(self.map.get_start_location()),
+                _ => continue,
+            }
         }
     }
     fn get_game_state(&self) -> Event {
@@ -154,5 +153,10 @@ impl Player {
         self.ball.vel.x = shot_event.x / 10.0;
         self.ball.vel.y = shot_event.y / 10.0;
         self.is_turn = false;
+    }
+
+    pub fn hole(&mut self, start_pos: VectorF64) {
+        self.ball.pos = start_pos;
+        self.ball.vel = VectorF64::new(0.0, 0.0);
     }
 }

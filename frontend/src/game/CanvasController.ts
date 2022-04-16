@@ -122,6 +122,20 @@ class CanvasController {
     this.context.restore();
   }
 
+  protected renderHole(point: Point) {
+    this.context.save();
+    this.context.fillStyle = '#000000';
+    this.renderCircle({ x: point.x + BALL_RADIUS, y: point.y + BALL_RADIUS }, BALL_RADIUS);
+    this.context.restore();
+  }
+
+  protected renderStart(point: Point) {
+    this.context.save();
+    this.context.fillStyle = '#fc0303';
+    this.renderCircle({ x: point.x + BALL_RADIUS, y: point.y + BALL_RADIUS }, 10);
+    this.context.restore();
+  }
+
   protected renderGrass(point: Point) {
     this.context.save();
     this.context.fillStyle = '#13a713';

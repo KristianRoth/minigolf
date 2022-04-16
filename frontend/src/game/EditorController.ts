@@ -68,6 +68,10 @@ class EditorController extends CanvasController {
         this.renderWall(this.tilePosition);
       } else if (type === 'Circle') {
         this.renderCircleWall(this.tilePosition);
+      } else if (type === 'Hole') {
+        this.renderHole(this.tilePosition);
+      } else if (type === 'Start') {
+        this.renderStart(this.tilePosition);
       }
     }
     this.renderCursor();

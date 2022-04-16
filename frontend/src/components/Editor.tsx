@@ -14,7 +14,7 @@ const BASE_URL = (() => {
   return window.location.host;
 })();
 
-const structureTypes: StructureType[] = ['Wall', 'Circle', 'None'];
+const structureTypes: StructureType[] = ['Wall', 'Circle', 'Wall', 'Start', 'Hole', 'None'];
 
 function Editor() {
   const [id, setId] = useState('');

@@ -14,7 +14,7 @@ export type Tile = {
   structureType: StructureType;
 };
 
-export type StructureType = 'Wall' | 'Portal' | 'Circle' | 'None';
+export type StructureType = 'Wall' | 'Portal' | 'Circle' | 'Start' | 'Hole' | 'None';
 export type GroundType = 'Sand' | 'Grass' | 'Water';
 
 // export type Structure = {

@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, borrow::Borrow};
 
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +37,13 @@ pub enum GroundType {
 pub enum StructureType {
     Wall,
     Circle,
+    Start,
+    Hole,
     None,
+}
+
+pub enum SpecialEffect {
+    Hole
 }
 
 pub enum Collider {
@@ -81,14 +87,31 @@ impl Collider {
 }
 
 impl StructureType {
-    fn get_collision_points(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
+    fn get_collision_points(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
         match self {
             StructureType::Wall => self.box_collide(pos, ball),
             StructureType::Circle => self.circle_collide(pos, ball),
-            StructureType::None => Vec::<Point>::default(),
+            StructureType::None |
+            StructureType::Hole |
+            StructureType::Start => Vec::<Point>::default(),
         }
     }
-    fn box_collide(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
+
+    fn get_special_effect_points(&self, pos: VectorF64, ball: Ball) -> Vec<(Point, StructureType)>{
+        match self {
+            StructureType::Hole => self.circle_collide(pos, ball).iter().map(|point| (*point, StructureType::Hole)).collect::<Vec<(Point, StructureType)>>(),
+            _ => Vec::default(),
+        }
+    }
+
+    fn get_special_effect(&self) -> Option<SpecialEffect> {
+        match self {
+            StructureType::Hole => Some(SpecialEffect::Hole),
+            _ => None
+        }
+    }
+
+    fn box_collide(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
         let colliders = BOX_COLLIDERS;
 
         let projection_points: Vec<Point> = colliders
@@ -103,7 +126,7 @@ impl StructureType {
         //    .min_by(|a, b| a.dist(&ball.pos).partial_cmp(&b.dist(&ball.pos)).unwrap_or(Ordering::Equal)).unwrap();
     }
 
-    fn circle_collide(&self, pos: VectorF64, ball: &mut Ball) -> Vec<Point> {
+    fn circle_collide(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
         let colliders = CIRCLE_COLLIDERS;
         let projection_points: Vec<Point> = colliders
             .iter()
@@ -156,10 +179,19 @@ impl GameMap {
         return tiles;
     }
 
-    pub fn collide(&self, ball: &mut Ball) {
+    pub fn get_start_location(&self) -> VectorF64 {
+        let start_pos = self.tiles.iter().flatten().filter(|tile| matches!(tile.structure_type, StructureType::Start)).next();
+        if let Some(start_pos) = start_pos {
+            start_pos.pos.add(&VectorF64::new(50.0, 50.0))
+        } else {
+            VectorF64::new(50.0, 50.0)
+        }
+    }
+
+    pub fn collide(&self, ball: &mut Ball) -> Option<SpecialEffect> {
         let mut d_pos = ball.vel.length();
         if d_pos < 1.0 {
-            return;
+            return None;
         }
         loop {
             let x_start = (((ball.pos.x - 100.0) / 100.0) as usize).max(0);
@@ -173,26 +205,41 @@ impl GameMap {
                 .map(|s| s.iter().skip(y_start).take(5))
                 .flatten()
                 .collect::<Vec<_>>();
-            let points = close_tiles
+                
+            let special_effects = close_tiles
                 .iter()
-                .map(|tile| tile.structure_type.get_collision_points(tile.pos, ball))
+                .map(|tile| tile.structure_type.get_special_effect_points(tile.pos, ball.clone()))
                 .flatten()
                 .collect::<Vec<_>>();
-            let closest = points.iter().min_by(|a, b| {
+            let closest_special_effect = special_effects.iter().min_by(|a, b| {
+                a.0.dist(&ball.pos)
+                    .partial_cmp(&b.0.dist(&ball.pos))
+                    .unwrap_or(Ordering::Equal)
+            });
+            
+            if let Some(closest_special_effect) = closest_special_effect {
+                let dist_to_closest = closest_special_effect.0.dist(&ball.pos);
+                if dist_to_closest < 50.0 {
+                    return closest_special_effect.1.get_special_effect();
+                }
+            }
+
+            let collision_points = close_tiles
+                .iter()
+                .map(|tile| tile.structure_type.get_collision_points(tile.pos, ball.clone()))
+                .flatten()
+                .collect::<Vec<_>>();
+            let closest_collision_point = collision_points.iter().min_by(|a, b| {
                 a.dist(&ball.pos)
                     .partial_cmp(&b.dist(&ball.pos))
                     .unwrap_or(Ordering::Equal)
             });
-            if let Some(closest) = closest {
-                let distance_to_wall = closest.dist(&ball.pos);
-                //let mut answer = String::new();
-                //io::stdin().read_line(&mut answer)
-                //.ok()
-                //.expect("Failed to read line");
+            if let Some(closest_collision_point) = closest_collision_point {
+                let distance_to_wall = closest_collision_point.dist(&ball.pos);
                 if distance_to_wall < 50.0 {
-                    println!("Seinä {:?}", closest);
+                    println!("Seinä {:?}", closest_collision_point);
                     println!("Pallo {:?}", ball.pos);
-                    self.do_collision(closest, ball)
+                    self.do_collision(closest_collision_point, ball)
                 }
                 let to_move = d_pos.min(distance_to_wall - 49.9).max(1.0);
                 ball.pos = ball.pos.add(&ball.vel.get_unit().multi(to_move));
@@ -201,10 +248,10 @@ impl GameMap {
                 d_pos -= to_move;
             } else {
                 ball.pos = ball.pos.add(&ball.vel.get_unit().multi(d_pos));
-                return;
+                return None;
             }
             if d_pos < 0.0001 {
-                return;
+                return None;
             };
         }
     }
