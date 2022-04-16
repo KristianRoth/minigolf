@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use crate::{
     game::{Game, Player},
-    game_map::{GameMap, GameMapTile, GameTiles},
+    game_map::{GameMap, GameMapTile, GameTiles, GroundType, StructureType},
 };
 use serde::Deserialize;
 use warp::ws::Message;
@@ -101,6 +101,7 @@ impl InitEvent {
         })
     }
 }
+
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct GameMapDTO {

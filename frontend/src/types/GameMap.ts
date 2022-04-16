@@ -11,11 +11,23 @@ export type GameMap = {
 export type Tile = {
   pos: Point;
   groundType: GroundType;
-  structureType: StructureType;
+  structure: Structure;
 };
 
-export type StructureType = 'Wall' | 'Portal' | 'Circle' | 'Start' | 'Hole' | 'None';
+export type Structure = StaticStructure | RotateStructure
+
+export type StaticStructure = {
+  type: 'Wall' | 'Portal' | 'Circle' | 'Start' | 'Hole' | 'None'
+}
+export type RotateStructure = {
+  type: 'Wedge' | 'Rounded_Corner' | 'Inverted_Rounded_Corner';
+  rotation: Rotation;
+}
+
+export type StructureType = 'Wall' | 'Portal' | 'Circle' | 'Start' | 'Hole' | 'Wedge' | 'Rounded_Corner' | 'Inverted_Rounded_Corner' | 'None';
 export type GroundType = 'Sand' | 'Grass' | 'Water';
+export type Rotation = 'North' | 'East' | 'South' | 'West';
+
 
 // export type Structure = {
 //   type: StructureType;
@@ -25,17 +37,6 @@ export type GroundType = 'Sand' | 'Grass' | 'Water';
 //   type: GroundType;
 //   rotation: Rotation;
 // };
-
-export enum Rotation {
-  'NORTH',
-  'EAST',
-  'SOUTH',
-  'WEST',
-  'M-NORTH',
-  'M-EAST',
-  'M-SOUTH',
-  'M-WEST',
-}
 
 export type Score = any;
 export type Creator = any;

@@ -1,5 +1,5 @@
 import { clamp } from './helpers';
-import { Ball, CanvasMouseEvent, Point } from '../types';
+import { Ball, CanvasMouseEvent, Point, Rotation } from '../types';
 
 const GAME_WIDTH = 4900;
 const GAME_HEIGHT = 2500;
@@ -122,6 +122,61 @@ class CanvasController {
     this.context.restore();
   }
 
+  protected renderWedge(point: Point, rotation: Rotation, doShadow = true) {
+    this.context.save();
+    this.context.beginPath();
+    if (doShadow) {
+      this.setShadowOpts();
+    }
+    this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
+    this.context.rotate(this.getRotationAngle(rotation));
+    this.context.moveTo(this.c(-50), this.c(-50));
+    this.context.lineTo(this.c(50), this.c(-50.0));
+    this.context.lineTo(this.c(-50), this.c(50));
+    this.context.lineWidth = 0.3;
+    this.context.fillStyle = '#b8b8b8';
+    this.context.strokeStyle = '#ededed';
+    this.context.stroke();
+    this.context.fill();
+    this.context.restore()
+  }
+
+  protected renderRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
+    this.context.save();
+    this.context.beginPath();
+    if (doShadow) {
+      this.setShadowOpts();
+    }
+    this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
+    this.context.rotate(this.getRotationAngle(rotation));
+    this.context.moveTo(this.c(-50), this.c(-50));
+    this.context.lineTo(this.c(50), this.c(-50.0));
+    this.context.arcTo(this.c(50), this.c(50), this.c(-50), this.c(50), this.c(100));
+    this.context.lineWidth = 0.3;
+    this.context.fillStyle = '#b8b8b8';
+    this.context.strokeStyle = '#ededed';
+    this.context.fill();
+    this.context.restore()
+  }
+
+  protected renderInvertedRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
+    this.context.save();
+    this.context.beginPath();
+    if (doShadow) {
+      this.setShadowOpts();
+    }
+    this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
+    this.context.rotate(this.getRotationAngle(rotation));
+    this.context.moveTo(this.c(-50), this.c(-50));
+    this.context.lineTo(this.c(50), this.c(-50.0));
+    this.context.arcTo(this.c(-50), this.c(-50), this.c(-50), this.c(50), this.c(100));
+    this.context.lineWidth = 0.3;
+    this.context.fillStyle = '#b8b8b8';
+    this.context.strokeStyle = '#ededed';
+    this.context.fill();
+    this.context.restore()
+  }
+
   protected renderHole(point: Point) {
     this.context.save();
     this.context.fillStyle = '#000000';
@@ -159,6 +214,15 @@ class CanvasController {
 
   protected get blockSize() {
     return this.c(BLOCK_SIZE);
+  }
+
+  protected getRotationAngle(rot: Rotation) {
+    switch (rot) {
+      case 'North': return 0;
+      case 'East': return Math.PI/2;
+      case 'South': return Math.PI;
+      case 'West': return -Math.PI/2;
+    }
   }
 
   init() {

@@ -4,7 +4,7 @@ import EditorController from '../game/EditorController';
 import MapController from '../game/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useUndoRedo from '../hooks/useUndoRedo';
-import { CanvasMouseEvent, GameMap, Point, StructureType, Tile } from '../types';
+import { CanvasMouseEvent, GameMap, Point, Rotation, StructureType, Tile } from '../types';
 import Canvas from './Canvas';
 
 const BASE_URL = (() => {
@@ -14,7 +14,7 @@ const BASE_URL = (() => {
   return window.location.host;
 })();
 
-const structureTypes: StructureType[] = ['Wall', 'Circle', 'Wall', 'Start', 'Hole', 'None'];
+const structureTypes: StructureType[] = ['Wall', 'Circle', 'Wall', 'Start', 'Hole', 'Wedge', 'Rounded_Corner', 'Inverted_Rounded_Corner', 'None'];
 
 function Editor() {
   const [id, setId] = useState('');
@@ -36,9 +36,13 @@ function Editor() {
   const [mapRef, mapController] = useCanvasController(MapController);
   const [editorRef, editorController] = useCanvasController(EditorController);
 
-  const setTile = (struct: StructureType, position: Point) => {
+  const setTile = (struct: StructureType, position: Point, rotation: Rotation) => {
     if (!position) return;
     const { x, y } = position;
+    const structure = {
+      type: struct,
+      rotation: rotation,
+    }
     const newTiles: Tile[] = tiles.map((tile) => {
       if (tile.pos.x === x && tile.pos.y === y) {
         return {
@@ -47,7 +51,7 @@ function Editor() {
             x,
             y,
           },
-          structureType: struct,
+          structure: structure,
         };
       }
       return tile;
@@ -113,7 +117,9 @@ function Editor() {
         for (let x = 0; x < 49; x += 1) {
           tiles.push({
             groundType: 'Grass',
-            structureType: 'None',
+            structure: {
+              type: 'None',
+            },
             pos: {
               x: x * 100,
               y: y * 100,

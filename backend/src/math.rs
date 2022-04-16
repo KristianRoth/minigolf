@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+use crate::game_map::Rotation;
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct VectorF64 {
     pub x: f64,
@@ -80,11 +82,24 @@ impl VectorF64 {
             x:    normal.y*self.x   - normal.x*self.y,
             y: -new_base.y*self.x + new_base.x*self.y,
         }
-    
+    }
+
+    pub fn rotate(&self, mid: &VectorF64, rot: &Rotation) -> VectorF64 {
+        match rot {
+            Rotation::North => self.clone(),
+            Rotation::East =>  self.sub(mid).change_to_normal_base(&VectorF64::new(0.0, 1.0)).add(mid),
+            Rotation::South => self.sub(mid).change_to_normal_base(&VectorF64::new(-1.0, 0.0)).add(mid),
+            Rotation::West =>  self.sub(mid).change_to_normal_base(&VectorF64::new(0.0, -1.0)).add(mid),
+        }
+    }
+
+    pub fn angle(&self) -> f64 {
+        let up = VectorF64::new(0.0, 1.0);
+        self.dot_product(&up) / (up.length() * self.length()).acos()
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Line {
     pos: VectorF64,
     dir: VectorF64,
@@ -111,10 +126,26 @@ impl Line {
         }
         None
     }
+
+    pub fn add_to_pos(&self, b: &VectorF64) -> Line {
+        Line { 
+            pos: self.pos.add(b),
+            dir: self.dir.clone(),
+        }
+    }
+
+    pub fn rotate(&self, mid: &VectorF64, rot: &Rotation) -> Self {
+        Line { 
+            pos: self.pos.rotate(mid, rot),
+            dir: self.dir.rotate(&VectorF64::new(0.0, 0.0), rot) 
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::game_map::Rotation;
+
     use super::{Line, VectorF64};
 
     // add
@@ -205,6 +236,16 @@ mod tests {
         let basis = VectorF64::new(1.0, 1.0);
         println!("{:?}", VectorF64::new(1.0, 0.0).change_base(&basis));
         assert_eq!(VectorF64::new(123.0, 1.0).change_base(&basis).change_to_normal_base(&basis), VectorF64::new(123.0, 1.0));
+    }
+
+    #[test]
+    fn test_rotation() {
+        let mid = VectorF64::new(50.0, 50.0);
+        // assert_eq!(VectorF64::new(100.0, 100.0).rotate(&mid, &crate::game_map::Rotation::South), VectorF64::new(0.0, 50.0));
+        let a = Line::new(&VectorF64::new(100.0, 0.0), &VectorF64::new(-100.0, 100.0));
+        println!("{:?}", a.rotate(&mid, &Rotation::East));
+        println!("{:?}", a.rotate(&mid, &Rotation::South));
+        println!("{:?}", a.rotate(&mid, &Rotation::West));
 
     }
 }

@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, borrow::Borrow};
+use std::{cmp::Ordering, borrow::Borrow, f64::consts::PI};
 
 use serde::{Deserialize, Serialize};
 
@@ -21,6 +21,7 @@ pub struct GameMap {
 pub struct GameMapTile {
     pub pos: VectorF64,
     ground_type: GroundType,
+    #[serde(rename(serialize = "structure", deserialize = "structure"))]
     structure_type: StructureType,
 }
 
@@ -34,11 +35,24 @@ pub enum GroundType {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "rotation")]
+pub enum Rotation {
+    North,
+    West,
+    East,
+    South,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum StructureType {
     Wall,
     Circle,
     Start,
     Hole,
+    Wedge(Rotation),
+    Rounded_Corner(Rotation),
+    Inverted_Rounded_Corner(Rotation),
     None,
 }
 
@@ -50,30 +64,63 @@ pub enum Collider {
     Point((f64, f64)),
     Circle((f64, f64), f64),
     Line((f64, f64), (f64, f64)),
+    Arch((f64, f64), f64, f64, f64)
 }
 
 const BOX_COLLIDERS: [Collider; 8] = [
-    Collider::Line((0.0, 0.0), (100.0, 0.0)),
-    Collider::Line((100.0, 0.0), (0.0, 100.0)),
-    Collider::Line((100.0, 100.0), (-100.0, 0.0)),
-    Collider::Line((0.0, 100.0), (0.0, -100.0)),
     Collider::Point((0.0, 0.0)),
+    Collider::Line((0.0, 0.0), (100.0, 0.0)),
     Collider::Point((100.0, 0.0)),
+    Collider::Line((100.0, 0.0), (0.0, 100.0)),
     Collider::Point((100.0, 100.0)),
+    Collider::Line((100.0, 100.0), (-100.0, 0.0)),
     Collider::Point((0.0, 100.0)),
+    Collider::Line((0.0, 100.0), (0.0, -100.0)),
 ];
+
+const WEDGE_COLLIDERS: [Collider; 6] = [
+    Collider::Point((0.0, 0.0)),
+    Collider::Line((0.0, 0.0), (100.0, 0.0)),
+    Collider::Point((100.0, 0.0)),
+    Collider::Line((100.0, 0.0), (-100.0, 100.0)),
+    Collider::Point((0.0, 100.0)),
+    Collider::Line((0.0, 100.0), (0.0, -100.0)),
+];
+
+const ROUNDED_CORNER_COLLIDERS: [Collider; 6] = [
+    Collider::Point((0.0, 0.0)),
+    Collider::Line((0.0, 0.0), (100.0, 0.0)),
+    Collider::Point((100.0, 0.0)),
+    // This is shit use arch
+    Collider::Circle((50.0, 50.0), 50.0),
+    Collider::Point((0.0, 100.0)),
+    Collider::Line((0.0, 100.0), (0.0, -100.0)),
+];
+
+const INVERTED_ROUNDED_CORNER_COLLIDERS: [Collider; 6] = [
+    Collider::Point((0.0, 0.0)),
+    Collider::Line((0.0, 0.0), (100.0, 0.0)),
+    Collider::Point((100.0, 0.0)),
+    Collider::Arch((100.0, 100.0), 50.0, -PI/2.0, 0.0),
+    Collider::Point((0.0, 100.0)),
+    Collider::Line((0.0, 100.0), (0.0, -100.0)),
+];
+
 
 const CIRCLE_COLLIDERS: [Collider; 1] = [Collider::Circle((50.0, 50.0), 24.0)];
 
 impl Collider {
-    pub fn get_project_point(&self, position: &VectorF64, ball: &Point) -> Option<Point> {
+    pub fn get_project_point(&self, position: &VectorF64, ball: &Point, rot: &Rotation) -> Option<Point> {
+        let mid = &VectorF64::new(50.0, 50.0);
         match self {
-            Collider::Point((x, y)) => return Some(position.add(&Point::new(*x, *y))),
+            Collider::Point(pos) => return Some(Point::from_tuple(*pos).rotate(mid, rot).add(position)),
             Collider::Line(pos, dir) => {
                 return Line::new(
-                    &position.add(&Point::from_tuple(*pos)),
+                    &Point::from_tuple(*pos),
                     &Point::from_tuple(*dir),
                 )
+                .rotate(mid, rot)
+                .add_to_pos(position)
                 .project_point(ball)
             }
             Collider::Circle(pos, radius) => {
@@ -82,6 +129,15 @@ impl Collider {
                     circle_centre.add(&ball.sub(&circle_centre).get_unit().multi(*radius)),
                 );
             }
+            Collider::Arch(pos, radius, start, end) => { 
+                let circle_centre = position.add(&Point::from_tuple(*pos));
+                let point_on_arch =  &ball.sub(&circle_centre).get_unit().multi(*radius);
+                // TODO this is wrong you have to check the arch constraint before getting the closest point
+                if start <= &point_on_arch.angle() && &point_on_arch.angle() <= end {
+                    return Some(circle_centre.add(point_on_arch).rotate(mid, rot));
+                }
+                return None;
+            }
         }
     }
 }
@@ -89,8 +145,11 @@ impl Collider {
 impl StructureType {
     fn get_collision_points(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
         match self {
-            StructureType::Wall => self.box_collide(pos, ball),
-            StructureType::Circle => self.circle_collide(pos, ball),
+            StructureType::Wall => self.get_points(pos, ball, &BOX_COLLIDERS),
+            StructureType::Circle => self.get_points(pos, ball,  &CIRCLE_COLLIDERS),
+            StructureType::Wedge(rotation) => self.get_points_rot(pos, ball, rotation, &WEDGE_COLLIDERS),
+            StructureType::Rounded_Corner(rotation) => self.get_points_rot(pos, ball, rotation, &ROUNDED_CORNER_COLLIDERS),
+            StructureType::Inverted_Rounded_Corner(rotation) => self.get_points_rot(pos, ball, rotation, &INVERTED_ROUNDED_CORNER_COLLIDERS),
             StructureType::None |
             StructureType::Hole |
             StructureType::Start => Vec::<Point>::default(),
@@ -99,7 +158,7 @@ impl StructureType {
 
     fn get_special_effect_points(&self, pos: VectorF64, ball: Ball) -> Vec<(Point, StructureType)>{
         match self {
-            StructureType::Hole => self.circle_collide(pos, ball).iter().map(|point| (*point, StructureType::Hole)).collect::<Vec<(Point, StructureType)>>(),
+            StructureType::Hole => self.get_points(pos, ball, &CIRCLE_COLLIDERS).iter().map(|point| (*point, StructureType::Hole)).collect::<Vec<(Point, StructureType)>>(),
             _ => Vec::default(),
         }
     }
@@ -111,31 +170,17 @@ impl StructureType {
         }
     }
 
-    fn box_collide(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
-        let colliders = BOX_COLLIDERS;
-
-        let projection_points: Vec<Point> = colliders
+    fn get_points_rot(&self, pos: Point, ball: Ball, rot: &Rotation, colliders: &[Collider]) -> Vec<Point> {
+        colliders
             .iter()
-            .map(|collider| collider.get_project_point(&pos, &ball.pos))
+            .map(|collider| collider.get_project_point(&pos, &ball.pos, rot))
             .filter(|point| point.is_some())
             .map(|point| point.unwrap())
-            .collect();
-
-        projection_points
-        //let closest = projection_points.iter()
-        //    .min_by(|a, b| a.dist(&ball.pos).partial_cmp(&b.dist(&ball.pos)).unwrap_or(Ordering::Equal)).unwrap();
+            .collect()
     }
 
-    fn circle_collide(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
-        let colliders = CIRCLE_COLLIDERS;
-        let projection_points: Vec<Point> = colliders
-            .iter()
-            .map(|collider| collider.get_project_point(&pos, &ball.pos))
-            .filter(|point| point.is_some())
-            .map(|point| point.unwrap())
-            .collect();
-
-        projection_points
+    fn get_points(&self, pos: Point, ball: Ball, colliders: &[Collider]) -> Vec<Point> {
+        self.get_points_rot(pos,ball, &Rotation::North, colliders)
     }
 }
 
@@ -154,7 +199,19 @@ impl GameMap {
             for y in 0..25i32 {
                 let is_border = x == 0 || y == 0 || x == 49 - 1 || y == 25 - 1;
                 let is_middle_map = y % 2 == 0 && x % 2 == 0;
-                if is_border {
+                if x == 1 && y == 1 {
+                    tiles_column.push(GameMapTile {
+                        pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
+                        ground_type: GroundType::Grass,
+                        structure_type: StructureType::Start,
+                    })
+                } else if x == 47 && y == 23 {
+                    tiles_column.push(GameMapTile {
+                        pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
+                        ground_type: GroundType::Grass,
+                        structure_type: StructureType::Hole,
+                    })
+                } else if is_border {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
                         ground_type: GroundType::Grass,

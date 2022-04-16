@@ -1,28 +1,36 @@
-import { GameMap, Point, StructureType, CanvasMouseEvent } from '../types';
+import { GameMap, Point, StructureType, CanvasMouseEvent, Rotation } from '../types';
 import CanvasController from './CanvasController';
 
 const BLOCK_SIZE = 100;
 
-type SetTileHandler = (struct: StructureType, point: Point) => void;
+type SetTileHandler = (struct: StructureType, point: Point, rotation: Rotation) => void;
 
 class EditorController extends CanvasController {
   protected gameMap: GameMap | null = null;
   private structureType: StructureType = 'None';
   private tilePosition: Point | null = null;
   private mouseButtonElement: StructureType | null = null;
-
+  private rotation: Rotation = 'North';
+  private rotationIdx = 0;
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
+  }
+
+  nextRotation() {
+    this.rotationIdx++;
+    return (['North', 'East', 'South', 'West'] as Rotation[])[this.rotationIdx%4]
   }
 
   handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
     if (!this.tilePosition) return;
     if (event.button === 0) {
-      setTile(this.structureType, this.tilePosition);
+      setTile(this.structureType, this.tilePosition, this.rotation);
       this.mouseButtonElement = this.structureType;
     } else if (event.button === 2) {
       this.mouseButtonElement = 'None';
-      setTile('None', this.tilePosition);
+      setTile('None', this.tilePosition, 'North');
+    } else if (event.button === 4) {
+      this.rotation = this.nextRotation();
     }
   }
 
@@ -42,7 +50,7 @@ class EditorController extends CanvasController {
 
     if (this.mouseButtonElement && this.tilePosition) {
       if (x !== this.tilePosition.x || y !== this.tilePosition.y) {
-        setTile(this.mouseButtonElement, this.tilePosition);
+        setTile(this.mouseButtonElement, this.tilePosition, this.rotation);
       }
     }
   }
@@ -72,6 +80,12 @@ class EditorController extends CanvasController {
         this.renderHole(this.tilePosition);
       } else if (type === 'Start') {
         this.renderStart(this.tilePosition);
+      } else if (type === 'Wedge') {
+        this.renderWedge(this.tilePosition, this.rotation);
+      } else if (type === 'Rounded_Corner') {
+        this.renderRoundedCorner(this.tilePosition, this.rotation);
+      } else if (type === 'Inverted_Rounded_Corner') {
+        this.renderInvertedRoundedCorner(this.tilePosition, this.rotation);
       }
     }
     this.renderCursor();

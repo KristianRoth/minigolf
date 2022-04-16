@@ -1,4 +1,4 @@
-import { GameMap } from '../types';
+import { GameMap, Rotation } from '../types';
 import CanvasController from './CanvasController';
 
 class MapController extends CanvasController {
@@ -23,22 +23,34 @@ class MapController extends CanvasController {
     // Shadow pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      if (tile.structureType === 'Wall') {
+      if (tile.structure.type === 'Wall') {
         this.renderWall(tile.pos);
-      } else if (tile.structureType === 'Circle') {
+      } else if (tile.structure.type === 'Circle') {
         this.renderCircleWall(tile.pos);
+      } else if (tile.structure.type === 'Wedge') {
+        this.renderWedge(tile.pos, tile.structure.rotation);
+      } else if (tile.structure.type === 'Rounded_Corner') {
+        this.renderRoundedCorner(tile.pos, tile.structure.rotation);
+      } else if (tile.structure.type === 'Inverted_Rounded_Corner') {
+        this.renderInvertedRoundedCorner(tile.pos, tile.structure.rotation);
       }
     }
 
     // Structure pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      if (tile.structureType === 'Wall') {
+      if (tile.structure.type === 'Wall') {
         this.renderWall(tile.pos, false);
-      } else if (tile.structureType === 'Hole') {
+      } else if (tile.structure.type === 'Hole') {
         this.renderHole(tile.pos);
-      } else if (tile.structureType === 'Start') {
+      } else if (tile.structure.type === 'Start') {
         this.renderStart(tile.pos);
+      } else if (tile.structure.type === 'Wedge') {
+        this.renderWedge(tile.pos, tile.structure.rotation, false);
+      } else if (tile.structure.type === 'Rounded_Corner') {
+        this.renderRoundedCorner(tile.pos, tile.structure.rotation, false);
+      } else if (tile.structure.type === 'Inverted_Rounded_Corner') {
+        this.renderInvertedRoundedCorner(tile.pos, tile.structure.rotation, false);
       }
     }
   }
