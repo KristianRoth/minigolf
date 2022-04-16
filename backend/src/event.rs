@@ -1,6 +1,8 @@
+use std::cmp::Ordering;
+
 use crate::{
     game::{Game, Player},
-    game_map::GameMapTile,
+    game_map::{GameMap, GameMapTile, GameTiles},
 };
 use serde::Deserialize;
 use warp::ws::Message;
@@ -83,12 +85,10 @@ pub struct ShotEvent {
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InitEvent {
-    #[serde(rename(serialize = "playerId"))]
     player_id: u32,
-    #[serde(rename(serialize = "players"))]
     players: Vec<PlayerUpdateDTO>,
-    #[serde(rename(serialize = "gameMap"))]
     game_map: GameMapDTO,
 }
 
@@ -104,20 +104,41 @@ impl InitEvent {
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct GameMapDTO {
+    id: String,
     tiles: Vec<GameMapTile>,
 }
 
 impl GameMapDTO {
     pub fn from_game(game: &Game) -> Self {
         Self {
+            id: game.map.id.to_string(),
             tiles: game.map.tiles.clone().into_iter().flatten().collect(),
+        }
+    }
+    pub fn to_game_map(&self) -> GameMap {
+        let mut tiles: Vec<Vec<Option<GameMapTile>>> = vec![vec![None; 25]; 49];
+
+        println!("Tiles length {}", tiles.len());
+
+        self.tiles.iter().for_each(|tile| {
+            let x = tile.pos.x as usize / 100;
+            let y = tile.pos.y as usize / 100;
+            tiles[x][y] = Some(tile.clone());
+        });
+
+        GameMap {
+            id: self.id.to_string(),
+            tiles: tiles
+                .iter()
+                .map(|row| row.iter().map(|t| t.clone().unwrap()).collect())
+                .collect(),
         }
     }
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TurnBeginEvent {
-    #[serde(rename(serialize = "playerId"))]
     player_id: u32,
 }
 

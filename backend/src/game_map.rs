@@ -10,17 +10,17 @@ use crate::{
 pub type GameTiles = Vec<Vec<GameMapTile>>;
 
 type Point = VectorF64;
+
 pub struct GameMap {
-    id: u32,
-    pub tiles: Vec<Vec<GameMapTile>>,
+    pub id: String,
+    pub tiles: GameTiles,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GameMapTile {
-    pos: VectorF64,
-    #[serde(rename(serialize = "groundType"))]
+    pub pos: VectorF64,
     ground_type: GroundType,
-    #[serde(rename(serialize = "structureType"))]
     structure_type: StructureType,
 }
 
@@ -57,9 +57,7 @@ const BOX_COLLIDERS: [Collider; 8] = [
     Collider::Point((0.0, 100.0)),
 ];
 
-const CIRCLE_COLLIDERS: [Collider; 1] = [
-    Collider::Circle((50.0, 50.0), 24.0),
-];
+const CIRCLE_COLLIDERS: [Collider; 1] = [Collider::Circle((50.0, 50.0), 24.0)];
 
 impl Collider {
     pub fn get_project_point(&self, position: &VectorF64, ball: &Point) -> Option<Point> {
@@ -74,7 +72,9 @@ impl Collider {
             }
             Collider::Circle(pos, radius) => {
                 let circle_centre = position.add(&Point::from_tuple(*pos));
-                return Some(circle_centre.add(&ball.sub(&circle_centre).get_unit().multi(*radius)))
+                return Some(
+                    circle_centre.add(&ball.sub(&circle_centre).get_unit().multi(*radius)),
+                );
             }
         }
     }
@@ -119,7 +119,7 @@ impl StructureType {
 impl GameMap {
     pub fn new() -> Self {
         Self {
-            id: 1,
+            id: "123".to_string(),
             tiles: Self::create_map(),
         }
     }

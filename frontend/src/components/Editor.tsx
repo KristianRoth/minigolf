@@ -7,6 +7,13 @@ import useUndoRedo from '../hooks/useUndoRedo';
 import { CanvasMouseEvent, GameMap, Point, StructureType, Tile } from '../types';
 import Canvas from './Canvas';
 
+const BASE_URL = (() => {
+  if (process.env.NODE_ENV === 'development') {
+    return 'localhost:8080';
+  }
+  return window.location.host;
+})();
+
 const structureTypes: StructureType[] = ['Wall', 'Circle', 'None'];
 
 function Editor() {
@@ -114,7 +121,7 @@ function Editor() {
           });
         }
       }
-      setId(Date.now() + '');
+      setId((Date.now() + '').slice(-6));
       setTiles(tiles);
     }
   }, [gameId]);
@@ -138,11 +145,20 @@ function Editor() {
     navigate(`/editor`);
   };
 
-  const startGame = () => {
+  const startGame = async () => {
     console.log('TODO: START GAME CALLED');
     const newMap = getMapFromState();
     localStorage.setItem(`gameMap-${newMap.id}`, JSON.stringify(newMap));
-    navigate(`/${newMap.id}`);
+
+    const response = await fetch(`http://${BASE_URL}/game`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: newMap.id, tiles: newMap.tiles }),
+    });
+    const { gameId } = await response.json();
+    navigate(`/${gameId}`);
     // TODO: Post the game map to backend.
     //  -> on success navigate to the game-page.
   };

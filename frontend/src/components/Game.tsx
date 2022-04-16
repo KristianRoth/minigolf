@@ -1,4 +1,4 @@
-import { MouseEventHandler, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useWebsocket from '../hooks/useWebsocket';
 import { CanvasMouseEvent, GameEvent } from '../types';
@@ -15,8 +15,6 @@ const BASE_URL = (() => {
 })();
 
 const colors = ['red', 'blue', 'cyan', 'black', 'green', 'yellow', 'orange', 'maroon'];
-
-const ROOT_ID = 'game-root';
 
 const getUrl = (gameId: string) => {
   let name = localStorage.getItem(`game-${gameId}-name`);
@@ -121,7 +119,7 @@ function Game() {
 
   return (
     <>
-      <div id={ROOT_ID} tabIndex={-1} className='canvas-container'>
+      <div tabIndex={-1} className='canvas-container'>
         <Canvas index={1} ref={mapRef} />
         <Canvas index={2} ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
       </div>

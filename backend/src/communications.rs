@@ -1,4 +1,4 @@
-use crate::event::{parse_event, Event};
+use crate::event::{parse_event, Event, GameMapDTO};
 use crate::game::Game;
 use crate::Games;
 use futures_util::StreamExt;
@@ -8,6 +8,13 @@ use serde::{Deserialize, Serialize};
 pub struct ConnectionParams {
     pub id: Option<u32>,
     pub name: String,
+}
+
+pub async fn create_game(games: Games, game_map_dto: GameMapDTO) -> String {
+    let game = Game::new_from_dto(game_map_dto);
+    let game_id = game.game_id.clone();
+    games.write().await.insert(game_id.clone(), game);
+    game_id
 }
 
 pub async fn connect(
