@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use warp::http::StatusCode;
 use warp::Filter;
 
 mod communications;
@@ -57,9 +56,9 @@ async fn main() {
 
     let get_routes = warp::get().and(api.or(websocket).or(files).or(index));
 
-    // TODO: Disable on production
+    // TODO: Add a whitelist
     let cors = warp::cors()
-        .allow_origin("http://localhost:3000")
+        .allow_any_origin()
         .allow_headers(vec!["content-type"])
         .allow_methods(vec!["OPTIONS", "PUT", "POST", "DELETE"]);
 
