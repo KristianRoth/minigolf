@@ -1,5 +1,4 @@
 use futures_util::{SinkExt, TryFutureExt};
-use rand::prelude::*;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};

@@ -189,10 +189,7 @@ impl Arc {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
-
     use crate::game_map::Rotation;
-
     use super::{Line, VectorF64, Arc};
 
     // add

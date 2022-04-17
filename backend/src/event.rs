@@ -1,8 +1,6 @@
-use std::cmp::Ordering;
-
 use crate::{
     game::{Game, Player},
-    game_map::{GameMap, GameMapTile, GameTiles, GroundType, StructureType},
+    game_map::{GameMap, GameMapTile},
 };
 use serde::Deserialize;
 use warp::ws::Message;

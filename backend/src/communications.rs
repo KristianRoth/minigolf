@@ -65,7 +65,7 @@ async fn process_user_event(
 
     match parse_event(event) {
         Ok(Event::SHOT(shot_event)) => game.shot(shot_event, player_id),
-        e => return, //eprintln!("for game '{game_id}', unexpected event: {:?}", e),
+        _ => return, //eprintln!("for game '{game_id}', unexpected event: {:?}", e),
     };
 }
 

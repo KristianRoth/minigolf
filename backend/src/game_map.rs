@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, borrow::Borrow, f64::consts::PI};
+use std::{cmp::Ordering, f64::consts::PI};
 
 use serde::{Deserialize, Serialize};
 
@@ -26,12 +26,11 @@ pub struct GameMapTile {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum GroundType {
     Grass,
-    Water,
-    ShallowWater,
-    LightDirt,
-    HeavyDirt,
+    Slope(Rotation),
+    SlopeDiagonal(Rotation)
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -62,8 +61,8 @@ pub enum StructureType {
     Start,
     Hole,
     Wedge(Rotation),
-    Rounded_Corner(Rotation),
-    Inverted_Rounded_Corner(Rotation),
+    RoundedCorner(Rotation),
+    InvertedRoundedCorner(Rotation),
     None,
 }
 
@@ -151,14 +150,24 @@ impl Collider {
     }
 }
 
+impl GroundType {
+    pub fn do_effect(&self, ball: &mut Ball) {
+        match self {
+            GroundType::Slope(rot) => ball.vel = ball.vel.add(&VectorF64::new(0.0, -1.0).rotate(&VectorF64::new(0.0, 0.0), rot)),
+            GroundType::SlopeDiagonal(rot) => ball.vel = ball.vel.add(&VectorF64::new(-1.0, -1.0).rotate(&VectorF64::new(0.0, 0.0), rot)),
+            _ => return,
+        }
+    }
+}
+
 impl StructureType {
     fn get_collision_points(&self, pos: VectorF64, ball: Ball) -> Vec<Point> {
         match self {
             StructureType::Wall => self.get_points(pos, ball, &BOX_COLLIDERS),
             StructureType::Circle => self.get_points(pos, ball,  &CIRCLE_COLLIDERS),
             StructureType::Wedge(rotation) => self.get_points_rot(pos, ball, rotation, &WEDGE_COLLIDERS),
-            StructureType::Rounded_Corner(rotation) => self.get_points_rot(pos, ball, rotation, &ROUNDED_CORNER_COLLIDERS),
-            StructureType::Inverted_Rounded_Corner(rotation) => self.get_points_rot(pos, ball, rotation, &INVERTED_ROUNDED_CORNER_COLLIDERS),
+            StructureType::RoundedCorner(rotation) => self.get_points_rot(pos, ball, rotation, &ROUNDED_CORNER_COLLIDERS),
+            StructureType::InvertedRoundedCorner(rotation) => self.get_points_rot(pos, ball, rotation, &INVERTED_ROUNDED_CORNER_COLLIDERS),
             StructureType::None |
             StructureType::Hole |
             StructureType::Start => Vec::<Point>::default(),
@@ -211,31 +220,31 @@ impl GameMap {
                 if x == 1 && y == 1 {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
-                        ground_type: GroundType::Grass,
+                        ground_type: GroundType::SlopeDiagonal(Rotation::North),
                         structure_type: StructureType::Start,
                     })
                 } else if x == 47 && y == 23 {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
-                        ground_type: GroundType::Grass,
+                        ground_type: GroundType::SlopeDiagonal(Rotation::North),
                         structure_type: StructureType::Hole,
                     })
                 } else if is_border {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
-                        ground_type: GroundType::Grass,
+                        ground_type: GroundType::SlopeDiagonal(Rotation::North),
                         structure_type: StructureType::Wall,
                     })
                 } else if is_middle_map {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
-                        ground_type: GroundType::Grass,
+                        ground_type: GroundType::SlopeDiagonal(Rotation::North),
                         structure_type: StructureType::Circle,
                     })
                 } else {
                     tiles_column.push(GameMapTile {
                         pos: VectorF64::new(x as f64 * 100.0, y as f64 * 100.0),
-                        ground_type: GroundType::Grass,
+                        ground_type: GroundType::SlopeDiagonal(Rotation::North),
                         structure_type: StructureType::None,
                     })
                 }
@@ -254,7 +263,16 @@ impl GameMap {
         }
     }
 
+    pub fn do_ground_effect(&self, ball: &mut Ball) {
+        let x = (ball.pos.x as usize) / 100;
+        let y = (ball.pos.y as usize) / 100;
+
+        let tile = self.tiles[x][y].clone();
+        tile.ground_type.do_effect(ball)
+    }
+
     pub fn collide(&self, ball: &mut Ball) -> Option<SpecialEffect> {
+        self.do_ground_effect(ball);
         let mut d_pos = ball.vel.length();
         if d_pos < 1.0 {
             return None;
