@@ -42,7 +42,7 @@ class GameController extends CanvasController {
       const ball = this.balls.find((b) => b.id === this.playerId);
       if (ball) {
         const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
-        this.renderLine(ball, point);
+        this.drawLine(ball, point);
       }
     }
   }

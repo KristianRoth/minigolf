@@ -22,6 +22,7 @@ const RootPage: React.FC = () => {
   };
   return (
     <div>
+      <h1>Minigolfpeli</h1>
       <p>Syötä pelin id</p>
       <input
         value={gameId}

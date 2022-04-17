@@ -2,6 +2,14 @@ import { Ball, CanvasMouseEvent, Point, Rotation } from '../types';
 import { clamp } from '../utils/calculation';
 import { GAME_WIDTH, RATIO, BALL_RADIUS, CIRCLE_RADIUS, BLOCK_SIZE, HALF_BLOCK } from '../utils/constants';
 
+const colors = {
+  wall: '#b8b8b8',
+  wallBorder: '#ededed',
+  hole: '#000000',
+  start: '#fc0303',
+  grass: '#13a713',
+};
+
 class CanvasController {
   protected animationReqId: number | null = null;
   protected tick = 0;
@@ -63,29 +71,21 @@ class CanvasController {
     if (!this.mouseAt) return;
     const { x, y } = this.mouseAt;
     this.context.beginPath();
-    this.context.moveTo(this.c(x), this.c(y - BALL_RADIUS));
-    this.context.lineTo(this.c(x), this.c(y + BALL_RADIUS));
-    this.context.moveTo(this.c(x - BALL_RADIUS), this.c(y));
-    this.context.lineTo(this.c(x + BALL_RADIUS), this.c(y));
+    this.context.moveTo(this.c(x), this.c(y - HALF_BLOCK));
+    this.context.lineTo(this.c(x), this.c(y + HALF_BLOCK));
+    this.context.moveTo(this.c(x - HALF_BLOCK), this.c(y));
+    this.context.lineTo(this.c(x + HALF_BLOCK), this.c(y));
     this.context.stroke();
   }
 
-  protected renderBall(ball: Ball) {
-    this.context.save();
-    this.setShadowOpts();
-    this.context.fillStyle = ball.color;
-    this.renderCircle(ball, BALL_RADIUS);
-    this.context.restore();
-  }
-
-  protected renderLine(p1: Point, p2: Point) {
+  protected drawLine(p1: Point, p2: Point) {
     this.context.beginPath();
     this.context.moveTo(this.c(p1.x), this.c(p1.y));
     this.context.lineTo(this.c(p2.x), this.c(p2.y));
     this.context.stroke();
   }
 
-  protected renderSquare(point: Point) {
+  protected drawSquare(point: Point) {
     this.context.beginPath();
     this.context.rect(this.c(point.x), this.c(point.y), this.blockSize, this.blockSize);
     this.context.fill();
@@ -93,131 +93,128 @@ class CanvasController {
     this.context.closePath();
   }
 
-  protected renderCircle(point: Point, radius: number) {
+  protected drawCircle(point: Point, radius: number) {
     this.context.beginPath();
-
     this.context.ellipse(this.c(point.x), this.c(point.y), this.c(radius), this.c(radius), 0, Math.PI * 2, 0);
-
     this.context.fill();
     this.context.closePath();
   }
 
+  private renderElement(callback: () => void) {
+    this.context.save();
+    callback();
+    this.context.restore();
+  }
+
+  private renderWallElement(doShadow: boolean, callback: () => void) {
+    this.renderElement(() => {
+      if (doShadow) {
+        this.setShadowOpts();
+      }
+
+      this.context.lineWidth = 0.5;
+      this.context.fillStyle = colors.wall;
+      this.context.strokeStyle = colors.wallBorder;
+
+      callback();
+    });
+  }
+
   protected renderWall(point: Point, doShadow = true) {
-    this.context.save();
-
-    if (doShadow) {
-      this.setShadowOpts();
-    }
-
-    this.context.lineWidth = 0.3;
-    this.context.fillStyle = '#b8b8b8';
-    this.context.strokeStyle = '#ededed';
-    this.renderSquare(point);
-    this.context.restore();
-  }
-
-  protected renderWedge(point: Point, rotation: Rotation, doShadow = true) {
-    this.context.save();
-    this.context.beginPath();
-    if (doShadow) {
-      this.setShadowOpts();
-    }
-    this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
-    this.context.rotate(this.getRotationAngle(rotation));
-    this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
-    this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
-    this.context.lineTo(this.c(-HALF_BLOCK), this.c(HALF_BLOCK));
-    this.context.lineWidth = 0.3;
-    this.context.fillStyle = '#b8b8b8';
-    this.context.strokeStyle = '#ededed';
-    this.context.stroke();
-    this.context.fill();
-    this.context.restore();
-  }
-
-  protected renderRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
-    this.context.save();
-    this.context.beginPath();
-    if (doShadow) {
-      this.setShadowOpts();
-    }
-    this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
-    this.context.rotate(this.getRotationAngle(rotation));
-    this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
-    this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
-    this.context.arcTo(
-      this.c(HALF_BLOCK),
-      this.c(HALF_BLOCK),
-      this.c(-HALF_BLOCK),
-      this.c(HALF_BLOCK),
-      this.c(BLOCK_SIZE)
-    );
-    this.context.lineWidth = 0.3;
-    this.context.fillStyle = '#b8b8b8';
-    this.context.strokeStyle = '#ededed';
-    this.context.fill();
-    this.context.restore();
-  }
-
-  protected renderInvertedRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
-    this.context.save();
-    this.context.beginPath();
-    if (doShadow) {
-      this.setShadowOpts();
-    }
-    this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
-    this.context.rotate(this.getRotationAngle(rotation));
-    this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
-    this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
-    this.context.arcTo(
-      this.c(-HALF_BLOCK),
-      this.c(-HALF_BLOCK),
-      this.c(-HALF_BLOCK),
-      this.c(HALF_BLOCK),
-      this.c(BLOCK_SIZE)
-    );
-    this.context.lineWidth = 0.3;
-    this.context.fillStyle = '#b8b8b8';
-    this.context.strokeStyle = '#ededed';
-    this.context.fill();
-    this.context.restore();
-  }
-
-  protected renderHole(point: Point) {
-    this.context.save();
-    this.context.fillStyle = '#000000';
-    this.renderCircle({ x: point.x + BALL_RADIUS, y: point.y + BALL_RADIUS }, BALL_RADIUS);
-    this.context.restore();
-  }
-
-  protected renderStart(point: Point) {
-    this.context.save();
-    this.context.fillStyle = '#fc0303';
-    this.renderCircle({ x: point.x + BALL_RADIUS, y: point.y + BALL_RADIUS }, 10);
-    this.context.restore();
-  }
-
-  protected renderGrass(point: Point) {
-    this.context.save();
-    this.context.fillStyle = '#13a713';
-    this.context.strokeStyle = '#13a713';
-    this.renderSquare(point);
-    this.context.restore();
+    this.renderWallElement(doShadow, () => {
+      this.drawSquare(point);
+    });
   }
 
   protected renderCircleWall(point: Point, doShadow = true) {
-    const { x, y } = point;
-    this.context.save();
+    this.renderWallElement(doShadow, () => {
+      const { x, y } = point;
+      this.drawCircle({ x: x + HALF_BLOCK, y: y + HALF_BLOCK }, CIRCLE_RADIUS);
+    });
+  }
 
-    if (doShadow) {
+  protected renderWedge(point: Point, rotation: Rotation, doShadow = true) {
+    this.renderWallElement(doShadow, () => {
+      this.context.beginPath();
+      this.context.translate(this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK));
+      this.context.rotate(this.getRotationAngle(rotation));
+      this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.lineTo(this.c(-HALF_BLOCK), this.c(HALF_BLOCK));
+      this.context.lineTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.stroke();
+      this.context.fill();
+    });
+  }
+
+  protected renderRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
+    this.renderWallElement(doShadow, () => {
+      this.context.beginPath();
+      this.context.translate(this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK));
+      this.context.rotate(this.getRotationAngle(rotation));
+      this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.arcTo(
+        this.c(HALF_BLOCK),
+        this.c(HALF_BLOCK),
+        this.c(-HALF_BLOCK),
+        this.c(HALF_BLOCK),
+        this.c(BLOCK_SIZE)
+      );
+      this.context.lineTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.stroke();
+      this.context.fill();
+    });
+  }
+
+  protected renderInvertedRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
+    this.renderWallElement(doShadow, () => {
+      this.context.beginPath();
+      this.context.translate(this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK));
+      this.context.rotate(this.getRotationAngle(rotation));
+      this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.arcTo(
+        this.c(-HALF_BLOCK),
+        this.c(-HALF_BLOCK),
+        this.c(-HALF_BLOCK),
+        this.c(HALF_BLOCK),
+        this.c(BLOCK_SIZE)
+      );
+      this.context.lineTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.stroke();
+      this.context.fill();
+    });
+  }
+
+  protected renderHole(point: Point) {
+    this.renderElement(() => {
+      this.context.fillStyle = colors.hole;
+      this.drawCircle({ x: point.x + HALF_BLOCK, y: point.y + HALF_BLOCK }, HALF_BLOCK);
+    });
+  }
+
+  protected renderStart(point: Point) {
+    this.renderElement(() => {
+      this.context.fillStyle = colors.start;
+      this.drawCircle({ x: point.x + HALF_BLOCK, y: point.y + HALF_BLOCK }, 10);
+    });
+  }
+
+  protected renderBall(ball: Ball) {
+    this.renderElement(() => {
       this.setShadowOpts();
-    }
+      this.context.fillStyle = ball.color;
+      this.drawCircle(ball, BALL_RADIUS);
+    });
+  }
 
-    this.context.fillStyle = '#c6c6c6';
-
-    this.renderCircle({ x: x + BALL_RADIUS, y: y + BALL_RADIUS }, CIRCLE_RADIUS);
-
-    this.context.restore();
+  protected renderGrass(point: Point) {
+    this.renderElement(() => {
+      this.context.fillStyle = colors.grass;
+      this.context.strokeStyle = colors.grass;
+      this.drawSquare(point);
+    });
   }
 
   protected get blockSize() {

@@ -13,7 +13,6 @@ function App() {
         flexDirection: 'column',
       }}
     >
-      <h1>Minigolfpeli</h1>
       <Routes>
         <Route path='/editor' element={<Editor />} />
         <Route path='/editor/:mapId' element={<Editor />} />

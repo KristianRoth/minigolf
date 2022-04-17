@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import GameController from '../controllers/GameController';
 import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
@@ -8,6 +8,7 @@ import { CanvasMouseEvent, GameEvent } from '../types';
 import { BASE_URL, GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
+import Row from '../components/Row';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
@@ -27,10 +28,12 @@ function Game() {
   const [playerId, setPlayerId] = useState(0);
   const [balls, setBalls] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
+  const [mapId, setMapId] = useState<string>('');
 
   const [mapRef, mapController] = useCanvasController(MapController);
   const [gameRef, gameController] = useCanvasController(GameController);
 
+  const navigate = useNavigate();
   const { gameId = '' } = useParams();
 
   const onMouseDown = (event: CanvasMouseEvent) => {
@@ -74,6 +77,7 @@ function Game() {
           gameController?.setPlayerId(event.playerId);
           mapController?.setGameMap(event.gameMap);
           setPlayerId(event.playerId);
+          setMapId(event.gameMap.id);
         } else if (event.type === 'TURN_BEGIN') {
           gameController?.setHasTurn(true);
         }
@@ -107,6 +111,10 @@ function Game() {
     window.location.reload();
   };
 
+  const goToEdit = () => {
+    navigate(`/editor/${mapId}`);
+  };
+
   return (
     <>
       <CanvasGroup>
@@ -114,22 +122,25 @@ function Game() {
         <Canvas ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
       </CanvasGroup>
 
-      <div style={{ width: '100%', marginTop: 10 }}>
-        <div style={{ display: 'inline-block' }}>
-          <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
-            Toggle debug
-          </button>
-          <button style={{ marginLeft: 10 }} onClick={() => disconnect()}>
-            Disconnect
-          </button>
-        </div>
+      <Row>
+        <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
+          Toggle debug
+        </button>
+        <button style={{ marginLeft: 10 }} onClick={() => disconnect()}>
+          Disconnect
+        </button>
+        <button style={{ marginLeft: 10 }} onClick={() => goToEdit()}>
+          Edit
+        </button>
+      </Row>
 
-        {debug && (
+      {debug && (
+        <Row>
           <pre style={{ width: '50%', marginLeft: 10 }}>
             {JSON.stringify({ playerId, len: balls.length, balls }, undefined, 2)}
           </pre>
-        )}
-      </div>
+        </Row>
+      )}
     </>
   );
 }

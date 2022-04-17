@@ -77,7 +77,7 @@ class EditorController extends CanvasController {
     this.context.save();
     this.context.fillStyle = '#fff';
     this.context.strokeStyle = '#fff';
-    this.renderSquare(point);
+    this.drawSquare(point);
     this.context.restore();
   }
 

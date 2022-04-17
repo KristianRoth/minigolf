@@ -9,6 +9,7 @@ import { BASE_URL, GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
+import templates from '../utils/templates';
 
 function Editor() {
   const [id, setId] = useState('');
@@ -101,23 +102,8 @@ function Editor() {
     if (savedMap) {
       setStateFromMap(savedMap);
     } else {
-      const tiles: Tile[] = [];
-      for (let y = 0; y < 25; y += 1) {
-        for (let x = 0; x < 49; x += 1) {
-          tiles.push({
-            groundType: 'Grass',
-            structure: {
-              type: 'None',
-            },
-            pos: {
-              x: x * 100,
-              y: y * 100,
-            },
-          });
-        }
-      }
       setId((Date.now() + '').slice(-6));
-      setTiles(tiles);
+      setTiles(templates.borders());
     }
   }, [mapId]);
 
