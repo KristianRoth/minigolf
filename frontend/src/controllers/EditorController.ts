@@ -10,19 +10,8 @@ class EditorController extends CanvasController {
   private tilePosition: Point | null = null;
   private draggedElement: StructureType | null = null;
   private rotation: Rotation = 'North';
-  private rotationIdx = 0;
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
-  }
-
-  nextRotation() {
-    this.rotationIdx++;
-    return (['North', 'East', 'South', 'West'] as Rotation[])[this.rotationIdx % 4];
-  }
-
-  previousRotation() {
-    this.rotationIdx--;
-    return (['North', 'East', 'South', 'West'] as Rotation[])[this.rotationIdx % 4];
   }
 
   handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
@@ -37,12 +26,6 @@ class EditorController extends CanvasController {
       // Secondary
       this.draggedElement = 'None';
       setTile('None', this.tilePosition, 'North');
-    } else if (event.button === 3) {
-      // Side
-      this.rotation = this.previousRotation();
-    } else if (event.button === 4) {
-      // Side
-      this.rotation = this.nextRotation();
     }
   }
 
@@ -115,6 +98,10 @@ class EditorController extends CanvasController {
 
   setStructureType(structureType: StructureType) {
     this.structureType = structureType;
+  }
+
+  setRotationType(rotation: Rotation) {
+    this.rotation = rotation;
   }
 }
 

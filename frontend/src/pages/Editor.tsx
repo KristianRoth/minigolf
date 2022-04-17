@@ -11,11 +11,14 @@ import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
 import templates from '../utils/templates';
 
+const rotations: Rotation[] = ['North', 'East', 'South', 'West'];
+
 function Editor() {
   const [id, setId] = useState('');
   const [mapName, setMapName] = useState<string>('');
   const [creator, setCreator] = useState<string>('');
   const [structureIdx, setStructureIdx] = useState<number>(0);
+  const [rotationIdx, setRotationIdx] = useState<number>(0);
 
   const {
     state: tiles,
@@ -82,20 +85,27 @@ function Editor() {
   useEffect(() => {
     if (!editorController) return;
     const structure = structureTypes[structureIdx];
+    const rotation = rotations[rotationIdx];
     editorController.setStructureType(structure);
+    editorController.setRotationType(rotation);
 
     const wheelHandler = (event: WheelEvent) => {
       event.preventDefault();
       const direction = event.deltaY > 0 ? -1 : 1;
-      const nextIdx = (structureIdx + direction + structureTypes.length) % structureTypes.length;
-      setStructureIdx(nextIdx);
+      if (event.shiftKey) {
+        const nextIdx = (rotationIdx + direction + 4) % 4;
+        setRotationIdx(nextIdx);
+      } else {
+        const nextIdx = (structureIdx + direction + structureTypes.length) % structureTypes.length;
+        setStructureIdx(nextIdx);
+      }
     };
 
     document.body.addEventListener('wheel', wheelHandler, { passive: false });
     return () => {
       document.body.removeEventListener('wheel', wheelHandler);
     };
-  }, [structureIdx, editorController]);
+  }, [structureIdx, rotationIdx, editorController]);
 
   useEffect(() => {
     const savedMap = GameStorage.getGameMap(mapId);
