@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     game::Ball,
-    math::{Line, VectorF64},
+    math::{Line, VectorF64, Arc},
 };
 
 pub type GameTiles = Vec<Vec<GameMapTile>>;
@@ -43,6 +43,17 @@ pub enum Rotation {
     South,
 }
 
+impl Rotation {
+    pub fn get_angle(&self) -> f64 {
+        match self {
+            Rotation::North => 0.0,
+            Rotation::East => PI/2.0,
+            Rotation::South => PI,
+            Rotation::West => -PI/2.0,
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StructureType {
@@ -64,7 +75,7 @@ pub enum Collider {
     Point((f64, f64)),
     Circle((f64, f64), f64),
     Line((f64, f64), (f64, f64)),
-    Arch((f64, f64), f64, f64, f64)
+    Arc((f64, f64), f64, (f64, f64), (f64, f64))
 }
 
 const BOX_COLLIDERS: [Collider; 8] = [
@@ -91,8 +102,7 @@ const ROUNDED_CORNER_COLLIDERS: [Collider; 6] = [
     Collider::Point((0.0, 0.0)),
     Collider::Line((0.0, 0.0), (100.0, 0.0)),
     Collider::Point((100.0, 0.0)),
-    // This is shit use arch
-    Collider::Circle((50.0, 50.0), 50.0),
+    Collider::Arc((0.0, 0.0), 100.0, (1.0, 0.0), (0.0, 1.0)),
     Collider::Point((0.0, 100.0)),
     Collider::Line((0.0, 100.0), (0.0, -100.0)),
 ];
@@ -101,7 +111,7 @@ const INVERTED_ROUNDED_CORNER_COLLIDERS: [Collider; 6] = [
     Collider::Point((0.0, 0.0)),
     Collider::Line((0.0, 0.0), (100.0, 0.0)),
     Collider::Point((100.0, 0.0)),
-    Collider::Arch((100.0, 100.0), 50.0, -PI/2.0, 0.0),
+    Collider::Arc((100.0, 100.0), 100.0, (-1.0, 0.0), (0.0, -1.0)),
     Collider::Point((0.0, 100.0)),
     Collider::Line((0.0, 100.0), (0.0, -100.0)),
 ];
@@ -124,19 +134,18 @@ impl Collider {
                 .project_point(ball)
             }
             Collider::Circle(pos, radius) => {
-                let circle_centre = position.add(&Point::from_tuple(*pos));
+                let circle_centre = &Point::from_tuple(*pos).rotate(mid, rot).add(position);
                 return Some(
                     circle_centre.add(&ball.sub(&circle_centre).get_unit().multi(*radius)),
                 );
             }
-            Collider::Arch(pos, radius, start, end) => { 
-                let circle_centre = position.add(&Point::from_tuple(*pos));
-                let point_on_arch =  &ball.sub(&circle_centre).get_unit().multi(*radius);
-                // TODO this is wrong you have to check the arch constraint before getting the closest point
-                if start <= &point_on_arch.angle() && &point_on_arch.angle() <= end {
-                    return Some(circle_centre.add(point_on_arch).rotate(mid, rot));
-                }
-                return None;
+            Collider::Arc(pos, radius, start, end) => { 
+                return Arc::new(
+                    Point::from_tuple(*pos).rotate(mid, rot).add(position),
+                    *radius,
+                    VectorF64::from_tuple(*start),
+                    VectorF64::from_tuple(*end)
+                ).project_point(ball, rot);
             }
         }
     }
