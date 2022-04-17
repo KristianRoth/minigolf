@@ -1,5 +1,21 @@
 import { Point } from './GameState';
 
+const staticStructures = ['Start', 'Hole', 'Wall', 'Circle', 'Portal', 'None'] as const;
+const rotateStructures = ['Wedge', 'Rounded_Corner', 'Inverted_Rounded_Corner'] as const;
+export const structureTypes = [...staticStructures, ...rotateStructures] as const;
+
+export type StaticStructure = {
+  type: typeof staticStructures[number];
+};
+export type RotateStructure = {
+  type: typeof rotateStructures[number];
+  rotation: Rotation;
+};
+
+export type Structure = StaticStructure | RotateStructure;
+
+export type StructureType = typeof structureTypes[number];
+
 export type GameMap = {
   id: string;
   name: string;
@@ -14,29 +30,8 @@ export type Tile = {
   structure: Structure;
 };
 
-export type Structure = StaticStructure | RotateStructure
-
-export type StaticStructure = {
-  type: 'Wall' | 'Portal' | 'Circle' | 'Start' | 'Hole' | 'None'
-}
-export type RotateStructure = {
-  type: 'Wedge' | 'Rounded_Corner' | 'Inverted_Rounded_Corner';
-  rotation: Rotation;
-}
-
-export type StructureType = 'Wall' | 'Portal' | 'Circle' | 'Start' | 'Hole' | 'Wedge' | 'Rounded_Corner' | 'Inverted_Rounded_Corner' | 'None';
 export type GroundType = 'Sand' | 'Grass' | 'Water';
 export type Rotation = 'North' | 'East' | 'South' | 'West';
-
-
-// export type Structure = {
-//   type: StructureType;
-//   rotation: Rotation;
-// };
-// export type Ground = {
-//   type: GroundType;
-//   rotation: Rotation;
-// };
 
 export type Score = any;
 export type Creator = any;

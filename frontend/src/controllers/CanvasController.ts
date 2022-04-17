@@ -1,12 +1,6 @@
-import { clamp } from './helpers';
 import { Ball, CanvasMouseEvent, Point, Rotation } from '../types';
-
-const GAME_WIDTH = 4900;
-const GAME_HEIGHT = 2500;
-const BALL_RADIUS = 50;
-const CIRCLE_RADIUS = 24;
-const BLOCK_SIZE = BALL_RADIUS * 2;
-const RATIO = GAME_HEIGHT / GAME_WIDTH;
+import { clamp } from '../utils/calculation';
+import { GAME_WIDTH, RATIO, BALL_RADIUS, CIRCLE_RADIUS, BLOCK_SIZE, HALF_BLOCK } from '../utils/constants';
 
 class CanvasController {
   protected animationReqId: number | null = null;
@@ -130,15 +124,15 @@ class CanvasController {
     }
     this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
     this.context.rotate(this.getRotationAngle(rotation));
-    this.context.moveTo(this.c(-50), this.c(-50));
-    this.context.lineTo(this.c(50), this.c(-50.0));
-    this.context.lineTo(this.c(-50), this.c(50));
+    this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+    this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+    this.context.lineTo(this.c(-HALF_BLOCK), this.c(HALF_BLOCK));
     this.context.lineWidth = 0.3;
     this.context.fillStyle = '#b8b8b8';
     this.context.strokeStyle = '#ededed';
     this.context.stroke();
     this.context.fill();
-    this.context.restore()
+    this.context.restore();
   }
 
   protected renderRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
@@ -149,14 +143,20 @@ class CanvasController {
     }
     this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
     this.context.rotate(this.getRotationAngle(rotation));
-    this.context.moveTo(this.c(-50), this.c(-50));
-    this.context.lineTo(this.c(50), this.c(-50.0));
-    this.context.arcTo(this.c(50), this.c(50), this.c(-50), this.c(50), this.c(100));
+    this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+    this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+    this.context.arcTo(
+      this.c(HALF_BLOCK),
+      this.c(HALF_BLOCK),
+      this.c(-HALF_BLOCK),
+      this.c(HALF_BLOCK),
+      this.c(BLOCK_SIZE)
+    );
     this.context.lineWidth = 0.3;
     this.context.fillStyle = '#b8b8b8';
     this.context.strokeStyle = '#ededed';
     this.context.fill();
-    this.context.restore()
+    this.context.restore();
   }
 
   protected renderInvertedRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
@@ -167,14 +167,20 @@ class CanvasController {
     }
     this.context.translate(this.c(point.x + BALL_RADIUS), this.c(point.y + BALL_RADIUS));
     this.context.rotate(this.getRotationAngle(rotation));
-    this.context.moveTo(this.c(-50), this.c(-50));
-    this.context.lineTo(this.c(50), this.c(-50.0));
-    this.context.arcTo(this.c(-50), this.c(-50), this.c(-50), this.c(50), this.c(100));
+    this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+    this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+    this.context.arcTo(
+      this.c(-HALF_BLOCK),
+      this.c(-HALF_BLOCK),
+      this.c(-HALF_BLOCK),
+      this.c(HALF_BLOCK),
+      this.c(BLOCK_SIZE)
+    );
     this.context.lineWidth = 0.3;
     this.context.fillStyle = '#b8b8b8';
     this.context.strokeStyle = '#ededed';
     this.context.fill();
-    this.context.restore()
+    this.context.restore();
   }
 
   protected renderHole(point: Point) {
@@ -199,11 +205,13 @@ class CanvasController {
     this.context.restore();
   }
 
-  protected renderCircleWall(point: Point) {
+  protected renderCircleWall(point: Point, doShadow = true) {
     const { x, y } = point;
     this.context.save();
 
-    this.setShadowOpts();
+    if (doShadow) {
+      this.setShadowOpts();
+    }
 
     this.context.fillStyle = '#c6c6c6';
 
@@ -218,10 +226,14 @@ class CanvasController {
 
   protected getRotationAngle(rot: Rotation) {
     switch (rot) {
-      case 'North': return 0;
-      case 'East': return Math.PI/2;
-      case 'South': return Math.PI;
-      case 'West': return -Math.PI/2;
+      case 'North':
+        return 0;
+      case 'East':
+        return Math.PI / 2;
+      case 'South':
+        return Math.PI;
+      case 'West':
+        return -Math.PI / 2;
     }
   }
 

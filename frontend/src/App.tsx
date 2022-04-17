@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
-import Game from './components/Game';
-import Editor from './components/Editor';
-import RootPage from './components/Root';
+import Game from './pages/Game';
+import Editor from './pages/Editor';
+import RootPage from './pages/Root';
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
       <h1>Minigolfpeli</h1>
       <Routes>
         <Route path='/editor' element={<Editor />} />
-        <Route path='/editor/:gameId' element={<Editor />} />
+        <Route path='/editor/:mapId' element={<Editor />} />
         <Route path='/:gameId' element={<Game />} />
         <Route path='*' element={<RootPage />} />
       </Routes>

@@ -1,20 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import EditorController from '../game/EditorController';
-import MapController from '../game/MapController';
+import EditorController from '../controllers/EditorController';
+import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useUndoRedo from '../hooks/useUndoRedo';
-import { CanvasMouseEvent, GameMap, Point, Rotation, StructureType, Tile } from '../types';
-import Canvas from './Canvas';
-
-const BASE_URL = (() => {
-  if (process.env.NODE_ENV === 'development') {
-    return 'localhost:8080';
-  }
-  return window.location.host;
-})();
-
-const structureTypes: StructureType[] = ['Wall', 'Circle', 'Wall', 'Start', 'Hole', 'Wedge', 'Rounded_Corner', 'Inverted_Rounded_Corner', 'None'];
+import { CanvasMouseEvent, GameMap, Point, Rotation, StructureType, structureTypes, Tile } from '../types';
+import { BASE_URL, GameStorage } from '../utils/api';
+import Canvas from '../components/Canvas';
+import CanvasGroup from '../components/CanvasGroup';
+import Row from '../components/Row';
 
 function Editor() {
   const [id, setId] = useState('');
@@ -31,7 +25,7 @@ function Editor() {
     goForward,
   } = useUndoRedo<Tile[]>([]);
 
-  const { gameId } = useParams();
+  const { mapId } = useParams();
   const navigate = useNavigate();
   const [mapRef, mapController] = useCanvasController(MapController);
   const [editorRef, editorController] = useCanvasController(EditorController);
@@ -42,16 +36,12 @@ function Editor() {
     const structure = {
       type: struct,
       rotation: rotation,
-    }
+    };
     const newTiles: Tile[] = tiles.map((tile) => {
       if (tile.pos.x === x && tile.pos.y === y) {
         return {
           ...tile,
-          pos: {
-            x,
-            y,
-          },
-          structure: structure,
+          structure,
         };
       }
       return tile;
@@ -91,7 +81,7 @@ function Editor() {
   useEffect(() => {
     if (!editorController) return;
     const structure = structureTypes[structureIdx];
-    editorController?.setStructureType(structure);
+    editorController.setStructureType(structure);
 
     const wheelHandler = (event: WheelEvent) => {
       event.preventDefault();
@@ -107,10 +97,9 @@ function Editor() {
   }, [structureIdx, editorController]);
 
   useEffect(() => {
-    const savedMapString = gameId ? localStorage.getItem(`gameMap-${gameId}`) : '';
-    if (savedMapString) {
-      const map: GameMap = JSON.parse(savedMapString);
-      setStateFromMap(map);
+    const savedMap = GameStorage.getGameMap(mapId);
+    if (savedMap) {
+      setStateFromMap(savedMap);
     } else {
       const tiles: Tile[] = [];
       for (let y = 0; y < 25; y += 1) {
@@ -130,7 +119,7 @@ function Editor() {
       setId((Date.now() + '').slice(-6));
       setTiles(tiles);
     }
-  }, [gameId]);
+  }, [mapId]);
 
   useEffect(() => {
     const map = getMapFromState();
@@ -140,21 +129,20 @@ function Editor() {
 
   const save = () => {
     const newMap = getMapFromState();
-    localStorage.setItem(`gameMap-${newMap.id}`, JSON.stringify(newMap));
-    if (gameId !== newMap.id) {
+    GameStorage.setGameMap(newMap);
+    if (mapId !== newMap.id) {
       navigate(`/editor/${newMap.id}`);
     }
   };
 
   const remove = () => {
-    localStorage.removeItem(`gameMap-${gameId}`);
+    GameStorage.removeGameMap(mapId);
     navigate(`/editor`);
   };
 
   const startGame = async () => {
-    console.log('TODO: START GAME CALLED');
     const newMap = getMapFromState();
-    localStorage.setItem(`gameMap-${newMap.id}`, JSON.stringify(newMap));
+    GameStorage.setGameMap(newMap);
 
     const response = await fetch(`http://${BASE_URL}/game`, {
       method: 'POST',
@@ -165,72 +153,52 @@ function Editor() {
     });
     const { gameId } = await response.json();
     navigate(`/${gameId}`);
-    // TODO: Post the game map to backend.
-    //  -> on success navigate to the game-page.
   };
 
-  // TODO: Refactor everything. Remove copy-paste shit.
   return (
     <>
-      <div tabIndex={-1} className='canvas-container'>
-        <Canvas index={1} ref={mapRef} />
-        <Canvas index={2} ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
-      </div>
+      <CanvasGroup>
+        <Canvas ref={mapRef} />
+        <Canvas ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
+      </CanvasGroup>
 
-      <div style={{ width: '100%', marginTop: 10 }}>
-        <div style={{ display: 'inline-block' }}>
+      <Row>
+        {structureTypes.map((st, i) => (
           <button
-            style={{ marginLeft: 10, color: structureIdx === 0 ? 'blue' : undefined }}
-            onClick={() => setStructureIdx(0)}
+            key={`${st}-button`}
+            style={{ marginLeft: 10, color: structureIdx === i ? 'blue' : undefined }}
+            onClick={() => setStructureIdx(i)}
           >
-            Seinä
+            {st}
           </button>
-          <button
-            style={{ marginLeft: 10, color: structureIdx === 1 ? 'blue' : undefined }}
-            onClick={() => setStructureIdx(1)}
-          >
-            Tappi
-          </button>
-          <button
-            style={{ marginLeft: 10, color: structureIdx === 2 ? 'blue' : undefined }}
-            onClick={() => setStructureIdx(2)}
-          >
-            Pyyhi
-          </button>
+        ))}
 
-          <button style={{ marginLeft: 50 }} disabled={undoIndex === 1} onClick={() => goBack(1)}>
-            Undo
-          </button>
-          <button style={{ marginLeft: 1 }} disabled={undoIndex === maxUndoIndex} onClick={() => goForward(2)}>
-            Redo
-          </button>
-        </div>
-      </div>
-      <div style={{ width: '100%', marginTop: 10 }}>
-        <div style={{ display: 'inline-block', marginLeft: 10 }}>
-          <strong>Kartan nimi</strong>
-          <input style={{ marginLeft: 10 }} value={mapName} onChange={({ target }) => setMapName(target.value)}></input>
-        </div>
-      </div>
-      <div style={{ width: '100%', marginTop: 10 }}>
-        <div style={{ display: 'inline-block', marginLeft: 10 }}>
-          <strong>Tekijän nimi</strong>
-          <input style={{ marginLeft: 10 }} value={creator} onChange={({ target }) => setCreator(target.value)}></input>
-        </div>
-      </div>
-      <div style={{ width: '100%', marginTop: 10 }}>
-        <div style={{ display: 'inline-block' }}>
-          <button style={{ marginLeft: 10 }} onClick={() => save()}>
-            Tallenna
-          </button>
-          <button style={{ marginLeft: 10 }} onClick={() => remove()}>
-            Poista
-          </button>
-          <button style={{ marginLeft: 10 }} onClick={() => startGame()}>
-            Käynnistä peli
-          </button>
-        </div>
-      </div>
+        <button style={{ marginLeft: 50 }} disabled={undoIndex === 1} onClick={() => goBack(1)}>
+          Undo
+        </button>
+        <button style={{ marginLeft: 1 }} disabled={undoIndex === maxUndoIndex} onClick={() => goForward(2)}>
+          Redo
+        </button>
+      </Row>
+      <Row>
+        <strong>Kartan nimi</strong>
+        <input style={{ marginLeft: 10 }} value={mapName} onChange={({ target }) => setMapName(target.value)}></input>
+      </Row>
+      <Row>
+        <strong>Tekijän nimi</strong>
+        <input style={{ marginLeft: 10 }} value={creator} onChange={({ target }) => setCreator(target.value)}></input>
+      </Row>
+      <Row>
+        <button style={{ marginLeft: 10 }} onClick={() => save()}>
+          Tallenna
+        </button>
+        <button style={{ marginLeft: 10 }} onClick={() => remove()}>
+          Poista
+        </button>
+        <button style={{ marginLeft: 10 }} onClick={() => startGame()}>
+          Käynnistä peli
+        </button>
+      </Row>
     </>
   );
 }

@@ -1,8 +1,7 @@
-import { calcEndpoint } from './helpers';
 import { Ball, CanvasMouseEvent, GameEvent } from '../types';
+import { calcEndpoint } from '../utils/calculation';
+import { MAX_LINE_LEN } from '../utils/constants';
 import CanvasController from './CanvasController';
-
-const MAX_LINE_LEN = 1000;
 
 type OnShotHandler = (action: GameEvent) => void;
 
