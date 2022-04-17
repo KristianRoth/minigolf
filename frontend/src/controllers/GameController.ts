@@ -1,8 +1,7 @@
-import { calcEndpoint } from './helpers';
 import { Ball, CanvasMouseEvent, GameEvent } from '../types';
+import { calcEndpoint } from '../utils/calculation';
+import { MAX_LINE_LEN } from '../utils/constants';
 import CanvasController from './CanvasController';
-
-const MAX_LINE_LEN = 1000;
 
 type OnShotHandler = (action: GameEvent) => void;
 
@@ -43,7 +42,7 @@ class GameController extends CanvasController {
       const ball = this.balls.find((b) => b.id === this.playerId);
       if (ball) {
         const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
-        this.renderLine(ball, point);
+        this.drawLine(ball, point);
       }
     }
   }

@@ -39,11 +39,3 @@ export type GameEvent =
       type: 'CHAT';
       message: string;
     };
-
-// type Join = BaseEvent & {
-//   bar: string;
-// }
-
-// type Leave = BaseEvent & {
-//   bar: string;
-// }

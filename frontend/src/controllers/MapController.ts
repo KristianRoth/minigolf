@@ -1,4 +1,4 @@
-import { GameMap, Rotation } from '../types';
+import { GameMap } from '../types';
 import CanvasController from './CanvasController';
 
 class MapController extends CanvasController {
@@ -41,6 +41,8 @@ class MapController extends CanvasController {
       const tile = tiles[i];
       if (tile.structure.type === 'Wall') {
         this.renderWall(tile.pos, false);
+      } else if (tile.structure.type === 'Circle') {
+        this.renderCircleWall(tile.pos, false);
       } else if (tile.structure.type === 'Hole') {
         this.renderHole(tile.pos);
       } else if (tile.structure.type === 'Start') {

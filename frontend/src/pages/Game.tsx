@@ -1,29 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import GameController from '../controllers/GameController';
+import MapController from '../controllers/MapController';
+import useCanvasController from '../hooks/useCanvasController';
 import useWebsocket from '../hooks/useWebsocket';
 import { CanvasMouseEvent, GameEvent } from '../types';
-import GameController from '../game/GameController';
-import MapController from '../game/MapController';
-import Canvas from './Canvas';
-import useCanvasController from '../hooks/useCanvasController';
+import { BASE_URL, GameStorage } from '../utils/api';
+import Canvas from '../components/Canvas';
+import CanvasGroup from '../components/CanvasGroup';
+import Row from '../components/Row';
 
-const BASE_URL = (() => {
-  if (process.env.NODE_ENV === 'development') {
-    return 'localhost:8080';
-  }
-  return window.location.host;
-})();
-
-const colors = ['red', 'blue', 'cyan', 'black', 'green', 'yellow', 'orange', 'maroon'];
+const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
 const getUrl = (gameId: string) => {
-  let name = localStorage.getItem(`game-${gameId}-name`);
-  if (!name) {
-    name = `Anon-${(Date.now() + '').slice(-7)}`;
-    localStorage.setItem(`game-${gameId}-name`, name);
-  }
-
-  const id = localStorage.getItem(`game-${gameId}-id`);
+  const name = GameStorage.getPlayerName(gameId);
+  const id = GameStorage.getPlayerId(gameId);
 
   let url = `ws://${BASE_URL}/game/${gameId}?name=${name}`;
   if (id) {
@@ -37,10 +28,12 @@ function Game() {
   const [playerId, setPlayerId] = useState(0);
   const [balls, setBalls] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
+  const [mapId, setMapId] = useState<string>('');
 
   const [mapRef, mapController] = useCanvasController(MapController);
   const [gameRef, gameController] = useCanvasController(GameController);
 
+  const navigate = useNavigate();
   const { gameId = '' } = useParams();
 
   const onMouseDown = (event: CanvasMouseEvent) => {
@@ -80,10 +73,11 @@ function Game() {
           gameController?.setBalls(newBalls);
           setBalls(newBalls);
         } else if (event.type === 'INIT') {
-          localStorage.setItem(`game-${gameId}-id`, event.playerId + '');
+          GameStorage.setPlayerId(gameId, event.playerId.toString());
           gameController?.setPlayerId(event.playerId);
           mapController?.setGameMap(event.gameMap);
           setPlayerId(event.playerId);
+          setMapId(event.gameMap.id);
         } else if (event.type === 'TURN_BEGIN') {
           gameController?.setHasTurn(true);
         }
@@ -112,34 +106,41 @@ function Game() {
 
   const disconnect = () => {
     close();
-    localStorage.removeItem(`game-${gameId}-id`);
-    localStorage.removeItem(`game-${gameId}-name`);
+    GameStorage.removePlayerId(gameId);
+    GameStorage.removePlayerName(gameId);
     window.location.reload();
+  };
+
+  const goToEdit = () => {
+    navigate(`/editor/${mapId}`);
   };
 
   return (
     <>
-      <div tabIndex={-1} className='canvas-container'>
-        <Canvas index={1} ref={mapRef} />
-        <Canvas index={2} ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
-      </div>
+      <CanvasGroup>
+        <Canvas ref={mapRef} />
+        <Canvas ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
+      </CanvasGroup>
 
-      <div style={{ width: '100%', marginTop: 10 }}>
-        <div style={{ display: 'inline-block' }}>
-          <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
-            Toggle debug
-          </button>
-          <button style={{ marginLeft: 10 }} onClick={() => disconnect()}>
-            Disconnect
-          </button>
-        </div>
+      <Row>
+        <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
+          Toggle debug
+        </button>
+        <button style={{ marginLeft: 10 }} onClick={() => disconnect()}>
+          Disconnect
+        </button>
+        <button style={{ marginLeft: 10 }} onClick={() => goToEdit()}>
+          Edit
+        </button>
+      </Row>
 
-        {debug && (
+      {debug && (
+        <Row>
           <pre style={{ width: '50%', marginLeft: 10 }}>
             {JSON.stringify({ playerId, len: balls.length, balls }, undefined, 2)}
           </pre>
-        )}
-      </div>
+        </Row>
+      )}
     </>
   );
 }

@@ -1,7 +1,6 @@
-import { GameMap, Point, StructureType, CanvasMouseEvent, Rotation } from '../types';
+import { CanvasMouseEvent, GameMap, Point, Rotation, StructureType } from '../types';
+import { BLOCK_SIZE } from '../utils/constants';
 import CanvasController from './CanvasController';
-
-const BLOCK_SIZE = 100;
 
 type SetTileHandler = (struct: StructureType, point: Point, rotation: Rotation) => void;
 
@@ -9,7 +8,7 @@ class EditorController extends CanvasController {
   protected gameMap: GameMap | null = null;
   private structureType: StructureType = 'None';
   private tilePosition: Point | null = null;
-  private mouseButtonElement: StructureType | null = null;
+  private draggedElement: StructureType | null = null;
   private rotation: Rotation = 'North';
   private rotationIdx = 0;
   constructor(canvas: HTMLCanvasElement) {
@@ -18,24 +17,37 @@ class EditorController extends CanvasController {
 
   nextRotation() {
     this.rotationIdx++;
-    return (['North', 'East', 'South', 'West'] as Rotation[])[this.rotationIdx%4]
+    return (['North', 'East', 'South', 'West'] as Rotation[])[this.rotationIdx % 4];
+  }
+
+  previousRotation() {
+    this.rotationIdx--;
+    return (['North', 'East', 'South', 'West'] as Rotation[])[this.rotationIdx % 4];
   }
 
   handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
+    event.preventDefault();
+    event.stopPropagation();
     if (!this.tilePosition) return;
     if (event.button === 0) {
+      // Primary
       setTile(this.structureType, this.tilePosition, this.rotation);
-      this.mouseButtonElement = this.structureType;
+      this.draggedElement = this.structureType;
     } else if (event.button === 2) {
-      this.mouseButtonElement = 'None';
+      // Secondary
+      this.draggedElement = 'None';
       setTile('None', this.tilePosition, 'North');
+    } else if (event.button === 3) {
+      // Side
+      this.rotation = this.previousRotation();
     } else if (event.button === 4) {
+      // Side
       this.rotation = this.nextRotation();
     }
   }
 
   handleMouseUp() {
-    this.mouseButtonElement = null;
+    this.draggedElement = null;
   }
 
   handleMouseMove(event: CanvasMouseEvent, setTile: SetTileHandler) {
@@ -48,9 +60,9 @@ class EditorController extends CanvasController {
       this.tilePosition = { x: posX, y: posY };
     }
 
-    if (this.mouseButtonElement && this.tilePosition) {
+    if (this.draggedElement && this.tilePosition) {
       if (x !== this.tilePosition.x || y !== this.tilePosition.y) {
-        setTile(this.mouseButtonElement, this.tilePosition, this.rotation);
+        setTile(this.draggedElement, this.tilePosition, this.rotation);
       }
     }
   }
@@ -61,17 +73,21 @@ class EditorController extends CanvasController {
     this.context.fillText(`x: ${Math.round(x)}, y: ${Math.round(y)}`, 7, 0.75 * this.blockSize);
   }
 
+  protected renderEraser(point: Point) {
+    this.context.save();
+    this.context.fillStyle = '#fff';
+    this.context.strokeStyle = '#fff';
+    this.drawSquare(point);
+    this.context.restore();
+  }
+
   protected render() {
     this.clear();
 
     if (this.tilePosition) {
       const type = this.structureType;
-      if (type === 'None' || this.mouseButtonElement === 'None') {
-        this.context.save();
-        this.context.fillStyle = '#fff';
-        this.context.strokeStyle = '#fff';
-        this.renderSquare(this.tilePosition);
-        this.context.restore();
+      if (type === 'None' || this.draggedElement === 'None') {
+        this.renderEraser(this.tilePosition);
       } else if (type === 'Wall') {
         this.renderWall(this.tilePosition);
       } else if (type === 'Circle') {
