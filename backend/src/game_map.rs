@@ -20,6 +20,7 @@ pub struct GameMap {
 #[serde(rename_all = "camelCase")]
 pub struct GameMapTile {
     pub pos: VectorF64,
+    #[serde(rename(serialize = "ground", deserialize = "ground"))]
     ground_type: GroundType,
     #[serde(rename(serialize = "structure", deserialize = "structure"))]
     structure_type: StructureType,
@@ -29,6 +30,9 @@ pub struct GameMapTile {
 #[serde(tag = "type")]
 pub enum GroundType {
     Grass,
+    Water,
+    Gravel,
+    GravelHeavy,
     Slope(Rotation),
     SlopeDiagonal(Rotation)
 }
@@ -151,11 +155,17 @@ impl Collider {
 }
 
 impl GroundType {
-    pub fn do_effect(&self, ball: &mut Ball) {
+    pub fn do_effect(&self, ball: &mut Ball, start: &Point) {
         match self {
             GroundType::Slope(rot) => ball.vel = ball.vel.add(&VectorF64::new(0.0, -1.0).rotate(&VectorF64::new(0.0, 0.0), rot)),
             GroundType::SlopeDiagonal(rot) => ball.vel = ball.vel.add(&VectorF64::new(-1.0, -1.0).rotate(&VectorF64::new(0.0, 0.0), rot)),
-            _ => return,
+            GroundType::Gravel => ball.vel = ball.vel.multi(0.8),
+            GroundType::GravelHeavy => ball.vel = ball.vel.multi(0.5),
+            GroundType::Water => {
+                ball.pos = start.clone();
+                ball.vel = VectorF64::new(0.0, 0.0);
+            }
+            GroundType::Grass => return,
         }
     }
 }
@@ -268,7 +278,7 @@ impl GameMap {
         let y = (ball.pos.y as usize) / 100;
 
         let tile = self.tiles[x][y].clone();
-        tile.ground_type.do_effect(ball)
+        tile.ground_type.do_effect(ball, &self.get_start_location())
     }
 
     pub fn collide(&self, ball: &mut Ball) -> Option<SpecialEffect> {
