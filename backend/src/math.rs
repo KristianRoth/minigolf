@@ -95,7 +95,19 @@ impl VectorF64 {
 
     pub fn angle(&self) -> f64 {
         let up = VectorF64::new(0.0, 1.0);
-        self.dot_product(&up) / (up.length() * self.length()).acos()
+        (self.dot_product(&up) / (up.length() * self.length())).acos()
+    }
+    
+    pub fn vector_to(&self, to: &VectorF64) -> VectorF64 {
+        to.sub(self)
+    }
+
+    pub fn cross_z(&self, b: &VectorF64) -> f64 {
+        self.y*b.x - self.x*b.y
+    }
+
+    pub fn is_between(&self, a: &VectorF64, c: &VectorF64) -> bool {
+        a.cross_z(self)*a.cross_z(c) >= 0.0 && c.cross_z(self)*c.cross_z(a) >= 0.0
     }
 }
 
@@ -142,11 +154,46 @@ impl Line {
     }
 }
 
+pub struct Arc {
+    pos: VectorF64,
+    radius: f64,
+    start: VectorF64,
+    end: VectorF64,
+}
+
+impl Arc {
+    pub fn new(pos: VectorF64, radius: f64, start: VectorF64, end: VectorF64) -> Self{
+        Self {
+            pos: pos,
+            radius: radius,
+            start: start,
+            end: end,
+        }
+    }
+
+    pub fn project_point(&self, ball: &VectorF64, rot: &Rotation) -> Option<VectorF64> {
+        let zero = VectorF64::new(0.0, 0.0);
+        let dist_vector = ball.vector_to(&self.pos);
+        let dist_unit = dist_vector.get_unit();
+        let closer = dist_unit.multi(-self.radius);
+        if closer.is_between(&self.start.rotate(&zero, rot), &self.end.rotate(&zero, rot)) {
+            return Some(self.pos.add(&closer));
+        }
+        let further = dist_unit.multi(self.radius);
+        if further.is_between(&self.start.rotate(&zero, rot), &self.end.rotate(&zero, rot)) {
+            return Some(self.pos.add(&further));
+        }
+        return None;
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
+
     use crate::game_map::Rotation;
 
-    use super::{Line, VectorF64};
+    use super::{Line, VectorF64, Arc};
 
     // add
     #[test]
@@ -248,4 +295,14 @@ mod tests {
         println!("{:?}", a.rotate(&mid, &Rotation::West));
 
     }
+
+    #[test]
+    fn test_arc() {
+        let mid = VectorF64::new(50.0, 50.0);
+        let arc = Arc::new(VectorF64::new(100.0, 100.0), 100.0, mid, mid);
+        println!("{:?}", arc.project_point(&mid, &Rotation::North));
+
+    }
+
+
 }
