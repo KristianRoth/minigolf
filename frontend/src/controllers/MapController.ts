@@ -15,49 +15,19 @@ class MapController extends CanvasController {
     // Ground pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      if (tile.ground.type === 'Grass') {
-        this.renderGrass(tile.pos);
-      } else if (tile.ground.type === 'Slope') {
-        this.renderSlope(tile.pos, tile.ground.rotation);
-      } else if (tile.ground.type === 'SlopeDiagonal') {
-        this.renderSlope(tile.pos, tile.ground.rotation, true);
-      }
+      this.renderGround(tile.pos, tile.ground.type, (tile.ground as any).rotation);
     }
 
     // Shadow pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      if (tile.structure.type === 'Wall') {
-        this.renderWall(tile.pos);
-      } else if (tile.structure.type === 'Circle') {
-        this.renderCircleWall(tile.pos);
-      } else if (tile.structure.type === 'Wedge') {
-        this.renderWedge(tile.pos, tile.structure.rotation);
-      } else if (tile.structure.type === 'RoundedCorner') {
-        this.renderRoundedCorner(tile.pos, tile.structure.rotation);
-      } else if (tile.structure.type === 'InvertedRoundedCorner') {
-        this.renderInvertedRoundedCorner(tile.pos, tile.structure.rotation);
-      }
+      this.renderStructure(tile.pos, tile.structure.type, (tile.structure as any).rotation, true);
     }
 
     // Structure pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      if (tile.structure.type === 'Wall') {
-        this.renderWall(tile.pos, false);
-      } else if (tile.structure.type === 'Circle') {
-        this.renderCircleWall(tile.pos, false);
-      } else if (tile.structure.type === 'Hole') {
-        this.renderHole(tile.pos);
-      } else if (tile.structure.type === 'Start') {
-        this.renderStart(tile.pos);
-      } else if (tile.structure.type === 'Wedge') {
-        this.renderWedge(tile.pos, tile.structure.rotation, false);
-      } else if (tile.structure.type === 'RoundedCorner') {
-        this.renderRoundedCorner(tile.pos, tile.structure.rotation, false);
-      } else if (tile.structure.type === 'InvertedRoundedCorner') {
-        this.renderInvertedRoundedCorner(tile.pos, tile.structure.rotation, false);
-      }
+      this.renderStructure(tile.pos, tile.structure.type, (tile.structure as any).rotation);
     }
   }
 

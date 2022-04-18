@@ -1,4 +1,4 @@
-import { Ball, CanvasMouseEvent, Point, Rotation } from '../types';
+import { Ball, CanvasMouseEvent, Ground, Point, Rotation, Structure } from '../types';
 import { clamp } from '../utils/calculation';
 import { GAME_WIDTH, RATIO, BALL_RADIUS, CIRCLE_RADIUS, BLOCK_SIZE, HALF_BLOCK } from '../utils/constants';
 
@@ -8,6 +8,9 @@ const colors = {
   hole: '#000000',
   start: '#fc0303',
   grass: '#13a713',
+  gravel: '#a5c400',
+  gravelHeavy: '#a97200',
+  water: '#0002fd',
   slope: {
     North: '#34c42f',
     East: '#176314',
@@ -42,6 +45,23 @@ class CanvasController {
     const x = this.dc(event.clientX - rect.left);
     const y = this.dc(event.clientY - rect.top);
     return { x, y };
+  }
+
+  protected get blockSize() {
+    return this.c(BLOCK_SIZE);
+  }
+
+  protected getRotationAngle(rot: Rotation) {
+    switch (rot) {
+      case 'North':
+        return 0;
+      case 'East':
+        return Math.PI / 2;
+      case 'South':
+        return Math.PI;
+      case 'West':
+        return -Math.PI / 2;
+    }
   }
 
   protected onResize() {
@@ -220,10 +240,10 @@ class CanvasController {
     });
   }
 
-  protected renderGrass(point: Point) {
+  protected renderStaticGround(point: Point, color: string) {
     this.renderElement(() => {
-      this.context.fillStyle = colors.grass;
-      this.context.strokeStyle = colors.grass;
+      this.context.fillStyle = color;
+      this.context.strokeStyle = color;
       this.drawSquare(point);
     });
   }
@@ -252,43 +272,60 @@ class CanvasController {
     });
   }
 
-  // protected renderSlopeDiagonal(point: Point, rotation: Rotation) {
-  //   const [middleX, middleY] = [this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK)];
-  //   const quarterBlock = this.c(HALF_BLOCK / 2);
-
-  //   this.renderElement(() => {
-  //     this.context.fillStyle = colors.slope[rotation];
-  //     this.context.strokeStyle = colors.slope[rotation];
-  //     this.drawSquare(point);
-  //     //
-  //     this.context.translate(middleX, middleY);
-  //     this.context.rotate(this.getRotationAngle(rotation));
-  //     this.context.translate(-middleX, -middleY);
-  //     // Draw line
-  //     this.context.fillStyle = '#000';
-  //     this.context.strokeStyle = '#000';
-  //     this.context.beginPath();
-  //     this.context.moveTo(middleX - quarterBlock, middleY);
-  //     this.context.lineTo(middleX, middleY + quarterBlock);
-  //     this.context.lineTo(middleX + quarterBlock, middleY);
-  //     this.context.stroke();
-  //   });
-  // }
-
-  protected get blockSize() {
-    return this.c(BLOCK_SIZE);
+  protected renderStructure(
+    point: Point,
+    structureType: Structure['type'],
+    rotation: Rotation = 'North',
+    doShadow = false
+  ) {
+    switch (structureType) {
+      case 'Start':
+        this.renderStart(point);
+        return;
+      case 'Hole':
+        this.renderHole(point);
+        return;
+      case 'Circle':
+        this.renderCircleWall(point, doShadow);
+        return;
+      case 'Wall':
+        this.renderWall(point, doShadow);
+        return;
+      case 'Wedge':
+        this.renderWedge(point, rotation, doShadow);
+        return;
+      case 'RoundedCorner':
+        this.renderRoundedCorner(point, rotation, doShadow);
+        return;
+      case 'InvertedRoundedCorner':
+        this.renderInvertedRoundedCorner(point, rotation, doShadow);
+        return;
+      case 'Portal':
+        console.log('TODO: IMPLEMENT PORTAL');
+        return;
+    }
   }
 
-  protected getRotationAngle(rot: Rotation) {
-    switch (rot) {
-      case 'North':
-        return 0;
-      case 'East':
-        return Math.PI / 2;
-      case 'South':
-        return Math.PI;
-      case 'West':
-        return -Math.PI / 2;
+  protected renderGround(point: Point, groundType: Ground['type'], rotation: Rotation = 'North') {
+    switch (groundType) {
+      case 'Grass':
+        this.renderStaticGround(point, colors.grass);
+        return;
+      case 'Water':
+        this.renderStaticGround(point, colors.water);
+        return;
+      case 'Gravel':
+        this.renderStaticGround(point, colors.gravel);
+        return;
+      case 'GravelHeavy':
+        this.renderStaticGround(point, colors.gravelHeavy);
+        return;
+      case 'Slope':
+        this.renderSlope(point, rotation, false);
+        return;
+      case 'SlopeDiagonal':
+        this.renderSlope(point, rotation, true);
+        return;
     }
   }
 

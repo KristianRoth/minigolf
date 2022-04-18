@@ -100,30 +100,9 @@ class EditorController extends CanvasController {
     }
 
     if (mode === 'Ground') {
-      if (groundType === 'Grass') {
-        this.renderGrass(this.tilePosition);
-      } else if (groundType === 'Slope') {
-        this.renderSlope(this.tilePosition, this.rotation);
-      } else if (groundType === 'SlopeDiagonal') {
-        this.renderSlope(this.tilePosition, this.rotation, true);
-      }
-      return;
-    }
-
-    if (structureType === 'Wall') {
-      this.renderWall(this.tilePosition);
-    } else if (structureType === 'Circle') {
-      this.renderCircleWall(this.tilePosition);
-    } else if (structureType === 'Hole') {
-      this.renderHole(this.tilePosition);
-    } else if (structureType === 'Start') {
-      this.renderStart(this.tilePosition);
-    } else if (structureType === 'Wedge') {
-      this.renderWedge(this.tilePosition, this.rotation);
-    } else if (structureType === 'RoundedCorner') {
-      this.renderRoundedCorner(this.tilePosition, this.rotation);
-    } else if (structureType === 'InvertedRoundedCorner') {
-      this.renderInvertedRoundedCorner(this.tilePosition, this.rotation);
+      this.renderGround(this.tilePosition, groundType, this.rotation);
+    } else {
+      this.renderStructure(this.tilePosition, structureType, this.rotation);
     }
   }
 
