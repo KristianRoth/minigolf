@@ -8,7 +8,13 @@ const colors = {
   hole: '#000000',
   start: '#fc0303',
   grass: '#13a713',
-};
+  slope: {
+    North: '#34c42f',
+    East: '#176314',
+    South: '#187814',
+    West: '#30d42a',
+  },
+} as const;
 
 class CanvasController {
   protected animationReqId: number | null = null;
@@ -221,6 +227,53 @@ class CanvasController {
       this.drawSquare(point);
     });
   }
+
+  protected renderSlope(point: Point, rotation: Rotation, isDiagonal = false) {
+    const [middleX, middleY] = [this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK)];
+    const rotationAngle = this.getRotationAngle(rotation) - (isDiagonal ? Math.PI / 4 : 0);
+    const quarterBlock = this.c(HALF_BLOCK / 2);
+
+    this.renderElement(() => {
+      this.context.fillStyle = colors.slope[rotation];
+      this.context.strokeStyle = colors.slope[rotation];
+      this.drawSquare(point);
+      //
+      this.context.translate(middleX, middleY);
+      this.context.rotate(rotationAngle);
+      this.context.translate(-middleX, -middleY);
+      // Draw line
+      this.context.fillStyle = colors.wallBorder;
+      this.context.strokeStyle = colors.wallBorder;
+      this.context.beginPath();
+      this.context.moveTo(middleX - quarterBlock, middleY);
+      this.context.lineTo(middleX, middleY - quarterBlock);
+      this.context.lineTo(middleX + quarterBlock, middleY);
+      this.context.stroke();
+    });
+  }
+
+  // protected renderSlopeDiagonal(point: Point, rotation: Rotation) {
+  //   const [middleX, middleY] = [this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK)];
+  //   const quarterBlock = this.c(HALF_BLOCK / 2);
+
+  //   this.renderElement(() => {
+  //     this.context.fillStyle = colors.slope[rotation];
+  //     this.context.strokeStyle = colors.slope[rotation];
+  //     this.drawSquare(point);
+  //     //
+  //     this.context.translate(middleX, middleY);
+  //     this.context.rotate(this.getRotationAngle(rotation));
+  //     this.context.translate(-middleX, -middleY);
+  //     // Draw line
+  //     this.context.fillStyle = '#000';
+  //     this.context.strokeStyle = '#000';
+  //     this.context.beginPath();
+  //     this.context.moveTo(middleX - quarterBlock, middleY);
+  //     this.context.lineTo(middleX, middleY + quarterBlock);
+  //     this.context.lineTo(middleX + quarterBlock, middleY);
+  //     this.context.stroke();
+  //   });
+  // }
 
   protected get blockSize() {
     return this.c(BLOCK_SIZE);

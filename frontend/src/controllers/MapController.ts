@@ -15,8 +15,12 @@ class MapController extends CanvasController {
     // Ground pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      if (tile.groundType === 'Grass') {
+      if (tile.ground.type === 'Grass') {
         this.renderGrass(tile.pos);
+      } else if (tile.ground.type === 'Slope') {
+        this.renderSlope(tile.pos, tile.ground.rotation);
+      } else if (tile.ground.type === 'SlopeDiagonal') {
+        this.renderSlope(tile.pos, tile.ground.rotation, true);
       }
     }
 
@@ -29,9 +33,9 @@ class MapController extends CanvasController {
         this.renderCircleWall(tile.pos);
       } else if (tile.structure.type === 'Wedge') {
         this.renderWedge(tile.pos, tile.structure.rotation);
-      } else if (tile.structure.type === 'Rounded_Corner') {
+      } else if (tile.structure.type === 'RoundedCorner') {
         this.renderRoundedCorner(tile.pos, tile.structure.rotation);
-      } else if (tile.structure.type === 'Inverted_Rounded_Corner') {
+      } else if (tile.structure.type === 'InvertedRoundedCorner') {
         this.renderInvertedRoundedCorner(tile.pos, tile.structure.rotation);
       }
     }
@@ -49,9 +53,9 @@ class MapController extends CanvasController {
         this.renderStart(tile.pos);
       } else if (tile.structure.type === 'Wedge') {
         this.renderWedge(tile.pos, tile.structure.rotation, false);
-      } else if (tile.structure.type === 'Rounded_Corner') {
+      } else if (tile.structure.type === 'RoundedCorner') {
         this.renderRoundedCorner(tile.pos, tile.structure.rotation, false);
-      } else if (tile.structure.type === 'Inverted_Rounded_Corner') {
+      } else if (tile.structure.type === 'InvertedRoundedCorner') {
         this.renderInvertedRoundedCorner(tile.pos, tile.structure.rotation, false);
       }
     }

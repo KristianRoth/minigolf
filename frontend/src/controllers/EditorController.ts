@@ -1,17 +1,39 @@
-import { CanvasMouseEvent, GameMap, Point, Rotation, StructureType } from '../types';
+import { CanvasMouseEvent, GameMap, Ground, Point, Rotation, StructureType, Tile } from '../types';
 import { BLOCK_SIZE } from '../utils/constants';
 import CanvasController from './CanvasController';
 
-type SetTileHandler = (struct: StructureType, point: Point, rotation: Rotation) => void;
+type SetTileHandler = (tile: Partial<Tile>) => void;
 
 class EditorController extends CanvasController {
   protected gameMap: GameMap | null = null;
   private structureType: StructureType = 'None';
+  private groundType: Ground['type'] = 'Grass';
+  private mode: 'Structure' | 'Ground' = 'Structure';
   private tilePosition: Point | null = null;
-  private draggedElement: StructureType | null = null;
+  private dragStatus: 'insert' | 'delete' | null = null;
   private rotation: Rotation = 'North';
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
+  }
+
+  private getTile(): Partial<Tile> {
+    const isDelete = this.dragStatus === 'delete';
+    if (this.mode === 'Structure') {
+      return {
+        pos: this.tilePosition as Point,
+        structure: {
+          type: isDelete ? 'None' : this.structureType,
+          rotation: isDelete ? 'North' : this.rotation,
+        },
+      };
+    }
+    return {
+      pos: this.tilePosition as Point,
+      ground: {
+        type: isDelete ? 'Grass' : this.groundType,
+        rotation: isDelete ? 'North' : this.rotation,
+      },
+    };
   }
 
   handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
@@ -20,17 +42,19 @@ class EditorController extends CanvasController {
     if (!this.tilePosition) return;
     if (event.button === 0) {
       // Primary
-      setTile(this.structureType, this.tilePosition, this.rotation);
-      this.draggedElement = this.structureType;
+      const tile = this.getTile();
+      setTile(tile);
+      this.dragStatus = 'insert';
     } else if (event.button === 2) {
       // Secondary
-      this.draggedElement = 'None';
-      setTile('None', this.tilePosition, 'North');
+      this.dragStatus = 'delete';
+      const tile = this.getTile();
+      setTile(tile);
     }
   }
 
   handleMouseUp() {
-    this.draggedElement = null;
+    this.dragStatus = null;
   }
 
   handleMouseMove(event: CanvasMouseEvent, setTile: SetTileHandler) {
@@ -43,9 +67,10 @@ class EditorController extends CanvasController {
       this.tilePosition = { x: posX, y: posY };
     }
 
-    if (this.draggedElement && this.tilePosition) {
+    if (this.dragStatus && this.tilePosition) {
       if (x !== this.tilePosition.x || y !== this.tilePosition.y) {
-        setTile(this.draggedElement, this.tilePosition, this.rotation);
+        const tile = this.getTile();
+        setTile(tile);
       }
     }
   }
@@ -64,29 +89,48 @@ class EditorController extends CanvasController {
     this.context.restore();
   }
 
+  protected renderEditorElement() {
+    const { groundType, structureType, mode } = this;
+
+    if (!this.tilePosition) return;
+
+    if (this.dragStatus === 'delete') {
+      this.renderEraser(this.tilePosition);
+      return;
+    }
+
+    if (mode === 'Ground') {
+      if (groundType === 'Grass') {
+        this.renderGrass(this.tilePosition);
+      } else if (groundType === 'Slope') {
+        this.renderSlope(this.tilePosition, this.rotation);
+      } else if (groundType === 'SlopeDiagonal') {
+        this.renderSlope(this.tilePosition, this.rotation, true);
+      }
+      return;
+    }
+
+    if (structureType === 'Wall') {
+      this.renderWall(this.tilePosition);
+    } else if (structureType === 'Circle') {
+      this.renderCircleWall(this.tilePosition);
+    } else if (structureType === 'Hole') {
+      this.renderHole(this.tilePosition);
+    } else if (structureType === 'Start') {
+      this.renderStart(this.tilePosition);
+    } else if (structureType === 'Wedge') {
+      this.renderWedge(this.tilePosition, this.rotation);
+    } else if (structureType === 'RoundedCorner') {
+      this.renderRoundedCorner(this.tilePosition, this.rotation);
+    } else if (structureType === 'InvertedRoundedCorner') {
+      this.renderInvertedRoundedCorner(this.tilePosition, this.rotation);
+    }
+  }
+
   protected render() {
     this.clear();
 
-    if (this.tilePosition) {
-      const type = this.structureType;
-      if (type === 'None' || this.draggedElement === 'None') {
-        this.renderEraser(this.tilePosition);
-      } else if (type === 'Wall') {
-        this.renderWall(this.tilePosition);
-      } else if (type === 'Circle') {
-        this.renderCircleWall(this.tilePosition);
-      } else if (type === 'Hole') {
-        this.renderHole(this.tilePosition);
-      } else if (type === 'Start') {
-        this.renderStart(this.tilePosition);
-      } else if (type === 'Wedge') {
-        this.renderWedge(this.tilePosition, this.rotation);
-      } else if (type === 'Rounded_Corner') {
-        this.renderRoundedCorner(this.tilePosition, this.rotation);
-      } else if (type === 'Inverted_Rounded_Corner') {
-        this.renderInvertedRoundedCorner(this.tilePosition, this.rotation);
-      }
-    }
+    this.renderEditorElement();
     this.renderCursor();
     this.renderStatus();
   }
@@ -102,6 +146,14 @@ class EditorController extends CanvasController {
 
   setRotationType(rotation: Rotation) {
     this.rotation = rotation;
+  }
+
+  setGroundType(groundType: Ground['type']) {
+    this.groundType = groundType;
+  }
+
+  setMode(mode: 'Structure' | 'Ground') {
+    this.mode = mode;
   }
 }
 

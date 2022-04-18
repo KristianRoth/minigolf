@@ -5,7 +5,7 @@ const empty = (): Tile[] => {
   for (let y = 0; y < 25; y += 1) {
     for (let x = 0; x < 49; x += 1) {
       tiles.push({
-        groundType: 'Grass',
+        ground: { type: 'Grass' },
         structure: {
           type: 'None',
         },
@@ -32,7 +32,7 @@ const borders = (): Tile[] => {
       if (isSpawn) type = 'Start';
       if (isHole) type = 'Hole';
       tiles.push({
-        groundType: 'Grass',
+        ground: { type: 'Grass' },
         structure: {
           type,
         },

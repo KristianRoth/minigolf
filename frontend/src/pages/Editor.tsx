@@ -4,20 +4,22 @@ import EditorController from '../controllers/EditorController';
 import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useUndoRedo from '../hooks/useUndoRedo';
-import { CanvasMouseEvent, GameMap, Point, Rotation, StructureType, structureTypes, Tile } from '../types';
+import { CanvasMouseEvent, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
 import { BASE_URL, GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
 import templates from '../utils/templates';
 
-const rotations: Rotation[] = ['North', 'East', 'South', 'West'];
-
 function Editor() {
   const [id, setId] = useState('');
   const [mapName, setMapName] = useState<string>('');
   const [creator, setCreator] = useState<string>('');
+
+  // TODO: Put these into an editor-state object.
+  const [mode, setMode] = useState<'Structure' | 'Ground'>('Structure');
   const [structureIdx, setStructureIdx] = useState<number>(0);
+  const [groundIdx, setGroundIdx] = useState<number>(0);
   const [rotationIdx, setRotationIdx] = useState<number>(0);
 
   const {
@@ -34,21 +36,17 @@ function Editor() {
   const [mapRef, mapController] = useCanvasController(MapController);
   const [editorRef, editorController] = useCanvasController(EditorController);
 
-  const setTile = (struct: StructureType, position: Point, rotation: Rotation) => {
-    if (!position) return;
-    const { x, y } = position;
-    const structure = {
-      type: struct,
-      rotation: rotation,
-    };
-    const newTiles: Tile[] = tiles.map((tile) => {
-      if (tile.pos.x === x && tile.pos.y === y) {
+  const setTile = (tile: Partial<Tile>) => {
+    if (!tile.pos) return;
+    const { x, y } = tile.pos;
+    const newTiles: Tile[] = tiles.map((t) => {
+      if (t.pos.x === x && t.pos.y === y) {
         return {
+          ...t,
           ...tile,
-          structure,
         };
       }
-      return tile;
+      return t;
     });
     setTiles(newTiles);
   };
@@ -84,10 +82,13 @@ function Editor() {
 
   useEffect(() => {
     if (!editorController) return;
-    const structure = structureTypes[structureIdx];
-    const rotation = rotations[rotationIdx];
+    const structure = STRUCTURE_TYPES[structureIdx];
+    const rotation = ROTATIONS[rotationIdx];
+    const ground = GROUND_TYPES[groundIdx];
     editorController.setStructureType(structure);
     editorController.setRotationType(rotation);
+    editorController.setGroundType(ground);
+    editorController.setMode(mode);
 
     const wheelHandler = (event: WheelEvent) => {
       event.preventDefault();
@@ -95,9 +96,12 @@ function Editor() {
       if (event.shiftKey) {
         const nextIdx = (rotationIdx + direction + 4) % 4;
         setRotationIdx(nextIdx);
-      } else {
-        const nextIdx = (structureIdx + direction + structureTypes.length) % structureTypes.length;
+      } else if (mode === 'Structure') {
+        const nextIdx = (structureIdx + direction + STRUCTURE_TYPES.length) % STRUCTURE_TYPES.length;
         setStructureIdx(nextIdx);
+      } else if (mode === 'Ground') {
+        const nextIdx = (groundIdx + direction + GROUND_TYPES.length) % GROUND_TYPES.length;
+        setGroundIdx(nextIdx);
       }
     };
 
@@ -105,7 +109,7 @@ function Editor() {
     return () => {
       document.body.removeEventListener('wheel', wheelHandler);
     };
-  }, [structureIdx, rotationIdx, editorController]);
+  }, [structureIdx, groundIdx, rotationIdx, mode, editorController]);
 
   useEffect(() => {
     const savedMap = GameStorage.getGameMap(mapId);
@@ -159,32 +163,63 @@ function Editor() {
       </CanvasGroup>
 
       <Row>
-        {structureTypes.map((st, i) => (
-          <button
-            key={`${st}-button`}
-            style={{ marginLeft: 10, color: structureIdx === i ? 'blue' : undefined }}
-            onClick={() => setStructureIdx(i)}
-          >
-            {st}
-          </button>
-        ))}
-
-        <button style={{ marginLeft: 50 }} disabled={undoIndex === 1} onClick={() => goBack(1)}>
-          Undo
+        <button
+          style={{ marginLeft: 10, color: mode === 'Structure' ? 'blue' : undefined }}
+          onClick={() => setMode('Structure')}
+        >
+          Structure
         </button>
-        <button style={{ marginLeft: 1 }} disabled={undoIndex === maxUndoIndex} onClick={() => goForward(2)}>
-          Redo
+        <button
+          style={{ marginLeft: 10, color: mode === 'Ground' ? 'blue' : undefined }}
+          onClick={() => setMode('Ground')}
+        >
+          Ground
         </button>
       </Row>
+
+      {mode === 'Structure' && (
+        <Row style={{ marginLeft: 30 }}>
+          {STRUCTURE_TYPES.map((st, i) => (
+            <button
+              key={`${st}-button`}
+              style={{ marginLeft: 10, color: structureIdx === i ? 'blue' : undefined }}
+              onClick={() => setStructureIdx(i)}
+            >
+              {st}
+            </button>
+          ))}
+        </Row>
+      )}
+
+      {mode === 'Ground' && (
+        <Row style={{ marginLeft: 30 }}>
+          {GROUND_TYPES.map((gt, i) => (
+            <button
+              key={`${gt}-button`}
+              style={{ marginLeft: 10, color: groundIdx === i ? 'blue' : undefined }}
+              onClick={() => setGroundIdx(i)}
+            >
+              {gt}
+            </button>
+          ))}
+        </Row>
+      )}
+
       <Row>
-        <strong>Kartan nimi</strong>
+        <strong style={{ marginLeft: 10 }}>Kartan nimi</strong>
         <input style={{ marginLeft: 10 }} value={mapName} onChange={({ target }) => setMapName(target.value)}></input>
       </Row>
       <Row>
-        <strong>Tekijän nimi</strong>
+        <strong style={{ marginLeft: 10 }}>Tekijän nimi</strong>
         <input style={{ marginLeft: 10 }} value={creator} onChange={({ target }) => setCreator(target.value)}></input>
       </Row>
       <Row>
+        <button style={{ marginLeft: 10 }} disabled={undoIndex === 1} onClick={() => goBack(1)}>
+          Undo
+        </button>
+        <button style={{ marginLeft: 10 }} disabled={undoIndex === maxUndoIndex} onClick={() => goForward(2)}>
+          Redo
+        </button>
         <button style={{ marginLeft: 10 }} onClick={() => save()}>
           Tallenna
         </button>

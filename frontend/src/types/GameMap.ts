@@ -1,8 +1,11 @@
 import { Point } from './GameState';
 
-const staticStructures = ['Start', 'Hole', 'Wall', 'Circle', 'Portal', 'None'] as const;
-const rotateStructures = ['Wedge', 'Rounded_Corner', 'Inverted_Rounded_Corner'] as const;
-export const structureTypes = [...staticStructures, ...rotateStructures] as const;
+export const ROTATIONS = ['North', 'East', 'South', 'West'] as const;
+export type Rotation = typeof ROTATIONS[number];
+
+const staticStructures = ['None', 'Start', 'Hole', 'Wall', 'Circle', 'Portal'] as const;
+const rotateStructures = ['Wedge', 'RoundedCorner', 'InvertedRoundedCorner'] as const;
+export const STRUCTURE_TYPES = [...staticStructures, ...rotateStructures] as const;
 
 export type StaticStructure = {
   type: typeof staticStructures[number];
@@ -11,10 +14,22 @@ export type RotateStructure = {
   type: typeof rotateStructures[number];
   rotation: Rotation;
 };
-
 export type Structure = StaticStructure | RotateStructure;
+export type StructureType = typeof STRUCTURE_TYPES[number];
 
-export type StructureType = typeof structureTypes[number];
+const staticGroundTypes = ['Grass', 'Gravel', 'GravelHeavy', 'Water'] as const;
+const rotateGroundTypes = ['Slope', 'SlopeDiagonal'] as const;
+export const GROUND_TYPES = [...staticGroundTypes, ...rotateGroundTypes] as const;
+
+export type StaticGroundType = {
+  type: typeof staticGroundTypes[number];
+};
+export type RotateGroundType = {
+  type: typeof rotateGroundTypes[number];
+  rotation: Rotation;
+};
+
+export type Ground = StaticGroundType | RotateGroundType;
 
 export type GameMap = {
   id: string;
@@ -26,12 +41,9 @@ export type GameMap = {
 
 export type Tile = {
   pos: Point;
-  groundType: GroundType;
+  ground: Ground;
   structure: Structure;
 };
-
-export type GroundType = 'Sand' | 'Grass' | 'Water';
-export type Rotation = 'North' | 'East' | 'South' | 'West';
 
 export type Score = any;
 export type Creator = any;
