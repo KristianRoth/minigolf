@@ -115,25 +115,31 @@ function Game() {
     navigate(`/editor/${mapId}`);
   };
 
+  const menu = (onClose: () => void) => (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div>
+          <button onClick={() => setDebug(!debug)}>Toggle debug</button>
+        </div>
+        <div>
+          <button onClick={() => disconnect()}>Disconnect</button>
+        </div>
+        <div>
+          <button onClick={() => goToEdit()}>Edit</button>
+        </div>
+        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'end' }}>
+          <button onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
-      <CanvasGroup>
+      <CanvasGroup menu={menu}>
         <Canvas ref={mapRef} />
         <Canvas ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
       </CanvasGroup>
-
-      <Row>
-        <button style={{ marginLeft: 10 }} onClick={() => setDebug(!debug)}>
-          Toggle debug
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={() => disconnect()}>
-          Disconnect
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={() => goToEdit()}>
-          Edit
-        </button>
-      </Row>
-
       {debug && (
         <Row>
           <pre style={{ width: '50%', marginLeft: 10 }}>

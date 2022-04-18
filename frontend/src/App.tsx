@@ -7,10 +7,11 @@ function App() {
   return (
     <div
       style={{
+        marginTop: 'auto',
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        flexDirection: 'column',
       }}
     >
       <Routes>

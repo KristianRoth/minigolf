@@ -65,11 +65,11 @@ class CanvasController {
   }
 
   protected onResize() {
-    let width = window.innerWidth - 30;
+    let width = window.innerWidth - 20;
     let height = width * RATIO;
 
     if (height > window.innerHeight) {
-      height = window.innerHeight - 60;
+      height = window.innerHeight - 20;
       width = height * (1 / RATIO);
     }
 

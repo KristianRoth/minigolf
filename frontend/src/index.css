@@ -13,6 +13,7 @@
 } */
 
 .canvas-container {
+  position: relative;
   border: 2px solid #000;
   display: grid;
 }
@@ -21,4 +22,17 @@
   grid-column: 1;
   grid-row: 1;
   cursor: none;
+}
+
+.canvas-menu {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  background-color: white;
+}
+
+.canvas-menu-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
