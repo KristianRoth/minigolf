@@ -4,13 +4,16 @@ import { CanvasMouseEvent } from '../types';
 type CanvasProps = React.HTMLProps<HTMLCanvasElement>;
 
 const Canvas = React.forwardRef<HTMLCanvasElement, CanvasProps>((props, ref) => {
+  const { style, ...rest } = props;
   const onContextMenu = useCallback((e: CanvasMouseEvent) => e.preventDefault(), []);
 
   return (
     <canvas
       ref={ref}
       className='canvas-layer'
-      style={{ zIndex: 1, ...props.style }}
+      tabIndex={-1}
+      {...rest}
+      style={{ zIndex: 1, ...style }}
       onMouseDown={props.onMouseDown}
       onMouseMove={props.onMouseMove}
       onMouseUp={props.onMouseUp}

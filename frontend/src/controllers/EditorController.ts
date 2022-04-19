@@ -1,4 +1,16 @@
-import { CanvasMouseEvent, GameMap, Ground, Point, Rotation, StructureType, Tile } from '../types';
+import {
+  CanvasMouseEvent,
+  EditorState,
+  GameMap,
+  Ground,
+  GROUND_TYPES,
+  Point,
+  Rotation,
+  ROTATIONS,
+  StructureType,
+  STRUCTURE_TYPES,
+  Tile,
+} from '../types';
 import { BLOCK_SIZE } from '../utils/constants';
 import CanvasController from './CanvasController';
 
@@ -119,20 +131,11 @@ class EditorController extends CanvasController {
     this.render();
   }
 
-  setStructureType(structureType: StructureType) {
-    this.structureType = structureType;
-  }
-
-  setRotationType(rotation: Rotation) {
-    this.rotation = rotation;
-  }
-
-  setGroundType(groundType: Ground['type']) {
-    this.groundType = groundType;
-  }
-
-  setMode(mode: 'Structure' | 'Ground') {
-    this.mode = mode;
+  setEditorState(state: EditorState) {
+    this.structureType = STRUCTURE_TYPES[state.structureIdx];
+    this.groundType = GROUND_TYPES[state.groundIdx];
+    this.rotation = ROTATIONS[state.rotationIdx];
+    this.mode = state.mode;
   }
 }
 

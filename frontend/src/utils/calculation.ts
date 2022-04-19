@@ -29,3 +29,7 @@ export const calcEndpoint = (start: Point, end: Point, maxLength: number) => {
 
   return point;
 };
+
+export const modulo = (n: number, m: number) => {
+  return ((n % m) + m) % m;
+};

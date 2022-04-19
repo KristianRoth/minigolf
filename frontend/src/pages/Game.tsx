@@ -115,25 +115,19 @@ function Game() {
     navigate(`/editor/${mapId}`);
   };
 
-  const menu = (onClose: () => void) => (
+  const menu = (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div>
-          <button onClick={() => setDebug(!debug)}>Toggle debug</button>
-        </div>
-        <div>
-          <button onClick={() => disconnect()}>Disconnect</button>
-        </div>
-        <div>
-          <button onClick={() => goToEdit()}>Edit</button>
-        </div>
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'end' }}>
-          <button onClick={onClose}>Close</button>
-        </div>
+      <div>
+        <button onClick={() => setDebug(!debug)}>Toggle debug</button>
+      </div>
+      <div>
+        <button onClick={() => disconnect()}>Disconnect</button>
+      </div>
+      <div>
+        <button onClick={() => goToEdit()}>Edit</button>
       </div>
     </>
   );
-
   return (
     <>
       <CanvasGroup menu={menu}>

@@ -1,20 +1,29 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import Canvas from '../components/Canvas';
+import CanvasGroup from '../components/CanvasGroup';
+import EditorMenu from '../components/EditorMenu';
 import EditorController from '../controllers/EditorController';
 import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useUndoRedo from '../hooks/useUndoRedo';
-import { CanvasMouseEvent, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
-import { BASE_URL, GameStorage } from '../utils/api';
-import Canvas from '../components/Canvas';
-import CanvasGroup from '../components/CanvasGroup';
-import Row from '../components/Row';
+import { CanvasMouseEvent, EditorState, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
+import { GameStorage } from '../utils/api';
+import { modulo } from '../utils/calculation';
 import templates from '../utils/templates';
 
 function Editor() {
   const [id, setId] = useState('');
   const [mapName, setMapName] = useState<string>('');
   const [creator, setCreator] = useState<string>('');
+  const {
+    state: tiles,
+    setState: setTiles,
+    index: undoIdx,
+    maxIndex: maxUndoIdx,
+    goBack,
+    goForward,
+  } = useUndoRedo<Tile[]>([]);
 
   // TODO: Put these into an editor-state object.
   const [mode, setMode] = useState<'Structure' | 'Ground'>('Structure');
@@ -22,17 +31,32 @@ function Editor() {
   const [groundIdx, setGroundIdx] = useState<number>(0);
   const [rotationIdx, setRotationIdx] = useState<number>(0);
 
-  const {
-    state: tiles,
-    setState: setTiles,
-    index: undoIndex,
-    maxIndex: maxUndoIndex,
-    goBack,
-    goForward,
-  } = useUndoRedo<Tile[]>([]);
+  const editorState: EditorState = useMemo(
+    () => ({
+      mode,
+      structureIdx,
+      groundIdx,
+      rotationIdx,
+      mapName,
+      creator,
+    }),
+    [mode, structureIdx, groundIdx, rotationIdx, mapName, creator]
+  );
+
+  const setEditorState = (newState: Partial<EditorState>) => {
+    const state = {
+      ...editorState,
+      ...newState,
+    };
+    setMode(state.mode);
+    setStructureIdx(state.structureIdx);
+    setGroundIdx(state.groundIdx);
+    setRotationIdx(state.rotationIdx);
+    setMapName(state.mapName);
+    setCreator(state.creator);
+  };
 
   const { mapId } = useParams();
-  const navigate = useNavigate();
   const [mapRef, mapController] = useCanvasController(MapController);
   const [editorRef, editorController] = useCanvasController(EditorController);
 
@@ -51,6 +75,16 @@ function Editor() {
     setTiles(newTiles);
   };
 
+  const getMapFromState = (): GameMap => {
+    return {
+      id,
+      tiles,
+      name: mapName,
+      creator,
+      highscores: [],
+    };
+  };
+
   const onMouseDown = (event: CanvasMouseEvent) => {
     editorController?.handleMouseDown(event, setTile);
   };
@@ -62,59 +96,14 @@ function Editor() {
     editorController?.handleMouseUp();
   };
 
-  const getMapFromState = (): GameMap => {
-    return {
-      id,
-      tiles,
-      name: mapName,
-      creator,
-      highscores: [],
-    };
-  };
-
-  const setStateFromMap = (gameMap: GameMap) => {
-    const { id, tiles, name, creator } = gameMap;
-    setId(id);
-    setTiles(tiles);
-    setMapName(name);
-    setCreator(creator);
-  };
-
-  useEffect(() => {
-    if (!editorController) return;
-    const structure = STRUCTURE_TYPES[structureIdx];
-    const rotation = ROTATIONS[rotationIdx];
-    const ground = GROUND_TYPES[groundIdx];
-    editorController.setStructureType(structure);
-    editorController.setRotationType(rotation);
-    editorController.setGroundType(ground);
-    editorController.setMode(mode);
-
-    const wheelHandler = (event: WheelEvent) => {
-      event.preventDefault();
-      const direction = event.deltaY > 0 ? -1 : 1;
-      if (event.shiftKey) {
-        const nextIdx = (rotationIdx + direction + 4) % 4;
-        setRotationIdx(nextIdx);
-      } else if (mode === 'Structure') {
-        const nextIdx = (structureIdx + direction + STRUCTURE_TYPES.length) % STRUCTURE_TYPES.length;
-        setStructureIdx(nextIdx);
-      } else if (mode === 'Ground') {
-        const nextIdx = (groundIdx + direction + GROUND_TYPES.length) % GROUND_TYPES.length;
-        setGroundIdx(nextIdx);
-      }
-    };
-
-    document.body.addEventListener('wheel', wheelHandler, { passive: false });
-    return () => {
-      document.body.removeEventListener('wheel', wheelHandler);
-    };
-  }, [structureIdx, groundIdx, rotationIdx, mode, editorController]);
-
   useEffect(() => {
     const savedMap = GameStorage.getGameMap(mapId);
     if (savedMap) {
-      setStateFromMap(savedMap);
+      const { id, tiles, name, creator } = savedMap;
+      setId(id);
+      setTiles(tiles);
+      setMapName(name);
+      setCreator(creator);
     } else {
       setId((Date.now() + '').slice(-6));
       setTiles(templates.borders());
@@ -127,109 +116,92 @@ function Editor() {
     editorController?.setGameMap(map);
   }, [tiles]);
 
-  const save = () => {
-    const newMap = getMapFromState();
-    GameStorage.setGameMap(newMap);
-    if (mapId !== newMap.id) {
-      navigate(`/editor/${newMap.id}`);
-    }
-  };
+  useEffect(() => {
+    if (!editorController) return;
+    editorController.setEditorState(editorState);
 
-  const remove = () => {
-    GameStorage.removeGameMap(mapId);
-    navigate(`/editor`);
-  };
+    const changeMode = () => {
+      const newMode: EditorState['mode'] = editorState.mode === 'Ground' ? 'Structure' : 'Ground';
+      setEditorState({ mode: newMode });
+    };
 
-  const startGame = async () => {
-    const newMap = getMapFromState();
-    GameStorage.setGameMap(newMap);
+    const setElement = (direction: number) => {
+      if (editorState.mode === 'Structure') {
+        const nextIdx = modulo(editorState.structureIdx + direction, STRUCTURE_TYPES.length);
+        setEditorState({ structureIdx: nextIdx });
+      } else if (editorState.mode === 'Ground') {
+        const nextIdx = modulo(editorState.groundIdx + direction, GROUND_TYPES.length);
+        setEditorState({ groundIdx: nextIdx });
+      }
+    };
 
-    const response = await fetch(`http://${BASE_URL}/game`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ id: newMap.id, tiles: newMap.tiles }),
-    });
-    const { gameId } = await response.json();
-    navigate(`/${gameId}`);
-  };
+    const wheelHandler = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.shiftKey) {
+        changeMode();
+      } else {
+        const direction = event.deltaY > 0 ? -1 : 1;
+        setElement(direction);
+      }
+    };
 
+    const keyHandler = (event: KeyboardEvent) => {
+      event.preventDefault();
+      const { shiftKey, ctrlKey } = event;
+      const key = event.key.toUpperCase();
+      switch (key) {
+        case 'R': {
+          const direction = shiftKey ? 1 : -1;
+          const nextIdx = modulo(editorState.rotationIdx + direction, ROTATIONS.length);
+          setEditorState({ rotationIdx: nextIdx });
+          break;
+        }
+        case 'Z':
+          if (ctrlKey) goBack(1);
+          break;
+        case 'Y':
+          if (ctrlKey) goForward(1);
+          break;
+        case 'ARROWUP':
+          setElement(1);
+          break;
+        case 'ARROWDOWN':
+          setElement(-1);
+          break;
+        case 'ARROWLEFT':
+          changeMode();
+          break;
+        case 'ARROWRIGHT':
+          changeMode();
+          break;
+      }
+    };
+
+    document.body.addEventListener('wheel', wheelHandler, { passive: false });
+    document.body.addEventListener('keyup', keyHandler);
+
+    return () => {
+      document.body.removeEventListener('wheel', wheelHandler);
+      document.body.removeEventListener('keyup', keyHandler);
+    };
+  }, [editorState, editorController, goBack, goForward]);
+
+  const menu = (
+    <EditorMenu
+      state={{ ...editorState, undoIdx, maxUndoIdx }}
+      gameMap={getMapFromState()}
+      setState={setEditorState}
+      goBack={goBack}
+      goForward={goForward}
+    />
+  );
   return (
     <>
-      <CanvasGroup>
+      <CanvasGroup menu={menu}>
         <Canvas ref={mapRef} />
         <Canvas ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
       </CanvasGroup>
-
-      <Row>
-        <button
-          style={{ marginLeft: 10, color: mode === 'Structure' ? 'blue' : undefined }}
-          onClick={() => setMode('Structure')}
-        >
-          Structure
-        </button>
-        <button
-          style={{ marginLeft: 10, color: mode === 'Ground' ? 'blue' : undefined }}
-          onClick={() => setMode('Ground')}
-        >
-          Ground
-        </button>
-      </Row>
-
-      {mode === 'Structure' && (
-        <Row style={{ marginLeft: 30 }}>
-          {STRUCTURE_TYPES.map((st, i) => (
-            <button
-              key={`${st}-button`}
-              style={{ marginLeft: 10, color: structureIdx === i ? 'blue' : undefined }}
-              onClick={() => setStructureIdx(i)}
-            >
-              {st}
-            </button>
-          ))}
-        </Row>
-      )}
-
-      {mode === 'Ground' && (
-        <Row style={{ marginLeft: 30 }}>
-          {GROUND_TYPES.map((gt, i) => (
-            <button
-              key={`${gt}-button`}
-              style={{ marginLeft: 10, color: groundIdx === i ? 'blue' : undefined }}
-              onClick={() => setGroundIdx(i)}
-            >
-              {gt}
-            </button>
-          ))}
-        </Row>
-      )}
-
-      <Row>
-        <strong style={{ marginLeft: 10 }}>Kartan nimi</strong>
-        <input style={{ marginLeft: 10 }} value={mapName} onChange={({ target }) => setMapName(target.value)}></input>
-      </Row>
-      <Row>
-        <strong style={{ marginLeft: 10 }}>Tekijän nimi</strong>
-        <input style={{ marginLeft: 10 }} value={creator} onChange={({ target }) => setCreator(target.value)}></input>
-      </Row>
-      <Row>
-        <button style={{ marginLeft: 10 }} disabled={undoIndex === 1} onClick={() => goBack(1)}>
-          Undo
-        </button>
-        <button style={{ marginLeft: 10 }} disabled={undoIndex === maxUndoIndex} onClick={() => goForward(2)}>
-          Redo
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={() => save()}>
-          Tallenna
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={() => remove()}>
-          Poista
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={() => startGame()}>
-          Käynnistä peli
-        </button>
-      </Row>
+      <div>{menu}</div>
     </>
   );
 }

@@ -8,3 +8,12 @@ export type Message = {
 };
 
 export type CanvasMouseEvent = React.MouseEvent<HTMLCanvasElement, MouseEvent>;
+
+export type EditorState = {
+  mode: 'Structure' | 'Ground';
+  structureIdx: number;
+  groundIdx: number;
+  rotationIdx: number;
+  mapName: string;
+  creator: string;
+};

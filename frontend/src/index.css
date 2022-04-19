@@ -16,6 +16,7 @@
   position: relative;
   border: 2px solid #000;
   display: grid;
+  touch-action: none;
 }
 
 .canvas-layer {
@@ -29,10 +30,23 @@
   grid-row: 1;
   justify-self: end;
   background-color: white;
+  padding: 8px;
+}
+
+.canvas-menu-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.canvas-menu-close {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .canvas-menu-toggle {
   position: absolute;
-  top: 0;
+  bottom: 0;
   right: 0;
 }

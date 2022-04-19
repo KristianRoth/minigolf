@@ -23,12 +23,13 @@ const useUndoRedo = <T>(init: T, maxMemory = 20) => {
   };
 
   const goBack = (steps = 1) => {
-    setIndex(Math.max(0, Number(index) - (Number(steps) || 1)));
+    setIndex(Math.max(1, Number(index) - (Number(steps) || 1)));
   };
 
   const goForward = (steps = 1) => {
     setIndex(Math.min(states.length - 1, Number(index) + (Number(steps) || 1)));
   };
+
   return {
     state,
     setState,
