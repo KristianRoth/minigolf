@@ -2,6 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { STRUCTURE_TYPES, GROUND_TYPES, EditorState, GameMap, ROTATIONS } from '../types';
 import { GameStorage, BASE_URL } from '../utils/api';
 import { modulo } from '../utils/calculation';
+import Button from './Button';
+import Input from './Input';
 import Row from './Row';
 
 type EditorMenuProps = {
@@ -42,91 +44,92 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
   };
 
   return (
-    <>
-      <Row>
-        <button
-          style={{ marginLeft: 10, color: state.mode === 'Structure' ? 'blue' : undefined }}
-          onClick={() => setState({ mode: 'Structure' })}
-        >
-          Structure
-        </button>
-        <button
-          style={{ marginLeft: 10, color: state.mode === 'Ground' ? 'blue' : undefined }}
-          onClick={() => setState({ mode: 'Ground' })}
-        >
-          Ground
-        </button>
-
-        <button
-          style={{ marginLeft: 40, color: state.mode === 'Ground' ? 'blue' : undefined }}
-          onClick={() => setState({ rotationIdx: modulo(state.rotationIdx + 1, ROTATIONS.length) })}
-        >
-          Rotate
-        </button>
-      </Row>
-
-      {state.mode === 'Structure' && (
-        <Row style={{ marginLeft: 30 }}>
-          {STRUCTURE_TYPES.map((st, i) => (
-            <button
-              key={`${st}-button`}
-              style={{ marginLeft: 10, color: state.structureIdx === i ? 'blue' : undefined }}
-              onClick={() => setState({ structureIdx: i })}
-            >
-              {st}
-            </button>
-          ))}
+    <div className='row'>
+      <div className='column'>
+        <Row style={{ width: '100%' }}>
+          <Button
+            style={{ color: state.mode === 'Structure' ? 'green' : undefined }}
+            onClick={() => setState({ mode: 'Structure' })}
+          >
+            Structure
+          </Button>
+          <Button
+            style={{ color: state.mode === 'Ground' ? 'green' : undefined }}
+            onClick={() => setState({ mode: 'Ground' })}
+          >
+            Ground
+          </Button>
+          <Button style={{ visibility: 'hidden' }}>Structure</Button>
         </Row>
-      )}
 
-      {state.mode === 'Ground' && (
-        <Row style={{ marginLeft: 30 }}>
-          {GROUND_TYPES.map((gt, i) => (
-            <button
-              key={`${gt}-button`}
-              style={{ marginLeft: 10, color: state.groundIdx === i ? 'blue' : undefined }}
-              onClick={() => setState({ groundIdx: i })}
-            >
-              {gt}
-            </button>
-          ))}
-        </Row>
-      )}
+        {state.mode === 'Structure' && (
+          <>
+            {STRUCTURE_TYPES.map((st, i) => (
+              <div style={{ paddingLeft: 10, width: 'fit-content' }} className='row' key={`${st}-button`}>
+                <Button
+                  style={{ marginLeft: 10, color: state.structureIdx === i ? 'blue' : undefined }}
+                  onClick={() => setState({ structureIdx: i })}
+                >
+                  {st}
+                </Button>
+              </div>
+            ))}
+          </>
+        )}
 
-      <Row>
-        <strong style={{ marginLeft: 10 }}>Kartan nimi</strong>
-        <input
-          style={{ marginLeft: 10 }}
+        {state.mode === 'Ground' && (
+          <>
+            {GROUND_TYPES.map((gt, i) => (
+              <div style={{ paddingLeft: 10, width: 'fit-content' }} className='row' key={`${gt}-button`}>
+                <Button
+                  style={{ marginLeft: 10, color: state.groundIdx === i ? 'blue' : undefined }}
+                  onClick={() => setState({ groundIdx: i })}
+                >
+                  {gt}
+                </Button>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      <div className='column'>
+        <Input
+          label={'Kartan nimi'}
           value={state.mapName}
           onChange={({ target }) => setState({ mapName: target.value })}
-        ></input>
-      </Row>
-      <Row>
-        <strong style={{ marginLeft: 10 }}>Tekijän nimi</strong>
-        <input
-          style={{ marginLeft: 10 }}
+        />
+
+        <Input
+          label={'Tekijän nimi'}
           value={state.creator}
           onChange={({ target }) => setState({ creator: target.value })}
-        ></input>
-      </Row>
-      <Row>
-        <button style={{ marginLeft: 10 }} disabled={state.undoIdx === 1} onClick={() => goBack(1)}>
-          Undo
-        </button>
-        <button style={{ marginLeft: 10 }} disabled={state.undoIdx === state.maxUndoIdx} onClick={() => goForward(2)}>
-          Redo
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={onSave}>
-          Tallenna
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={onRemove}>
-          Poista
-        </button>
-        <button style={{ marginLeft: 10 }} onClick={onStartGame}>
-          Käynnistä peli
-        </button>
-      </Row>
-    </>
+        />
+        <div className='p' style={{ display: 'inline-flex' }}>
+          <Button disabled={state.undoIdx === 1} onClick={() => goBack(1)}>
+            Undo
+          </Button>
+          <Button style={{ marginLeft: 10 }} disabled={state.undoIdx === state.maxUndoIdx} onClick={() => goForward(2)}>
+            Redo
+          </Button>
+          <Button
+            style={{ marginLeft: 10 }}
+            onClick={() => setState({ rotationIdx: modulo(state.rotationIdx + 1, ROTATIONS.length) })}
+          >
+            Rotate
+          </Button>
+        </div>
+        <div className='p' style={{ display: 'inline-flex', paddingBottom: 0 }}>
+          <Button onClick={onSave}>Tallenna</Button>
+          <Button style={{ marginLeft: 10 }} onClick={onRemove}>
+            Poista
+          </Button>
+          <Button style={{ marginLeft: 10 }} onClick={onStartGame}>
+            Käynnistä peli
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

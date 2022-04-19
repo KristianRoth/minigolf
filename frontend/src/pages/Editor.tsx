@@ -140,7 +140,7 @@ function Editor() {
       if (event.shiftKey) {
         changeMode();
       } else {
-        const direction = event.deltaY > 0 ? -1 : 1;
+        const direction = event.deltaY > 0 ? 1 : -1;
         setElement(direction);
       }
     };
@@ -163,10 +163,10 @@ function Editor() {
           if (ctrlKey) goForward(1);
           break;
         case 'ARROWUP':
-          setElement(1);
+          setElement(-1);
           break;
         case 'ARROWDOWN':
-          setElement(-1);
+          setElement(1);
           break;
         case 'ARROWLEFT':
           changeMode();
@@ -196,14 +196,23 @@ function Editor() {
     />
   );
   return (
-    <>
-      <CanvasGroup menu={menu}>
-        <Canvas ref={mapRef} />
-        <Canvas ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
-      </CanvasGroup>
-      <div>{menu}</div>
-    </>
+    <CanvasGroup menu={menu} help={<Instructions />}>
+      <Canvas ref={mapRef} />
+      <Canvas ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
+    </CanvasGroup>
   );
 }
+
+const Instructions = () => (
+  <div className='column p'>
+    <p className='inline-text'>Toggle-menu: Q</p>
+    <p className='inline-text'>Rotate: R</p>
+    <p className='inline-text'>Rotate back: shift+R</p>
+    <p className='inline-text'>Undo: ctrl+Z</p>
+    <p className='inline-text'>Redo: ctrl+Y</p>
+    <p className='inline-text'>Navigate types: arrows-side / shift+wheel</p>
+    <p className='inline-text'>Navigate structs: arrows-vertical / wheel</p>
+  </div>
+);
 
 export default Editor;

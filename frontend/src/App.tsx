@@ -5,15 +5,7 @@ import RootPage from './pages/Root';
 
 function App() {
   return (
-    <div
-      style={{
-        marginTop: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
+    <div className='flex-container'>
       <Routes>
         <Route path='/editor' element={<Editor />} />
         <Route path='/editor/:mapId' element={<Editor />} />

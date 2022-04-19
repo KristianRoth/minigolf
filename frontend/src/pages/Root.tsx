@@ -21,7 +21,7 @@ const RootPage: React.FC = () => {
     }
   };
   return (
-    <div>
+    <div className='column'>
       <h1>Minigolfpeli</h1>
       <p>Syötä pelin id</p>
       <input

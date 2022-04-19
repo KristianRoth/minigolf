@@ -130,7 +130,7 @@ function Game() {
   );
   return (
     <>
-      <CanvasGroup menu={menu}>
+      <CanvasGroup menu={menu} help={<p>Siperia opettaa.</p>}>
         <Canvas ref={mapRef} />
         <Canvas ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
       </CanvasGroup>
