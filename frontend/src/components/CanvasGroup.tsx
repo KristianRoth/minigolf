@@ -4,6 +4,18 @@ type CanvasGroupProps = React.HTMLProps<HTMLDivElement> & { menu?: ReactNode };
 const CanvasGroup: React.FC<CanvasGroupProps> = ({ children, menu, ...attrs }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const fullScreen = () => {
+    const root = document.getElementById('root');
+    if (root) {
+      root
+        .requestFullscreen()
+        .then(() => {
+          setIsOpen(false);
+        })
+        .catch((e) => console.log('FULL SCREEN ERROR', e));
+    }
+  };
+
   const layerCount = React.Children.count(children);
 
   return (
@@ -19,7 +31,8 @@ const CanvasGroup: React.FC<CanvasGroupProps> = ({ children, menu, ...attrs }) =
           <div className='canvas-menu-container'>
             {menu}
 
-            <div className='canvas-menu-close'>
+            <div className='canvas-menu-footer'>
+              <button onClick={() => fullScreen()}>Full screen</button>
               <button onClick={() => setIsOpen(false)}>Close</button>
             </div>
           </div>
