@@ -37,7 +37,7 @@ class CanvasController {
   }
 
   protected dc(value: number): number {
-    return clamp(value, 0, this.canvas.width, 0, GAME_WIDTH);
+    return clamp(value, 0, this.canvas.width / window.devicePixelRatio, 0, GAME_WIDTH);
   }
 
   protected getMousePosition(event: CanvasMouseEvent) {
@@ -73,8 +73,11 @@ class CanvasController {
       width = height * (1 / RATIO);
     }
 
-    this.canvas.width = width;
-    this.canvas.height = height;
+    const { devicePixelRatio = 1 } = window;
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
+    this.canvas.width = width * devicePixelRatio;
+    this.canvas.height = height * devicePixelRatio;
     this.render();
   }
 
