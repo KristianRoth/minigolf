@@ -112,11 +112,16 @@ class CanvasController {
     this.context.stroke();
   }
 
-  protected drawLine(p1: Point, p2: Point) {
-    this.context.beginPath();
-    this.context.moveTo(this.c(p1.x), this.c(p1.y));
-    this.context.lineTo(this.c(p2.x), this.c(p2.y));
-    this.context.stroke();
+  protected drawLine(p1: Point, p2: Point, isDashed = false) {
+    this.renderElement(() => {
+      if (isDashed) {
+        this.context.setLineDash([this.c(100), this.c(40)]);
+      }
+      this.context.beginPath();
+      this.context.moveTo(this.c(p1.x), this.c(p1.y));
+      this.context.lineTo(this.c(p2.x), this.c(p2.y));
+      this.context.stroke();
+    });
   }
 
   protected drawSquare(point: Point) {

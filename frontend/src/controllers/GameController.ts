@@ -1,9 +1,12 @@
 import { Ball, CanvasMouseEvent, GameEvent } from '../types';
-import { calcEndpoint } from '../utils/calculation';
+import { calcEndpoint, getMirroredPoint } from '../utils/calculation';
 import { MAX_LINE_LEN } from '../utils/constants';
 import CanvasController from './CanvasController';
 
 type OnShotHandler = (action: GameEvent) => void;
+
+const shotModes = ['normal', 'inverted'] as const;
+type ShotMode = typeof shotModes[number];
 
 class GameController extends CanvasController {
   private balls: Ball[] = [];
@@ -11,19 +14,27 @@ class GameController extends CanvasController {
   private playerId = 0;
   private playerName = '';
   private playerColor = '';
+  private shotMode: ShotMode = 'normal';
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
   }
 
   handleMouseDown(event: CanvasMouseEvent, onShot: OnShotHandler) {
+    if (event.button === 2) {
+      this.shotMode = this.shotMode === 'normal' ? 'inverted' : 'normal';
+      return;
+    }
+
     const clickedAt = this.getMousePosition(event);
     const ball = this.balls.find((b) => b.id === this.playerId);
 
     if (!ball || !this.hasTurn) return;
 
-    const point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
-
+    let point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
+    if (this.shotMode === 'inverted') {
+      point = getMirroredPoint({ x: ball.x, y: ball.y }, point);
+    }
     onShot({
       type: 'SHOT',
       x: point.x - ball.x,
@@ -38,12 +49,16 @@ class GameController extends CanvasController {
   }
 
   protected renderShotLine() {
-    if (this.hasTurn && this.mouseAt) {
-      const ball = this.balls.find((b) => b.id === this.playerId);
-      if (ball) {
-        const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
-        this.drawLine(ball, point);
-      }
+    const ball = this.balls.find((b) => b.id === this.playerId);
+    if (!this.hasTurn || !this.mouseAt || !ball) return;
+
+    const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
+    if (this.shotMode === 'inverted') {
+      const mirroredPoint = getMirroredPoint({ x: ball.x, y: ball.y }, point);
+      this.drawLine(ball, mirroredPoint);
+      this.drawLine(ball, point, true);
+    } else {
+      this.drawLine(ball, point);
     }
   }
 

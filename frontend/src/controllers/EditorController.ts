@@ -49,8 +49,6 @@ class EditorController extends CanvasController {
   }
 
   handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
-    event.preventDefault();
-    event.stopPropagation();
     if (!this.tilePosition) return;
     if (event.button === 0) {
       // Primary

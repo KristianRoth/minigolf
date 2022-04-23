@@ -30,6 +30,15 @@ export const calcEndpoint = (start: Point, end: Point, maxLength: number) => {
   return point;
 };
 
+export const getMirroredPoint = (start: Point, end: Point) => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return {
+    x: start.x - dx,
+    y: start.y - dy,
+  };
+};
+
 export const modulo = (n: number, m: number) => {
   return ((n % m) + m) % m;
 };
