@@ -92,11 +92,11 @@ class EditorController extends CanvasController {
   }
 
   protected renderEraser(point: Point) {
-    this.context.save();
-    this.context.fillStyle = '#fff';
-    this.context.strokeStyle = '#fff';
-    this.drawSquare(point);
-    this.context.restore();
+    this.renderElement(() => {
+      this.context.fillStyle = '#fff';
+      this.context.strokeStyle = '#fff';
+      this.drawSquare();
+    }, point);
   }
 
   protected renderEditorElement() {

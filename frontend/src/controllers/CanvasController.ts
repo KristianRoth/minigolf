@@ -113,20 +113,20 @@ class CanvasController {
   }
 
   protected drawLine(p1: Point, p2: Point, isDashed = false) {
-    this.renderElement(() => {
-      if (isDashed) {
-        this.context.setLineDash([this.c(100), this.c(40)]);
-      }
-      this.context.beginPath();
-      this.context.moveTo(this.c(p1.x), this.c(p1.y));
-      this.context.lineTo(this.c(p2.x), this.c(p2.y));
-      this.context.stroke();
-    });
+    this.context.save()
+    if (isDashed) {
+      this.context.setLineDash([this.c(100), this.c(40)]);
+    }
+    this.context.beginPath();
+    this.context.moveTo(this.c(p1.x), this.c(p1.y));
+    this.context.lineTo(this.c(p2.x), this.c(p2.y));
+    this.context.stroke();
+    this.context.restore();    
   }
 
-  protected drawSquare(point: Point) {
+  protected drawSquare() {
     this.context.beginPath();
-    this.context.rect(this.c(point.x), this.c(point.y), this.blockSize, this.blockSize);
+    this.context.rect(-HALF_BLOCK, -HALF_BLOCK, 100, 100);
     this.context.fill();
     this.context.stroke();
     this.context.closePath();
@@ -134,18 +134,22 @@ class CanvasController {
 
   protected drawCircle(point: Point, radius: number) {
     this.context.beginPath();
-    this.context.ellipse(this.c(point.x), this.c(point.y), this.c(radius), this.c(radius), 0, Math.PI * 2, 0);
+    this.context.ellipse(point.x, point.y, radius, radius, 0, Math.PI * 2, 0);
     this.context.fill();
     this.context.closePath();
   }
 
-  private renderElement(callback: () => void) {
+  protected renderElement(callback: () => void, middle: Point, rotation: Rotation = 'North') {
     this.context.save();
+    const scale = this.canvas.width/GAME_WIDTH;
+    this.context.scale(scale, scale);
+    this.context.translate(middle.x + HALF_BLOCK, middle.y + HALF_BLOCK);
+    this.context.rotate(this.getRotationAngle(rotation));
     callback();
     this.context.restore();
   }
 
-  private renderWallElement(doShadow: boolean, callback: () => void) {
+  private renderWallElement(callback: () => void, doShadow: boolean, middle: Point, rotation: Rotation = 'North') {
     this.renderElement(() => {
       if (doShadow) {
         this.setShadowOpts();
@@ -156,128 +160,120 @@ class CanvasController {
       this.context.strokeStyle = colors.wallBorder;
 
       callback();
-    });
+    }, middle, rotation);
   }
 
   protected renderWall(point: Point, doShadow = true) {
-    this.renderWallElement(doShadow, () => {
-      this.drawSquare(point);
-    });
+    this.renderWallElement(() => {
+      this.drawSquare();
+    }, doShadow, point);
   }
 
   protected renderCircleWall(point: Point, doShadow = true) {
-    this.renderWallElement(doShadow, () => {
-      const { x, y } = point;
-      this.drawCircle({ x: x + HALF_BLOCK, y: y + HALF_BLOCK }, CIRCLE_RADIUS);
-    });
+    this.renderWallElement(() => {
+      this.drawCircle({ x: 0, y: 0 }, CIRCLE_RADIUS);
+    }, doShadow, point);
   }
 
   protected renderWedge(point: Point, rotation: Rotation, doShadow = true) {
-    this.renderWallElement(doShadow, () => {
+    this.renderWallElement(() => {
       this.context.beginPath();
-      this.context.translate(this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK));
-      this.context.rotate(this.getRotationAngle(rotation));
-      this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
-      this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
-      this.context.lineTo(this.c(-HALF_BLOCK), this.c(HALF_BLOCK));
-      this.context.lineTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.moveTo(-HALF_BLOCK, -HALF_BLOCK);
+      this.context.lineTo(HALF_BLOCK, -HALF_BLOCK);
+      this.context.lineTo(-HALF_BLOCK, HALF_BLOCK);
+      this.context.lineTo(-HALF_BLOCK, -HALF_BLOCK);
       this.context.stroke();
       this.context.fill();
-    });
+    }, doShadow, point, rotation);
   }
 
   protected renderRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
-    this.renderWallElement(doShadow, () => {
+    this.renderWallElement(() => {
       this.context.beginPath();
-      this.context.translate(this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK));
-      this.context.rotate(this.getRotationAngle(rotation));
-      this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
-      this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.moveTo(-HALF_BLOCK, -HALF_BLOCK);
+      this.context.lineTo(HALF_BLOCK, -HALF_BLOCK);
       this.context.arcTo(
-        this.c(HALF_BLOCK),
-        this.c(HALF_BLOCK),
-        this.c(-HALF_BLOCK),
-        this.c(HALF_BLOCK),
-        this.c(BLOCK_SIZE)
+        HALF_BLOCK,
+        HALF_BLOCK,
+        -HALF_BLOCK,
+        HALF_BLOCK,
+        BLOCK_SIZE
       );
-      this.context.lineTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.lineTo(-HALF_BLOCK, -HALF_BLOCK);
       this.context.stroke();
       this.context.fill();
-    });
+    }, doShadow, point, rotation);
   }
 
   protected renderInvertedRoundedCorner(point: Point, rotation: Rotation, doShadow = true) {
-    this.renderWallElement(doShadow, () => {
+    this.renderWallElement(() => {
       this.context.beginPath();
-      this.context.translate(this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK));
-      this.context.rotate(this.getRotationAngle(rotation));
-      this.context.moveTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
-      this.context.lineTo(this.c(HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.moveTo(-HALF_BLOCK, -HALF_BLOCK);
+      this.context.lineTo(HALF_BLOCK, -HALF_BLOCK);
       this.context.arcTo(
-        this.c(-HALF_BLOCK),
-        this.c(-HALF_BLOCK),
-        this.c(-HALF_BLOCK),
-        this.c(HALF_BLOCK),
-        this.c(BLOCK_SIZE)
+        -HALF_BLOCK,
+        -HALF_BLOCK,
+        -HALF_BLOCK,
+        HALF_BLOCK,
+        BLOCK_SIZE
       );
-      this.context.lineTo(this.c(-HALF_BLOCK), this.c(-HALF_BLOCK));
+      this.context.lineTo(-HALF_BLOCK, -HALF_BLOCK);
       this.context.stroke();
       this.context.fill();
-    });
+    }, doShadow, point, rotation);
   }
 
   protected renderHole(point: Point) {
     this.renderElement(() => {
       this.context.fillStyle = colors.hole;
-      this.drawCircle({ x: point.x + HALF_BLOCK, y: point.y + HALF_BLOCK }, HALF_BLOCK);
-    });
+      this.drawCircle({ x: 0, y: 0 }, HALF_BLOCK);
+    }, point);
   }
 
   protected renderStart(point: Point) {
     this.renderElement(() => {
       this.context.fillStyle = colors.start;
-      this.drawCircle({ x: point.x + HALF_BLOCK, y: point.y + HALF_BLOCK }, 10);
-    });
+      this.drawCircle({ x: 0, y:  0 }, 10);
+    }, point);
   }
 
   protected renderBall(ball: Ball) {
     this.renderElement(() => {
       this.setShadowOpts();
       this.context.fillStyle = ball.color;
-      this.drawCircle(ball, BALL_RADIUS);
-    });
+      this.drawCircle({ x: -HALF_BLOCK, y: -HALF_BLOCK }, BALL_RADIUS);
+    }, ball);
   }
 
   protected renderStaticGround(point: Point, color: string) {
     this.renderElement(() => {
       this.context.fillStyle = color;
       this.context.strokeStyle = color;
-      this.drawSquare(point);
-    });
+      this.drawSquare();
+    }, point);
   }
 
-  protected renderSlope(point: Point, rotation: Rotation, isDiagonal = false) {
-    const [middleX, middleY] = [this.c(point.x + HALF_BLOCK), this.c(point.y + HALF_BLOCK)];
-    const rotationAngle = this.getRotationAngle(rotation) - (isDiagonal ? Math.PI / 4 : 0);
-    const quarterBlock = this.c(HALF_BLOCK / 2);
+  protected renderSlope(point: Point, rotation: Rotation, isDiagonal: boolean) {
 
     this.renderElement(() => {
       this.context.fillStyle = colors.slope[rotation];
       this.context.strokeStyle = colors.slope[rotation];
-      this.drawSquare(point);
-      //
-      this.context.translate(middleX, middleY);
-      this.context.rotate(rotationAngle);
-      this.context.translate(-middleX, -middleY);
-      // Draw line
-      this.context.fillStyle = colors.wallBorder;
+      this.drawSquare();
       this.context.strokeStyle = colors.wallBorder;
+      this.context.lineWidth = 3;
       this.context.beginPath();
-      this.context.moveTo(middleX - quarterBlock, middleY);
-      this.context.lineTo(middleX, middleY - quarterBlock);
-      this.context.lineTo(middleX + quarterBlock, middleY);
+      if (!isDiagonal) {
+        this.context.moveTo(-BLOCK_SIZE/4, BLOCK_SIZE/8);
+        this.context.lineTo(0, -BLOCK_SIZE/8);
+        this.context.lineTo(BLOCK_SIZE/4, BLOCK_SIZE/8);
+      } else {
+        this.context.moveTo(-BLOCK_SIZE/8, BLOCK_SIZE/4);
+        this.context.lineTo(-BLOCK_SIZE/8, -BLOCK_SIZE/8);
+        this.context.lineTo(BLOCK_SIZE/4, -BLOCK_SIZE/8);
+      }
       this.context.stroke();
-    });
+
+    }, point, rotation);
   }
 
   protected renderStructure(
