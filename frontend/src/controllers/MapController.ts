@@ -12,10 +12,14 @@ class MapController extends CanvasController {
     if (!this.gameMap) return;
     const { tiles } = this.gameMap;
 
+    this.renderGrassFloor();
+
     // Ground pass
     for (let i = tiles.length - 1; i >= 0; i -= 1) {
       const tile = tiles[i];
-      this.renderGround(tile.pos, tile.ground.type, (tile.ground as any).rotation);
+      if (tile.ground.type !== 'Grass') {
+        this.renderGround(tile.pos, tile.ground.type, (tile.ground as any).rotation);
+      }
     }
 
     // Shadow pass
