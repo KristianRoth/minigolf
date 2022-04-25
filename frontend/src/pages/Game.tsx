@@ -36,14 +36,18 @@ function Game() {
   const navigate = useNavigate();
   const { gameId = '' } = useParams();
 
-  const onMouseDown = (event: CanvasMouseEvent) => {
-    const onShot = (value: GameEvent) => {
-      sendMessage(JSON.stringify(value));
-    };
+  const onShot = (value: GameEvent) => {
+    sendMessage(JSON.stringify(value));
+  };
+
+  const onPointerDown = (event: CanvasMouseEvent) => {
     gameController?.handleMouseDown(event, onShot);
   };
-  const onMouseMove = (event: CanvasMouseEvent) => {
+  const onPointerMove = (event: CanvasMouseEvent) => {
     gameController?.handleMouseMove(event);
+  };
+  const onPointerUp = (event: CanvasMouseEvent) => {
+    gameController?.handleMouseUp(event, onShot);
   };
 
   const onOpen = useCallback(() => {
@@ -132,7 +136,7 @@ function Game() {
     <>
       <CanvasGroup menu={menu} help={<p>Siperia opettaa.</p>}>
         <Canvas ref={mapRef} />
-        <Canvas ref={gameRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} />
+        <Canvas ref={gameRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
       </CanvasGroup>
       {debug && (
         <Row>

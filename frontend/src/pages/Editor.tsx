@@ -85,15 +85,14 @@ function Editor() {
     };
   };
 
-  const onMouseDown = (event: CanvasMouseEvent) => {
+  const onPointerDown = (event: CanvasMouseEvent) => {
     editorController?.handleMouseDown(event, setTile);
   };
-  const onMouseMove = (event: CanvasMouseEvent) => {
+  const onPointerMove = (event: CanvasMouseEvent) => {
     editorController?.handleMouseMove(event, setTile);
   };
-
-  const onMouseUp = () => {
-    editorController?.handleMouseUp();
+  const onPointerUp = (event: CanvasMouseEvent) => {
+    editorController?.handleMouseUp(event);
   };
 
   useEffect(() => {
@@ -198,7 +197,7 @@ function Editor() {
   return (
     <CanvasGroup menu={menu} help={<Instructions />}>
       <Canvas ref={mapRef} />
-      <Canvas ref={editorRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
+      <Canvas ref={editorRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
     </CanvasGroup>
   );
 }

@@ -7,7 +7,7 @@ export type Message = {
   value: string;
 };
 
-export type CanvasMouseEvent = React.MouseEvent<HTMLCanvasElement, MouseEvent>;
+export type CanvasMouseEvent = React.PointerEvent<HTMLCanvasElement>;
 
 export type EditorState = {
   mode: 'Structure' | 'Ground';

@@ -14,9 +14,6 @@ const Canvas = React.forwardRef<HTMLCanvasElement, CanvasProps>((props, ref) => 
       tabIndex={-1}
       {...rest}
       style={{ zIndex: 1, ...style }}
-      onMouseDown={props.onMouseDown}
-      onMouseMove={props.onMouseMove}
-      onMouseUp={props.onMouseUp}
       onContextMenu={onContextMenu}
     ></canvas>
   );

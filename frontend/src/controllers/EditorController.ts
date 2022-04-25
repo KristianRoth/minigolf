@@ -48,7 +48,20 @@ class EditorController extends CanvasController {
     };
   }
 
+  private calculatePosition(event: CanvasMouseEvent) {
+    event.preventDefault();
+    super.setMouseAt(event);
+
+    if (this.mouseAt) {
+      const posX = Math.floor(this.mouseAt.x / BLOCK_SIZE) * BLOCK_SIZE;
+      const posY = Math.floor(this.mouseAt.y / BLOCK_SIZE) * BLOCK_SIZE;
+      this.tilePosition = { x: posX, y: posY };
+    }
+  }
+
   handleMouseDown(event: CanvasMouseEvent, setTile: SetTileHandler) {
+    this.calculatePosition(event);
+
     if (!this.tilePosition) return;
     if (event.button === 0) {
       // Primary
@@ -63,19 +76,15 @@ class EditorController extends CanvasController {
     }
   }
 
-  handleMouseUp() {
+  handleMouseUp(event: CanvasMouseEvent) {
+    event.preventDefault();
     this.dragStatus = null;
   }
 
   handleMouseMove(event: CanvasMouseEvent, setTile: SetTileHandler) {
-    super.setMouseAt(event);
-
     const { x, y } = this.tilePosition || { x: -1, y: -1 };
-    if (this.mouseAt) {
-      const posX = Math.floor(this.mouseAt.x / BLOCK_SIZE) * BLOCK_SIZE;
-      const posY = Math.floor(this.mouseAt.y / BLOCK_SIZE) * BLOCK_SIZE;
-      this.tilePosition = { x: posX, y: posY };
-    }
+
+    this.calculatePosition(event);
 
     if (this.dragStatus && this.tilePosition) {
       if (x !== this.tilePosition.x || y !== this.tilePosition.y) {
@@ -104,7 +113,7 @@ class EditorController extends CanvasController {
 
     if (!this.tilePosition) return;
 
-    if (this.dragStatus === 'delete') {
+    if (this.dragStatus === 'delete' || (this.mode === 'Structure' && this.structureType === 'None')) {
       this.renderEraser(this.tilePosition);
       return;
     }

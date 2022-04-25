@@ -1,4 +1,4 @@
-import { Ball, CanvasMouseEvent, GameEvent } from '../types';
+import { Ball, CanvasMouseEvent, GameEvent, Point } from '../types';
 import { calcEndpoint, getMirroredPoint } from '../utils/calculation';
 import { MAX_LINE_LEN } from '../utils/constants';
 import CanvasController from './CanvasController';
@@ -15,26 +15,22 @@ class GameController extends CanvasController {
   private playerName = '';
   private playerColor = '';
   private shotMode: ShotMode = 'normal';
+  private touchDrag: { start: Point; end: Point } | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
   }
 
-  handleMouseDown(event: CanvasMouseEvent, onShot: OnShotHandler) {
-    if (event.button === 2) {
-      this.shotMode = this.shotMode === 'normal' ? 'inverted' : 'normal';
-      return;
-    }
+  private findTouchLineEndPoint(ball: Ball): Point {
+    const { start, end } = this.touchDrag as { start: Point; end: Point };
+    const point = calcEndpoint(start, end, MAX_LINE_LEN);
+    const mirroredPoint = getMirroredPoint(start, point);
+    const dx = mirroredPoint.x - start.x;
+    const dy = mirroredPoint.y - start.y;
+    return { x: ball.x + dx || ball.x, y: ball.y + dy || ball.y };
+  }
 
-    const clickedAt = this.getMousePosition(event);
-    const ball = this.balls.find((b) => b.id === this.playerId);
-
-    if (!ball || !this.hasTurn) return;
-
-    let point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
-    if (this.shotMode === 'inverted') {
-      point = getMirroredPoint({ x: ball.x, y: ball.y }, point);
-    }
+  doShot(point: Point, ball: Ball, onShot: OnShotHandler) {
     onShot({
       type: 'SHOT',
       x: point.x - ball.x,
@@ -44,13 +40,58 @@ class GameController extends CanvasController {
     this.setHasTurn(false);
   }
 
-  handleMouseMove(event: CanvasMouseEvent) {
+  handleMouseDown(event: CanvasMouseEvent, onShot: OnShotHandler) {
+    event.preventDefault();
     super.setMouseAt(event);
+
+    if (event.button === 2) {
+      this.shotMode = this.shotMode === 'normal' ? 'inverted' : 'normal';
+      return;
+    }
+    if (!this.ball || !this.hasTurn) return;
+
+    const { ball } = this;
+    const clickedAt = this.getMousePosition(event);
+
+    if (event.pointerType !== 'mouse') {
+      this.touchDrag = { start: clickedAt, end: clickedAt };
+      return;
+    }
+    // MOUSE
+    let point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
+    if (this.shotMode === 'inverted') {
+      point = getMirroredPoint({ x: ball.x, y: ball.y }, point);
+    }
+    this.doShot(point, ball, onShot);
+  }
+
+  handleMouseMove(event: CanvasMouseEvent) {
+    event.preventDefault();
+    super.setMouseAt(event);
+    if (this.touchDrag && this.mouseAt) {
+      this.touchDrag = { ...this.touchDrag, end: this.mouseAt };
+    }
+  }
+
+  handleMouseUp(event: CanvasMouseEvent, onShot: OnShotHandler) {
+    if (event.pointerType === 'mouse' || !this.touchDrag) return;
+    if (!this.ball || !this.hasTurn) return;
+
+    const shotPoint = this.findTouchLineEndPoint(this.ball);
+    this.doShot(shotPoint, this.ball, onShot);
+    this.touchDrag = null;
   }
 
   protected renderShotLine() {
-    const ball = this.balls.find((b) => b.id === this.playerId);
-    if (!this.hasTurn || !this.mouseAt || !ball) return;
+    if (!this.hasTurn || !this.mouseAt || !this.ball) return;
+
+    const { ball } = this;
+
+    if (this.touchDrag) {
+      const lineEndPoint = this.findTouchLineEndPoint(ball);
+      this.drawLine(ball, lineEndPoint);
+      return;
+    }
 
     const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
     if (this.shotMode === 'inverted') {
@@ -100,6 +141,10 @@ class GameController extends CanvasController {
   setPlayerId(playerId: number) {
     this.playerId = playerId;
     this.hasTurn = true;
+  }
+
+  get ball(): Ball | null {
+    return this.balls.find((b) => b.id === this.playerId) || null;
   }
 
   get debug() {
