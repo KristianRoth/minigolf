@@ -1,5 +1,5 @@
 import { Ball, CanvasMouseEvent, GameEvent, Point } from '../types';
-import { calcEndpoint, getMirroredPoint } from '../utils/calculation';
+import { calcEndpoint, getMirroredPoint, PerSecondCounter } from '../utils/calculation';
 import { MAX_LINE_LEN } from '../utils/constants';
 import CanvasController from './CanvasController';
 
@@ -16,6 +16,8 @@ class GameController extends CanvasController {
   private playerColor = '';
   private shotMode: ShotMode = 'normal';
   private touchDrag: { start: Point; end: Point } | null = null;
+  private fpsCounter = new PerSecondCounter(50);
+  private tickCounter = new PerSecondCounter(50);
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
@@ -108,12 +110,17 @@ class GameController extends CanvasController {
     const { x, y } = this.mouseAt || { x: NaN, y: NaN };
     this.context.font = `${0.8 * this.blockSize}px serif`;
     this.context.fillStyle = this.playerColor;
-    this.context.fillText(`x: ${Math.round(x)}, y: ${Math.round(y)}, ${this.playerName}`, 7, 0.75 * this.blockSize);
+
+    const fps = Math.round(this.fpsCounter.value);
+    const tick = Math.round(this.tickCounter.value);
+    const text = `x: ${Math.round(x)}, y: ${Math.round(y)}, ${this.playerName} | fps: ${fps}, tick: ${tick}`;
+    this.context.fillText(text, 7, 0.75 * this.blockSize);
     this.context.restore();
   }
 
   protected render() {
     this.clear();
+    this.fpsCounter.add();
 
     this.renderShotLine();
 
@@ -132,6 +139,7 @@ class GameController extends CanvasController {
       this.playerColor = ball?.color || '';
     }
     this.balls = balls;
+    this.tickCounter.add();
   }
 
   setHasTurn(hasTurn: boolean) {

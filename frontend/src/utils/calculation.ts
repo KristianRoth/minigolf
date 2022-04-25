@@ -42,3 +42,26 @@ export const getMirroredPoint = (start: Point, end: Point) => {
 export const modulo = (n: number, m: number) => {
   return ((n % m) + m) % m;
 };
+
+export class PerSecondCounter {
+  private length: number;
+  private values: number[] = [];
+  private lastTime: number = Date.now();
+
+  constructor(length = 5) {
+    this.length = length;
+  }
+
+  add() {
+    const now = Date.now();
+    const value = now - this.lastTime;
+    this.values.unshift(value);
+    this.values = this.values.slice(0, this.length);
+    this.lastTime = now;
+  }
+
+  get value() {
+    const avg = this.values.reduce((s, x) => s + x, 0) / this.length;
+    return 1000 / avg;
+  }
+}
