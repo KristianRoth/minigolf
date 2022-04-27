@@ -28,6 +28,7 @@ pub struct Player {
     pub ball: Ball,
     pub ws: Option<WebSocketSender>,
     pub is_turn: bool,
+    pub shot_count: u32,
 }
 
 static NEXT_USER_ID: AtomicU32 = AtomicU32::new(1);
@@ -78,6 +79,7 @@ impl Game {
                 },
                 ws: Some(ws),
                 is_turn: false,
+                shot_count: 0,
             },
         );
         return id;
@@ -149,10 +151,12 @@ impl Player {
         self.ball.vel.x = shot_event.x / 10.0;
         self.ball.vel.y = shot_event.y / 10.0;
         self.is_turn = false;
+        self.shot_count += 1;
     }
 
     pub fn hole(&mut self, start_pos: VectorF64) {
         self.ball.pos = start_pos;
         self.ball.vel = VectorF64::new(0.0, 0.0);
+        self.shot_count = 0;
     }
 }

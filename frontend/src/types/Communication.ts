@@ -10,6 +10,7 @@ export type GameEvent =
         dy: number;
         id: number;
         name: string;
+        shotCount: number;
       }[];
     }
   | {

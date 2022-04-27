@@ -111,9 +111,16 @@ class GameController extends CanvasController {
     this.context.font = `${0.8 * this.blockSize}px serif`;
     this.context.fillStyle = this.playerColor;
 
-    const fps = Math.round(this.fpsCounter.value);
-    const tick = Math.round(this.tickCounter.value);
-    const text = `x: ${Math.round(x)}, y: ${Math.round(y)}, ${this.playerName} | fps: ${fps}, tick: ${tick}`;
+    const state = {
+      name: this.playerName,
+      shot: this.ball?.shotCount || 0,
+      x: Math.round(x),
+      y: Math.round(y),
+      fps: Math.round(this.fpsCounter.value),
+      tick: Math.round(this.tickCounter.value),
+    };
+
+    const text = JSON.stringify(state).slice(1, -1).replaceAll('"', '').replaceAll(',', ', ');
     this.context.fillText(text, 7, 0.75 * this.blockSize);
     this.context.restore();
   }

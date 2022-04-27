@@ -45,9 +45,11 @@ impl UpdateEvent {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct PlayerUpdateDTO {
     id: u32,
     name: String,
+    shot_count: u32,
     x: f64,
     y: f64,
     dx: f64,
@@ -67,6 +69,7 @@ impl PlayerUpdateDTO {
         Self {
             id: player.id,
             name: player.name.to_string(),
+            shot_count: player.shot_count,
             x: player.ball.pos.x,
             y: player.ball.pos.y,
             dx: player.ball.vel.x,
@@ -99,7 +102,6 @@ impl InitEvent {
         })
     }
 }
-
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct GameMapDTO {

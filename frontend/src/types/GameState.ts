@@ -3,7 +3,7 @@ export type Point = {
   y: number;
 };
 
-export type Ball = Point & { color: string; id: number; name: string };
+export type Ball = Point & { color: string; id: number; name: string; shotCount: number };
 
 export type GameState = {
   balls: Ball[];

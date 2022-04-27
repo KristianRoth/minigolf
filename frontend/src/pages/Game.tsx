@@ -65,12 +65,13 @@ function Game() {
       try {
         const event: GameEvent = JSON.parse(payload.data as any);
         if (event.type === 'UPDATE') {
-          const newBalls = event.playerStates.map(({ id, x, y, name }) => {
+          const newBalls = event.playerStates.map(({ id, x, y, name, shotCount }) => {
             return {
               id,
               x,
               y,
               name,
+              shotCount,
               color: colors[id % colors.length],
             };
           });
