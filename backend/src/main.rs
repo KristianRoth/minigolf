@@ -34,7 +34,7 @@ async fn main() {
     let sum = warp::path!("sum" / u32 / u32).map(|a, b| format!("{} + {} = {}", a, b, a + b));
 
     // Mount routes on "api" - path.
-    let api = warp::path!("api").and(hi.or(hello_from_warp).or(sum));
+    let api = warp::path("api").and(hi.or(hello_from_warp).or(sum));
 
     let games = Games::default();
     communications::start_loop(games.clone()).await;

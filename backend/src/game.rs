@@ -1,7 +1,7 @@
 use futures_util::{SinkExt, TryFutureExt};
+use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
 use warp::ws::Message;
 
 use crate::event::{Event, GameMapDTO, InitEvent, ShotEvent, TurnBeginEvent, UpdateEvent};
@@ -43,11 +43,11 @@ impl Game {
 
     pub fn new_from_dto(map: GameMapDTO) -> Self {
         Self {
-            game_id: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .to_string(),
+            game_id: rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(5)
+                .map(char::from)
+                .collect(),
             players: HashMap::default(),
             map: map.to_game_map(),
         }
@@ -74,10 +74,7 @@ impl Game {
                 name,
                 ball: Ball {
                     pos: self.map.get_start_location(),
-                    vel: VectorF64 {
-                        x: 0.0,
-                        y: 0.0,
-                    },
+                    vel: VectorF64 { x: 0.0, y: 0.0 },
                 },
                 ws: Some(ws),
                 is_turn: false,
