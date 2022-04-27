@@ -131,8 +131,16 @@ class GameController extends CanvasController {
 
     this.renderShotLine();
 
+    let playerBall: Ball | undefined = undefined;
     for (const ball of this.balls) {
-      this.renderBall(ball);
+      if (ball.id === this.playerId) {
+        playerBall = ball;
+      } else {
+        this.renderBall(ball);
+      }
+    }
+    if (playerBall) {
+      this.renderBall(playerBall);
     }
 
     this.renderCursor();
