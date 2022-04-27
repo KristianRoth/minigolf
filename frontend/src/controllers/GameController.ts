@@ -120,7 +120,7 @@ class GameController extends CanvasController {
       tick: Math.round(this.tickCounter.value),
     };
 
-    const text = JSON.stringify(state).slice(1, -1).replaceAll('"', '').replaceAll(',', ', ');
+    const text = JSON.stringify(state).slice(1, -1).replaceAll('"', '').replaceAll(',', ', ').replaceAll(':', ': ');
     this.context.fillText(text, 7, 0.75 * this.blockSize);
     this.context.restore();
   }
