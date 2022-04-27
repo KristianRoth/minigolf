@@ -1,12 +1,8 @@
-import { Ball, CanvasMouseEvent, GameEvent, Point } from '../types';
-import { calcEndpoint, getMirroredPoint, PerSecondCounter } from '../utils/calculation';
-import { MAX_LINE_LEN } from '../utils/constants';
+import { Ball, CanvasMouseEvent, GameEvent, Point, ROTATIONS } from '../types';
+import { calculateLineEndPoints, modulo, PerSecondCounter } from '../utils/calculation';
 import CanvasController from './CanvasController';
 
 type OnShotHandler = (action: GameEvent) => void;
-
-const shotModes = ['normal', 'inverted'] as const;
-type ShotMode = typeof shotModes[number];
 
 class GameController extends CanvasController {
   private balls: Ball[] = [];
@@ -14,7 +10,7 @@ class GameController extends CanvasController {
   private playerId = 0;
   private playerName = '';
   private playerColor = '';
-  private shotMode: ShotMode = 'normal';
+  private shotRotationIdx = 0;
   private touchDrag: { start: Point; end: Point } | null = null;
   private fpsCounter = new PerSecondCounter(50);
   private tickCounter = new PerSecondCounter(50);
@@ -25,18 +21,22 @@ class GameController extends CanvasController {
 
   private findTouchLineEndPoint(ball: Ball): Point {
     const { start, end } = this.touchDrag as { start: Point; end: Point };
-    const point = calcEndpoint(start, end, MAX_LINE_LEN);
-    const mirroredPoint = getMirroredPoint(start, point);
-    const dx = mirroredPoint.x - start.x;
-    const dy = mirroredPoint.y - start.y;
+    const { shot } = calculateLineEndPoints(start, end, 'South');
+    const dx = shot.x - start.x;
+    const dy = shot.y - start.y;
     return { x: ball.x + dx || ball.x, y: ball.y + dy || ball.y };
   }
 
   doShot(point: Point, ball: Ball, onShot: OnShotHandler) {
+    const x = point.x - ball.x;
+    const y = point.y - ball.y;
+
+    if (x === 0 && y === 0) return;
+
     onShot({
       type: 'SHOT',
-      x: point.x - ball.x,
-      y: point.y - ball.y,
+      x,
+      y,
       id: ball.id,
     });
     this.setHasTurn(false);
@@ -47,12 +47,11 @@ class GameController extends CanvasController {
     super.setMouseAt(event);
 
     if (event.button === 2) {
-      this.shotMode = this.shotMode === 'normal' ? 'inverted' : 'normal';
+      this.shotRotationIdx = modulo(this.shotRotationIdx + 1, ROTATIONS.length);
       return;
     }
     if (!this.ball || !this.hasTurn) return;
 
-    const { ball } = this;
     const clickedAt = this.getMousePosition(event);
 
     if (event.pointerType !== 'mouse') {
@@ -60,11 +59,8 @@ class GameController extends CanvasController {
       return;
     }
     // MOUSE
-    let point = calcEndpoint({ x: ball.x, y: ball.y }, clickedAt, MAX_LINE_LEN);
-    if (this.shotMode === 'inverted') {
-      point = getMirroredPoint({ x: ball.x, y: ball.y }, point);
-    }
-    this.doShot(point, ball, onShot);
+    const { shot } = calculateLineEndPoints(this.ball, clickedAt, ROTATIONS[this.shotRotationIdx]);
+    this.doShot(shot, this.ball, onShot);
   }
 
   handleMouseMove(event: CanvasMouseEvent) {
@@ -95,14 +91,12 @@ class GameController extends CanvasController {
       return;
     }
 
-    const point = calcEndpoint({ x: ball.x, y: ball.y }, this.mouseAt, MAX_LINE_LEN);
-    if (this.shotMode === 'inverted') {
-      const mirroredPoint = getMirroredPoint({ x: ball.x, y: ball.y }, point);
-      this.drawLine(ball, mirroredPoint);
-      this.drawLine(ball, point, true);
-    } else {
-      this.drawLine(ball, point);
+    const rotation = ROTATIONS[this.shotRotationIdx];
+    const { shot, guide } = calculateLineEndPoints(ball, this.mouseAt, ROTATIONS[this.shotRotationIdx]);
+    if (rotation !== 'North') {
+      this.drawLine(ball, guide, true);
     }
+    this.drawLine(ball, shot);
   }
 
   protected renderStatus() {

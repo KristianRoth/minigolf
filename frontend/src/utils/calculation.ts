@@ -1,4 +1,5 @@
-import { Point } from '../types';
+import { Point, Rotation } from '../types';
+import { MAX_LINE_LEN } from './constants';
 
 export const clamp = (value: number, in_min: number, in_max: number, out_min: number, out_max: number) => {
   return ((value - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
@@ -12,7 +13,7 @@ export const distance = (point1: Point, point2: Point): number => {
   return Math.sqrt(distanceSquared(point1, point2));
 };
 
-export const calcEndpoint = (start: Point, end: Point, maxLength: number) => {
+const calcEndpoint = (start: Point, end: Point) => {
   const lineLength = distance(start, end);
 
   const vect = {
@@ -20,7 +21,7 @@ export const calcEndpoint = (start: Point, end: Point, maxLength: number) => {
     y: (end.y - start.y) / lineLength,
   };
 
-  const realLength = Math.min(maxLength, lineLength);
+  const realLength = Math.min(MAX_LINE_LEN, lineLength);
 
   const point: Point = {
     x: start.x + vect.x * realLength,
@@ -30,13 +31,36 @@ export const calcEndpoint = (start: Point, end: Point, maxLength: number) => {
   return point;
 };
 
-export const getMirroredPoint = (start: Point, end: Point) => {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  return {
-    x: start.x - dx,
-    y: start.y - dy,
-  };
+export const calculateLineEndPoints = (
+  ballAt: Point,
+  mouseAt: Point,
+  rotation: Rotation
+): { shot: Point; guide: Point } => {
+  const guide = calcEndpoint(ballAt, mouseAt);
+  const shot = (() => {
+    const dx = guide.x - ballAt.x;
+    const dy = guide.y - ballAt.y;
+    switch (rotation) {
+      case 'North':
+        return guide;
+      case 'East':
+        return {
+          x: ballAt.x - dy,
+          y: ballAt.y + dx,
+        };
+      case 'South':
+        return {
+          x: ballAt.x - dx,
+          y: ballAt.y - dy,
+        };
+      case 'West':
+        return {
+          x: ballAt.x + dy,
+          y: ballAt.y - dx,
+        };
+    }
+  })();
+  return { guide, shot };
 };
 
 export const modulo = (n: number, m: number) => {
