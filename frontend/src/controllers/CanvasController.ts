@@ -17,6 +17,10 @@ const colors = {
     South: '#187814',
     West: '#30d42a',
   },
+  portal: {
+    base: '#000000',
+    center: '#e68a00',
+  },
 } as const;
 
 class CanvasController {
@@ -253,6 +257,16 @@ class CanvasController {
     }, point);
   }
 
+  protected renderPortal(point: Point) {
+    this.renderElement(() => {
+      const grd = this.context.createRadialGradient(0, 0, HALF_BLOCK / 3, 0, 0, HALF_BLOCK);
+      grd.addColorStop(0, 'black');
+      grd.addColorStop(1, 'orange');
+      this.context.fillStyle = grd;
+      this.drawCircle({ x: 0, y: 0 }, HALF_BLOCK);
+    }, point);
+  }
+
   protected renderStart(point: Point) {
     this.renderElement(() => {
       this.context.fillStyle = colors.start;
@@ -332,7 +346,7 @@ class CanvasController {
         this.renderInvertedRoundedCorner(point, rotation, doShadow);
         return;
       case 'Portal':
-        console.log('TODO: IMPLEMENT PORTAL');
+        this.renderPortal(point);
         return;
     }
   }

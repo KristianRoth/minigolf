@@ -4,11 +4,12 @@ import GameController from '../controllers/GameController';
 import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useWebsocket from '../hooks/useWebsocket';
-import { CanvasMouseEvent, GameEvent } from '../types';
+import { CanvasMouseEvent, GameEvent, GameMap } from '../types';
 import { BASE_URL, GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
+import templates from '../utils/templates';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
@@ -28,7 +29,7 @@ function Game() {
   const [playerId, setPlayerId] = useState(0);
   const [balls, setBalls] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
-  const [mapId, setMapId] = useState<string>('');
+  const [gameMap, setGameMap] = useState<GameMap | null>(null);
 
   const [mapRef, mapController] = useCanvasController(MapController);
   const [gameRef, gameController] = useCanvasController(GameController);
@@ -82,7 +83,7 @@ function Game() {
           gameController?.setPlayerId(event.playerId);
           mapController?.setGameMap(event.gameMap);
           setPlayerId(event.playerId);
-          setMapId(event.gameMap.id);
+          setGameMap(event.gameMap);
         } else if (event.type === 'TURN_BEGIN') {
           gameController?.setHasTurn(true);
         }
@@ -117,7 +118,9 @@ function Game() {
   };
 
   const goToEdit = () => {
-    navigate(`/editor/${mapId}`);
+    if (!gameMap) return;
+    GameStorage.setGameMap(gameMap);
+    navigate(`/editor/${gameMap.id}`);
   };
 
   const menu = (

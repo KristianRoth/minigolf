@@ -51,4 +51,14 @@ export const GameStorage = {
   removeGameMap: (mapId = '') => {
     localStorage.removeItem(m(mapId));
   },
+  getSavedMaps: () => {
+    const maps: GameMap[] = [];
+    for (const key in localStorage) {
+      if (key.indexOf('gameMap') === 0) {
+        const map = JSON.parse(localStorage.getItem(key) as string) as GameMap;
+        maps.push(map);
+      }
+    }
+    return maps;
+  },
 };

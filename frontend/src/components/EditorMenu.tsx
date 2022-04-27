@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { STRUCTURE_TYPES, GROUND_TYPES, EditorState, GameMap, ROTATIONS } from '../types';
 import { GameStorage, BASE_URL } from '../utils/api';
@@ -16,6 +17,8 @@ type EditorMenuProps = {
 const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBack, goForward }) => {
   const { mapId } = useParams();
   const navigate = useNavigate();
+
+  const [page, setPage] = useState<'toolbar' | 'maps'>('toolbar');
 
   const onSave = () => {
     GameStorage.setGameMap(gameMap);
@@ -43,8 +46,8 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
     navigate(`/${gameId}`);
   };
 
-  return (
-    <div className='row'>
+  const Toolbar = () => (
+    <>
       <div className='column'>
         <Row style={{ width: '100%' }}>
           <Button
@@ -128,7 +131,39 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
             Käynnistä peli
           </Button>
         </div>
+        <div className='p' style={{ display: 'inline-flex', paddingBottom: 0 }}>
+          <Button onClick={() => setPage('maps')}>Näytä kartat</Button>
+        </div>
       </div>
+    </>
+  );
+
+  return (
+    <div className='row'>
+      {page === 'toolbar' && <Toolbar />}
+      {page === 'maps' && <MapMenu setPage={() => setPage('toolbar')} />}
+    </div>
+  );
+};
+
+const MapMenu: React.FC<{ setPage: () => void }> = ({ setPage }) => {
+  const maps = useMemo(() => GameStorage.getSavedMaps(), []);
+  const navigate = useNavigate();
+
+  return (
+    <div className='p' style={{ paddingTop: 0 }}>
+      <p>Tallennetut kartat</p>
+      {maps.map(({ id, name, creator }) => (
+        <div className='row' key={id}>
+          <Button onClick={() => navigate(`/editor/${id}`)}>Avaa</Button>
+          <span style={{ marginLeft: '5px' }}>
+            id: {id}, name: {name}, creator: {creator}
+          </span>
+        </div>
+      ))}
+      <Button style={{ marginTop: '5px' }} onClick={() => setPage()}>
+        Näytä editori
+      </Button>
     </div>
   );
 };

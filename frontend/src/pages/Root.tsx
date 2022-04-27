@@ -23,6 +23,9 @@ const RootPage: React.FC = () => {
   return (
     <div className='column'>
       <h1>Minigolfpeli</h1>
+
+      <button onClick={() => navigate(`/editor`)}>Tästä nappulasta editoriin</button>
+
       <p>Syötä pelin id</p>
       <input
         value={gameId}
