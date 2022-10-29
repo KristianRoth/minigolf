@@ -74,9 +74,20 @@ pub async fn start_loop(games: Games) {
     println!("Starting game loop");
     tokio::task::spawn(async move {
         let mut interval = tokio::time::interval(std::time::Duration::from_millis(TICK_RATE));
+        let mut gameids_to_delete: Vec<String> = vec![];
         loop {
             interval.tick().await;
+
+            for game_id in gameids_to_delete {
+                println!("Remove game {game_id}");
+                games.write().await.remove(&game_id);
+            }
+            gameids_to_delete = vec![];
+
             for (_game_id, game) in games.write().await.iter_mut() {
+                if game.is_idle() {
+                    gameids_to_delete.push(_game_id.to_string());
+                }
                 game.tick().await;
                 game.send_update().await;
             }

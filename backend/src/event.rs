@@ -96,7 +96,7 @@ pub struct InitEvent {
 impl InitEvent {
     pub fn from_game(game: &Game, player_id: u32) -> Event {
         Event::INIT(InitEvent {
-            player_id: player_id,
+            player_id,
             players: PlayerUpdateDTO::from_game(game),
             game_map: GameMapDTO::from_game(game),
         })
@@ -146,7 +146,7 @@ pub struct TurnBeginEvent {
 impl TurnBeginEvent {
     pub fn new(player_id: u32) -> Event {
         Event::TURNBEGIN(TurnBeginEvent {
-            player_id: player_id,
+            player_id,
         })
     }
 }

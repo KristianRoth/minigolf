@@ -3,6 +3,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 use warp::ws::Message;
+use std::time::{SystemTime};
 
 use crate::event::{Event, GameMapDTO, InitEvent, ShotEvent, TurnBeginEvent, UpdateEvent};
 use crate::game_map::{GameMap, SpecialEffect};
@@ -11,6 +12,7 @@ use crate::math::VectorF64;
 pub type WebSocketSender = futures_util::stream::SplitSink<warp::ws::WebSocket, warp::ws::Message>;
 
 pub struct Game {
+    last_event_time: SystemTime,
     pub game_id: String,
     pub players: HashMap<u32, Player>,
     pub map: GameMap,
@@ -33,10 +35,13 @@ pub struct Player {
 
 static NEXT_USER_ID: AtomicU32 = AtomicU32::new(1);
 
+const IDLE_AFTER_SECONDS: u32 = 1800;
+
 impl Game {
     pub fn new(game_id: String) -> Self {
         Self {
-            game_id: game_id,
+            last_event_time: SystemTime::now(),
+            game_id,
             players: HashMap::default(),
             map: GameMap::new(),
         }
@@ -44,6 +49,7 @@ impl Game {
 
     pub fn new_from_dto(map: GameMapDTO) -> Self {
         Self {
+            last_event_time: SystemTime::now(),
             game_id: rand::thread_rng()
                 .sample_iter(&Alphanumeric)
                 .take(5)
@@ -119,7 +125,13 @@ impl Game {
     }
 
     pub fn shot(&mut self, shot_event: ShotEvent, player_id: u32) {
+        self.last_event_time = SystemTime::now();
         self.players.get_mut(&player_id).unwrap().shot(shot_event);
+    }
+
+    pub fn is_idle(&self) -> bool {
+        let time_since_last_action = SystemTime::now().duration_since(self.last_event_time).unwrap();
+        return time_since_last_action.as_secs() as u32 > IDLE_AFTER_SECONDS;
     }
 }
 
