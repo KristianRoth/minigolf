@@ -145,8 +145,6 @@ pub struct TurnBeginEvent {
 
 impl TurnBeginEvent {
     pub fn new(player_id: u32) -> Event {
-        Event::TURNBEGIN(TurnBeginEvent {
-            player_id,
-        })
+        Event::TURNBEGIN(TurnBeginEvent { player_id })
     }
 }

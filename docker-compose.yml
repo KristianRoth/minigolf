@@ -1,12 +1,38 @@
 version: "3.9"
 services:
-  web:
-    container_name: app
-    image: app
+  backend:
+    container_name: backend
     build:
-      context: .
-      target: app
+      context: ./backend
     ports:
-      - "8080:8080"
-    command:
-      - "cd backend && ./backend"
+      - 8080:8080
+    depends_on:
+      - mongodb
+    environment:
+      WAIT_HOSTS: mongodb:27017
+    volumes:
+      - ./backend:/app
+    command: sh -c "/wait && cargo watch -w src -x run"
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend/src:/app/src
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+
+volumes:
+  mongodb_data_container:
