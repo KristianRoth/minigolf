@@ -13,13 +13,15 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebSocket(router *gin.Engine) {
-	router.GET("/api/ws", func(c *gin.Context) {
+	router.GET("/game/:gameId", func(c *gin.Context) {
 		//upgrade get request to websocket protocol
+		//gameId := c.Param("gameId")
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+
 		defer ws.Close()
 		for {
 			//Read Message from client
