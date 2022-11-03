@@ -1,10 +1,10 @@
 package game
 
 type Ball struct {
-	x  float32
-	y  float32
-	vx float32
-	vy float32
+	x  float64
+	y  float64
+	vx float64
+	vy float64
 }
 
 func NewBall() Ball {
