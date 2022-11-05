@@ -1,6 +1,10 @@
 package game
 
-import "github.com/gorilla/websocket"
+import (
+	"backend/calc"
+
+	"github.com/gorilla/websocket"
+)
 
 type Player struct {
 	name string
@@ -9,14 +13,15 @@ type Player struct {
 }
 
 func NewPlayer(name string, ws websocket.Conn) Player {
+	start := calc.NewVec(0.0, 0.0)
+	vel := calc.NewVec(1.0, 1.0)
 	return Player{
 		name: name,
-		ball: NewBall(),
+		ball: NewBall(start, vel),
 		ws:   ws,
 	}
 }
 
-func (p Player) Update() {
-	p.ball.x += p.ball.vx
-	p.ball.y += p.ball.vy
+func (p *Player) Update() {
+	p.ball = p.ball.Move(p.ball.Vel.Length())
 }

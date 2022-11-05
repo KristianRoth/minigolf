@@ -1,15 +1,18 @@
-package game
+package calc
 
-import "errors"
+import (
+	"backend/models"
+	"errors"
+)
 
 type Arc struct {
-	Pos    VectorF64
+	Pos    Vector
 	Radius float64
-	Start  VectorF64
-	End    VectorF64
+	Start  Vector
+	End    Vector
 }
 
-func NewArc(pos VectorF64, radius float64, start VectorF64, end VectorF64) Arc {
+func NewArc(pos Vector, radius float64, start Vector, end Vector) Arc {
 	return Arc{
 		pos,
 		radius,
@@ -18,7 +21,7 @@ func NewArc(pos VectorF64, radius float64, start VectorF64, end VectorF64) Arc {
 	}
 }
 
-func (arc Arc) ProjectPoint(ball VectorF64, rot Rotation) (VectorF64, error) {
+func (arc Arc) ProjectPoint(ball Vector, rot models.Rotation) (Vector, error) {
 	zero := NewVec(0.0, 0.0)
 	dist_vector := ball.VectorTo(arc.Pos)
 	dist_unit := dist_vector.Unit()
@@ -34,5 +37,5 @@ func (arc Arc) ProjectPoint(ball VectorF64, rot Rotation) (VectorF64, error) {
 	if further.IsBetween(rot_end, rot_start) {
 		return arc.Pos.Add(further), nil
 	}
-	return VectorF64{}, errors.New("cannot project point")
+	return Vector{}, errors.New("cannot project point")
 }
