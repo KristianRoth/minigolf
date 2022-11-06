@@ -7,9 +7,10 @@ import (
 )
 
 type Player struct {
-	name string
-	ball Ball
-	ws   websocket.Conn
+	name       string
+	ball       Ball
+	shot_count int
+	ws         websocket.Conn
 }
 
 func NewPlayer(name string, ws websocket.Conn) Player {
@@ -17,11 +18,7 @@ func NewPlayer(name string, ws websocket.Conn) Player {
 	vel := calc.NewVec(1.0, 1.0)
 	return Player{
 		name: name,
-		ball: NewBall(start, vel),
+		ball: newBall(start, vel),
 		ws:   ws,
 	}
-}
-
-func (p *Player) Update() {
-	p.ball = p.ball.Move(p.ball.Vel.Length())
 }

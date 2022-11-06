@@ -23,7 +23,7 @@ func (handler GameHandler) getDefaultGame(gameId string) game.Game {
 		return currentGame
 	}
 	fmt.Println(gameId, "Doesnt exist")
-	game := game.NewGame(gameId, 1)
+	game := game.NewGame(gameId, "1")
 	handler.games[gameId] = game
 	return game
 }

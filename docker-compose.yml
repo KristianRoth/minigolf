@@ -8,11 +8,10 @@ services:
       - 8080:8080
     depends_on:
       - mongodb
-    environment:
-      WAIT_HOSTS: mongodb:27017
     volumes:
       - ./backend:/app
-    command: sh -c "/wait && cargo watch -w src -x run"
+    env_file:
+      - .env
 
   frontend:
     container_name: frontend

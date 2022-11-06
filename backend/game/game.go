@@ -6,11 +6,15 @@ type Game struct {
 	GameConn
 	game_id  string
 	players  map[string]Player
-	game_map int
+	game_map GameMap
 }
 
-func NewGame(game_id string, game_map int) Game {
+func NewGame(game_id string, game_map_id string) Game {
 	fmt.Println("Making new game:", game_id)
+	// TODO: load from database
+	game_map := NewGameMap()
+	game_map.Id = game_map_id
+	//
 	game := Game{
 		game_id:  game_id,
 		players:  make(map[string]Player),
@@ -25,15 +29,10 @@ func NewGame(game_id string, game_map int) Game {
 
 func (g Game) AddPlayer(player Player) {
 	g.players[player.name] = player
-	g.sendAllPlayers("New player")
+	message := fmt.Sprintf("New player %s", player.name)
+	g.sendAllPlayers(message)
 }
 
 func (g Game) RemovePlayer(player *Player) {
 	delete(g.players, player.name)
-}
-
-func (g Game) Tick() {
-	for _, player := range g.players {
-		player.Update()
-	}
 }
