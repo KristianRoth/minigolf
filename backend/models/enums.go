@@ -13,9 +13,9 @@ func reverseMap[T GroundType | StructureType | Rotation, U string](m map[T]U) ma
 	return n
 }
 
-func toJson[T GroundType | StructureType | Rotation](s T, toString map[T]string) ([]byte, error) {
+func toJson(value string) ([]byte, error) {
 	buffer := bytes.NewBufferString(`"`)
-	buffer.WriteString(toString[s])
+	buffer.WriteString(value)
 	buffer.WriteString(`"`)
 	return buffer.Bytes(), nil
 }
@@ -58,6 +58,10 @@ func (gt GroundType) String() string {
 	return gtToString[gt]
 }
 
+func (gt GroundType) MarshalJSON() ([]byte, error) {
+	return toJson(gtToString[gt])
+}
+
 func (gt *GroundType) UnmarshalJSON(b []byte) error {
 	return toId(gt, b, gtToId)
 }
@@ -93,6 +97,10 @@ func (st StructureType) String() string {
 	return stToString[st]
 }
 
+func (st StructureType) MarshalJSON() ([]byte, error) {
+	return toJson(stToString[st])
+}
+
 func (st *StructureType) UnmarshalJSON(b []byte) error {
 	return toId(st, b, stToId)
 }
@@ -118,6 +126,10 @@ var rToId = reverseMap(rToString)
 
 func (r Rotation) String() string {
 	return rToString[r]
+}
+
+func (r Rotation) MarshalJSON() ([]byte, error) {
+	return toJson(rToString[r])
 }
 
 func (r *Rotation) UnmarshalJSON(b []byte) error {

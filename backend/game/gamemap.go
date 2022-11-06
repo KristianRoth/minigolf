@@ -27,6 +27,28 @@ type GameMapTile struct {
 	Structure models.Structure
 }
 
+func TileToDto(gmt GameMapTile) models.TileDto {
+	return models.TileDto{
+		Pos: models.Point{
+			X: gmt.Pos.X,
+			Y: gmt.Pos.Y,
+		},
+		Ground:    gmt.Ground,
+		Structure: gmt.Structure,
+	}
+}
+
+func TileFromDto(tdto models.TileDto) GameMapTile {
+	return GameMapTile{
+		Pos: calc.Vector{
+			X: tdto.Pos.X,
+			Y: tdto.Pos.Y,
+		},
+		Ground:    tdto.Ground,
+		Structure: tdto.Structure,
+	}
+}
+
 type GameMap struct {
 	Id    string
 	Tiles [][]GameMapTile
@@ -57,6 +79,32 @@ func NewGameMap() GameMap {
 	}
 	return GameMap{
 		Id:    strconv.Itoa(id),
+		Tiles: tiles,
+	}
+}
+
+func GameToDto(gameMap GameMap) models.GameMapDto {
+	var tile_dtos []models.TileDto = []models.TileDto{}
+	for _, col := range gameMap.Tiles {
+		for _, tile := range col {
+			tile_dtos = append(tile_dtos, TileToDto(tile))
+		}
+	}
+	return models.GameMapDto{
+		Id:    gameMap.Id,
+		Tiles: tile_dtos,
+	}
+}
+
+func GameFromDto(gdto models.GameMapDto) GameMap {
+	var tiles [][]GameMapTile = [][]GameMapTile{}
+	for _, tile_dto := range gdto.Tiles {
+		x := tile_dto.Pos.X / 100
+		y := tile_dto.Pos.Y / 100
+		tiles[int(x)][int(y)] = TileFromDto(tile_dto)
+	}
+	return GameMap{
+		Id:    gdto.Id,
 		Tiles: tiles,
 	}
 }

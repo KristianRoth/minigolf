@@ -17,14 +17,14 @@ type Ground struct {
 }
 
 // Tile
-type Tile struct {
+type TileDto struct {
 	Pos       Point     `json:"pos"`
 	Ground    Ground    `json:"ground"`
 	Structure Structure `json:"structure"`
 }
 
 // GameMap
-type GameMap struct {
-	Id    string   `json:"id"`
-	Tiles [][]Tile `json:"tiles"`
+type GameMapDto struct {
+	Id    string    `json:"id"`
+	Tiles []TileDto `json:"tiles"`
 }
