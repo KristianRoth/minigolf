@@ -4,7 +4,9 @@ import (
 	"backend/calc"
 	"backend/models"
 	"errors"
+	"fmt"
 	"math"
+	"time"
 )
 
 type SpecialEffect int64
@@ -13,6 +15,15 @@ const (
 	HoleEffect SpecialEffect = iota
 	NoEffect
 )
+
+func (g Game) runGame() {
+	for {
+		fmt.Println("Running game tick")
+		g.sendUpdateEvent()
+		g.tick()
+		<-time.After(time.Second)
+	}
+}
 
 func (g Game) tick() {
 	for _, player := range g.players {
@@ -68,8 +79,8 @@ func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
 }
 
 func (g Game) doGroundEffect(ball Ball) Ball {
-	x := uint32(ball.Pos.X)
-	y := uint32(ball.Pos.Y)
+	x := uint32(ball.Pos.X / 100)
+	y := uint32(ball.Pos.Y / 100)
 	tile := g.game_map.Tiles[x][y]
 	switch tile.Ground.Type {
 	case models.Grass:
@@ -113,10 +124,10 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 		to_move := math.Min(d_pos, distance_to_wall-49.9)
 		ball = ball.Move(to_move)
 		d_pos -= to_move
-
 		if d_pos < 0.0001 {
 			return ball, NoEffect
 		}
+		return ball, NoEffect
 	}
 }
 

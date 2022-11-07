@@ -24,18 +24,20 @@ func NewGame(game_id string, game_map_id string) Game {
 		players:  make(map[string]Player),
 		game_map: game_map,
 		GameConn: GameConn{
-			broadcast:     make(chan string),
+			broadcast:     make(chan interface{}),
 			playerChannel: make(chan string),
 		},
 	}
 	go game.run()
+	go game.runGame()
 	return game
 }
 
 func (g Game) AddPlayer(name string, ws websocket.Conn) {
-	g.players[name] = NewPlayer(name, ws, &g.playerChannel)
-	message := fmt.Sprintf("New player %s", name)
-	g.sendAllPlayers(message)
+	player := NewPlayer(name, ws, &g.playerChannel)
+	g.players[name] = player
+	go player.run()
+	g.sendInitEvent()
 
 }
 

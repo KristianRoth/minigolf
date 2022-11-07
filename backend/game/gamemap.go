@@ -58,6 +58,9 @@ func NewGameMap() GameMap {
 			if is_border {
 				structure_type = models.Wall
 			}
+			if x == 1 && y == 1 {
+				structure_type = models.Start
+			}
 			tiles_col = append(
 				tiles_col,
 				GameMapTile{
