@@ -1,9 +1,29 @@
 package game
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gorilla/websocket"
+)
 
 type GameConn struct {
-	broadcast chan string
+	broadcast     chan string
+	playerChannel chan string
+}
+
+type PlayerConn struct {
+	playerEvents *chan string
+	ws           websocket.Conn
+}
+
+func (p Player) run() {
+	for {
+		_, message, err := p.ws.ReadMessage()
+		if err != nil {
+			break
+		}
+		*p.playerEvents <- string(message)
+	}
 }
 
 func (p Player) SendPlayerEvent() {
@@ -28,6 +48,8 @@ func (g Game) run() {
 				fmt.Println("Sending to name", name)
 				p.ws.WriteJSON(message)
 			}
+		case message := <-g.playerChannel:
+			fmt.Println("Received message:", message)
 		}
 	}
 }

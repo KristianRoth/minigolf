@@ -7,18 +7,21 @@ import (
 )
 
 type Player struct {
+	PlayerConn
 	name       string
 	ball       Ball
 	shot_count int
-	ws         websocket.Conn
 }
 
-func NewPlayer(name string, ws websocket.Conn) Player {
+func NewPlayer(name string, ws websocket.Conn, playerChannel *chan string) Player {
 	start := calc.NewVec(0.0, 0.0)
 	vel := calc.NewVec(1.0, 1.0)
 	return Player{
 		name: name,
 		ball: newBall(start, vel),
-		ws:   ws,
+		PlayerConn: PlayerConn{
+			playerEvents: playerChannel,
+			ws:           ws,
+		},
 	}
 }

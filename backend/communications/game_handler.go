@@ -30,7 +30,5 @@ func (handler GameHandler) getDefaultGame(gameId string) game.Game {
 
 func (handler GameHandler) NewConnection(gameId string, name string, ws websocket.Conn) {
 	currentGame := handler.getDefaultGame(gameId)
-
-	player := game.NewPlayer(name, ws)
-	currentGame.AddPlayer(player)
+	currentGame.AddPlayer(name, ws)
 }

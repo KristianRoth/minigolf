@@ -1,6 +1,10 @@
 package game
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gorilla/websocket"
+)
 
 type Game struct {
 	GameConn
@@ -20,17 +24,19 @@ func NewGame(game_id string, game_map_id string) Game {
 		players:  make(map[string]Player),
 		game_map: game_map,
 		GameConn: GameConn{
-			broadcast: make(chan string),
+			broadcast:     make(chan string),
+			playerChannel: make(chan string),
 		},
 	}
 	go game.run()
 	return game
 }
 
-func (g Game) AddPlayer(player Player) {
-	g.players[player.name] = player
-	message := fmt.Sprintf("New player %s", player.name)
+func (g Game) AddPlayer(name string, ws websocket.Conn) {
+	g.players[name] = NewPlayer(name, ws, &g.playerChannel)
+	message := fmt.Sprintf("New player %s", name)
 	g.sendAllPlayers(message)
+
 }
 
 func (g Game) RemovePlayer(player *Player) {
