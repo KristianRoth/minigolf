@@ -3,6 +3,7 @@ package routes
 import (
 	"backend/communications"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -11,10 +12,10 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true }, //TODO: this is wrong
 }
 
 func WebSocket(router *gin.Engine) {
-	fmt.Println("STaring websocket listener")
 	gameH := communications.NewGameHandler()
 	router.GET("/game/:gameId", func(c *gin.Context) {
 		//upgrade get request to websocket protocol
