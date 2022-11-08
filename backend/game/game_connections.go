@@ -18,7 +18,7 @@ type PlayerConn struct {
 	ws           websocket.Conn
 }
 
-type Event struct {
+type event struct {
 	Type string `json:"type"`
 }
 
@@ -29,8 +29,8 @@ type initEvent struct {
 }
 
 type updateEvent struct {
-	Type         string        `json:"type"`
-	PlayerStates []playerState `json:"playerStates"`
+	Type         string             `json:"type"`
+	PlayerStates []models.PlayerDto `json:"playerStates"`
 }
 
 type shotEvent struct {
@@ -49,49 +49,29 @@ func (p Player) run() {
 	for {
 		_, message, err := p.ws.ReadMessage()
 		if err != nil {
+			//TODO: something went wrong with player disconnect him
 			break
 		}
 		*p.playerEvents <- playerEvent{&p, message}
 	}
 }
 
-func (g Game) sendAllPlayers(s string) {
-	fmt.Println("Sending message:", s)
-	go func() { g.broadcast <- s }()
-}
-
-func (g Game) sendInitEvent() {
-	g.broadcast <- initEvent{
+func (g Game) sendInitEvent(p Player) {
+	p.ws.WriteJSON(initEvent{
 		Type:     "INIT",
 		PlayerId: 1,
-		GameMap:  GameToDto(g.game_map),
-	}
-}
-
-type playerState struct {
-	X         float64 `json:"x"`
-	Y         float64 `json:"y"`
-	Dx        float64 `json:"dx"`
-	Dy        float64 `json:"dy"`
-	Id        int64   `json:"id"`
-	Name      string  `json:"name"`
-	ShotCount int64   `json:"shotCount"`
+		GameMap:  GameMapToDto(g.game_map),
+	})
 }
 
 func (g Game) sendUpdateEvent() {
+	var playerStates []models.PlayerDto
+	for _, player := range g.players {
+		playerStates = append(playerStates, PlayerToDto(player))
+	}
 	g.broadcast <- updateEvent{
-		Type: "UPDATE",
-		PlayerStates: []playerState{
-			{
-				X:         g.players["Nimi"].ball.Pos.X,
-				Y:         g.players["Nimi"].ball.Pos.Y,
-				Dx:        1,
-				Dy:        1,
-				Id:        1,
-				Name:      "Nimi",
-				ShotCount: 1,
-			},
-		},
+		Type:         "UPDATE",
+		PlayerStates: playerStates,
 	}
 }
 
@@ -107,7 +87,7 @@ func (g Game) run() {
 		case playerEvent := <-g.playerChannel:
 			player, message := playerEvent.player, playerEvent.message
 			fmt.Println("Received message:", string(message))
-			var event Event
+			var event event
 			err := json.Unmarshal(message, &event)
 			if err != nil {
 				fmt.Println(fmt.Errorf("Unknow message from player, %v, %s", err, message))

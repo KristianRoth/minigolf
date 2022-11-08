@@ -37,8 +37,7 @@ func (g Game) AddPlayer(name string, ws websocket.Conn) {
 	player := NewPlayer(name, ws, &g.playerChannel)
 	g.players[name] = player
 	go player.run()
-	g.sendInitEvent()
-
+	g.sendInitEvent(player)
 }
 
 func (g Game) RemovePlayer(player *Player) {

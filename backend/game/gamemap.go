@@ -77,7 +77,7 @@ func NewGameMap() GameMap {
 	}
 }
 
-func GameToDto(gameMap GameMap) models.GameMapDto {
+func GameMapToDto(gameMap GameMap) models.GameMapDto {
 	var tile_dtos []models.TileDto = []models.TileDto{}
 	for _, col := range gameMap.Tiles {
 		for _, tile := range col {

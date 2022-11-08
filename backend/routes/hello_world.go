@@ -25,7 +25,7 @@ func HelloWorld(router *gin.Engine) {
 
 	router.GET("/api/game", func(c *gin.Context) {
 		game_map := game.NewGameMap()
-		dto := game.GameToDto(game_map)
+		dto := game.GameMapToDto(game_map)
 		c.JSON(200, dto)
 	})
 
