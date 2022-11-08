@@ -51,7 +51,7 @@ type arcCollider struct {
 }
 
 func (ac arcCollider) projectionPoint(position calc.Vector, ball calc.Vector, rot models.Rotation) (calc.Vector, error) {
-	return calc.NewArc(ac.Pos, ac.Radius, ac.Start, ac.End).ProjectPoint(ball, rot)
+	return calc.NewArc(ac.Pos.Rotate(mid, rot).Add(position), ac.Radius, ac.Start, ac.End).ProjectPoint(ball, rot)
 }
 
 var boxColliders []collider = []collider{

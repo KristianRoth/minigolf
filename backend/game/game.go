@@ -29,8 +29,9 @@ func NewGame(game_id string, game_map GameMap) Game {
 	return game
 }
 
-func (g Game) AddPlayer(name string, ws websocket.Conn) {
+func (g *Game) AddPlayer(name string, ws websocket.Conn) {
 	player := NewPlayer(name, ws, &g.playerChannel)
+	player.ball.Pos = g.getStartLocation()
 	g.players[name] = &player
 	go player.run()
 	g.sendInitEvent(player)

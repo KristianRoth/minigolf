@@ -20,7 +20,7 @@ func (g *Game) runGame() {
 	for {
 		g.sendUpdateEvent()
 		g.tick()
-		<-time.After(time.Second / 30)
+		<-time.After(time.Second / 60)
 	}
 }
 
