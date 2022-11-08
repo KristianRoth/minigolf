@@ -4,6 +4,7 @@ import (
 	"backend/calc"
 	"backend/models"
 	"errors"
+	"fmt"
 	"math"
 	"time"
 )
@@ -19,7 +20,7 @@ func (g *Game) runGame() {
 	for {
 		g.sendUpdateEvent()
 		g.tick()
-		<-time.After(time.Second / 20)
+		<-time.After(time.Second / 30)
 	}
 }
 
@@ -121,16 +122,19 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 			if collision.Type == models.Hole {
 				return ball, HoleEffect
 			}
+			fmt.Printf("Seinä %f, %f\n", collision.Point.X, collision.Point.Y)
+			fmt.Printf("Pallo %f, %f\n", ball.Pos.X, ball.Pos.Y)
 			ball = doCollision(collision.Point, ball)
 		}
-		to_move := math.Min(d_pos, distance_to_wall-49.9)
+		to_move := math.Max(1, math.Min(d_pos, distance_to_wall-49.9))
+
+		fmt.Printf("adding some: %f/%f\n", to_move, ball.Vel.Length())
+
 		ball = ball.Move(to_move)
 		d_pos -= to_move
-		if d_pos < 1.0 {
+		if d_pos < 0.0001 {
 			return ball, NoEffect
 		}
-		// fmt.Println("STILL HERE")
-		// return ball, NoEffect
 	}
 }
 
@@ -140,7 +144,7 @@ func doCollision(projectionPoint calc.Vector, ball Ball) Ball {
 	basis_changed.X = -basis_changed.X
 
 	vel := basis_changed.NormalBase(basis)
-	pos := projectionPoint.Add(basis.Multiply(1.05 * BALL_SIZE))
+	pos := projectionPoint.Add(basis.Multiply(50.1))
 	return newBall(pos, vel)
 }
 

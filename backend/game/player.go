@@ -15,7 +15,7 @@ type Player struct {
 }
 
 func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) Player {
-	start := calc.NewVec(200.0, 200.0)
+	start := calc.NewVec(600.0, 2000.0)
 	vel := calc.NewVec(0, 0)
 	return Player{
 		name: name,
@@ -35,5 +35,6 @@ func PlayerToDto(player Player) models.PlayerDto {
 		Dy:        player.ball.Vel.Y,
 		ShotCount: int64(player.shot_count),
 		Name:      player.name,
+		Id:        1,
 	}
 }

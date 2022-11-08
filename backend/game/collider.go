@@ -54,27 +54,27 @@ func (ac arcCollider) projectionPoint(position calc.Vector, ball calc.Vector, ro
 	return calc.NewArc(ac.Pos, ac.Radius, ac.Start, ac.End).ProjectPoint(ball, rot)
 }
 
-var origin = calc.NewVec(0.0, 0.0)
-var north = calc.NewVec(100.0, 0.0)
-var northeast = calc.NewVec(100.0, 100.0)
-var east = calc.NewVec(0.0, 100.0)
+var origin = calc.NewVec(0, 0)
+var north = calc.NewVec(100, 0)
+var northeast = calc.NewVec(100, 100)
+var east = calc.NewVec(0, 100)
 
 // var southeast = NewVec(-100.0, 100.0)
-var south = calc.NewVec(0.0, -100.0)
+var south = calc.NewVec(0, -100)
 
 // var southwest = NewVec(-100.0, -100.0)
-var west = calc.NewVec(-100.0, 0)
-var northwest = calc.NewVec(-100.0, 100.0)
+var west = calc.NewVec(-100, 0)
+var northwest = calc.NewVec(-100, 100)
 
 var boxColliders []collider = []collider{
-	pointCollider{Pos: origin},
-	lineCollider{Pos: origin, Dir: east},
-	pointCollider{Pos: east},
-	lineCollider{Pos: east, Dir: north},
-	pointCollider{Pos: northeast},
-	lineCollider{Pos: northeast, Dir: west},
-	pointCollider{Pos: north},
-	lineCollider{Pos: north, Dir: south},
+	pointCollider{Pos: calc.NewVec(0, 0)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
+	pointCollider{Pos: calc.NewVec(100, 0)},
+	lineCollider{Pos: calc.NewVec(100, 0), Dir: calc.NewVec(0, 100)},
+	pointCollider{Pos: calc.NewVec(100, 100)},
+	lineCollider{Pos: calc.NewVec(100, 100), Dir: calc.NewVec(-100, 0)},
+	pointCollider{Pos: calc.NewVec(0, 100)},
+	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
 }
 
 var wedgeColliders []collider = []collider{

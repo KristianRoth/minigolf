@@ -79,7 +79,7 @@ func (a Vector) ChangeBase(newVec_base Vector) Vector {
 	// |    normal.y,  -normal.x | x | self.x | = | newVec_base.x*self.x + normal.x*self.y |
 	// | -newVec_base.y, newVec_base.x |   | self.y |   | newVec_base.y*self.x + normal.y*self.y |
 	//                .multi(1/(normal.y*newVec_base.x - normal.x*newVec_base.y))
-	x := a.X*normal.Y - a.Y - normal.X
+	x := a.X*normal.Y - a.Y*normal.X
 	y := -a.X*base.Y + a.Y*base.X
 	return NewVec(x, y)
 }
