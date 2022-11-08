@@ -15,8 +15,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true }, //TODO: this is wrong
 }
 
-func WebSocket(router *gin.Engine) {
-	gameH := communications.NewGameHandler()
+func WebSocket(router *gin.Engine, gameH *communications.GameHandler) {
 	router.GET("/game/:gameId", func(c *gin.Context) {
 		//upgrade get request to websocket protocol
 		gameId := c.Param("gameId")

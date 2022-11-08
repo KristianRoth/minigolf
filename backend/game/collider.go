@@ -93,7 +93,7 @@ var invertedRoundedCornerColliders []collider = []collider{
 }
 
 var circleColliders []collider = []collider{
-	circleCollider{Pos: calc.NewVec(50, 50), Radius: 2},
+	circleCollider{Pos: calc.NewVec(50, 50), Radius: 24},
 }
 
 type CollisionPoint struct {

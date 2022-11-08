@@ -13,12 +13,8 @@ type Game struct {
 	game_map GameMap
 }
 
-func NewGame(game_id string, game_map_id string) Game {
+func NewGame(game_id string, game_map GameMap) Game {
 	fmt.Println("Making new game:", game_id)
-	// TODO: load from database
-	game_map := NewGameMap()
-	game_map.Id = game_map_id
-	//
 	game := Game{
 		game_id:  game_id,
 		players:  make(map[string]*Player),

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"backend/communications"
 	"backend/game"
 	"backend/models"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func HelloWorld(router *gin.Engine) {
+func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 	router.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"data": "Hello World!",
@@ -34,6 +35,7 @@ func HelloWorld(router *gin.Engine) {
 		if err := c.BindJSON(&game_dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})
 		}
-		c.JSON(200, game_dto)
+		g_id := gameH.GameFromMapDto(game_dto)
+		c.JSON(200, gin.H{"gameId": g_id})
 	})
 }

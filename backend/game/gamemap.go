@@ -90,8 +90,20 @@ func GameMapToDto(gameMap GameMap) models.GameMapDto {
 	}
 }
 
-func GameFromDto(gdto models.GameMapDto) GameMap {
-	var tiles [][]GameMapTile = [][]GameMapTile{}
+func GameMapFromDto(gdto models.GameMapDto) GameMap {
+	// var tiles [][]GameMapTile = [][]GameMapTile{}
+	// for x := 0; x < SIZE_X; x += 1 {
+	// 	tiles_col := []GameMapTile{}
+	// 	for y := 0; y < SIZE_Y; y += 1 {
+	// 		tiles_col = append(tiles_col, GameMapTile{})
+	// 	}
+	// 	tiles = append(tiles, tiles_col)
+	// }
+	tiles := make([][]GameMapTile, SIZE_X)
+	for x := 0; x < SIZE_X; x += 1 {
+		tiles[x] = make([]GameMapTile, SIZE_Y)
+	}
+
 	for _, tile_dto := range gdto.Tiles {
 		x := tile_dto.Pos.X / 100
 		y := tile_dto.Pos.Y / 100
