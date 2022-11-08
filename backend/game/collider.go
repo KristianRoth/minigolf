@@ -54,18 +54,6 @@ func (ac arcCollider) projectionPoint(position calc.Vector, ball calc.Vector, ro
 	return calc.NewArc(ac.Pos, ac.Radius, ac.Start, ac.End).ProjectPoint(ball, rot)
 }
 
-var origin = calc.NewVec(0, 0)
-var north = calc.NewVec(100, 0)
-var northeast = calc.NewVec(100, 100)
-var east = calc.NewVec(0, 100)
-
-// var southeast = NewVec(-100.0, 100.0)
-var south = calc.NewVec(0, -100)
-
-// var southwest = NewVec(-100.0, -100.0)
-var west = calc.NewVec(-100, 0)
-var northwest = calc.NewVec(-100, 100)
-
 var boxColliders []collider = []collider{
 	pointCollider{Pos: calc.NewVec(0, 0)},
 	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
@@ -78,34 +66,34 @@ var boxColliders []collider = []collider{
 }
 
 var wedgeColliders []collider = []collider{
-	pointCollider{Pos: origin},
-	lineCollider{Pos: origin, Dir: east},
-	pointCollider{Pos: east},
-	lineCollider{Pos: east, Dir: northwest},
-	pointCollider{Pos: east},
-	lineCollider{Pos: east, Dir: west},
+	pointCollider{Pos: calc.NewVec(0, 0)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
+	pointCollider{Pos: calc.NewVec(100, 0)},
+	lineCollider{Pos: calc.NewVec(100, 0), Dir: calc.NewVec(-100, 100)},
+	pointCollider{Pos: calc.NewVec(0, 100)},
+	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
 }
 
 var roundedCornerColliders []collider = []collider{
-	pointCollider{Pos: origin},
-	lineCollider{Pos: origin, Dir: east},
-	pointCollider{Pos: east},
-	arcCollider{Pos: origin, Radius: 100.0, Start: calc.NewVec(1.0, 0.0), End: calc.NewVec(0.0, 1.0)},
-	pointCollider{Pos: north},
-	lineCollider{Pos: north, Dir: south},
+	pointCollider{Pos: calc.NewVec(0, 0)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
+	pointCollider{Pos: calc.NewVec(100, 0)},
+	arcCollider{Pos: calc.NewVec(0, 0), Radius: 100, Start: calc.NewVec(1, 0), End: calc.NewVec(0, 1)},
+	pointCollider{Pos: calc.NewVec(0, 100)},
+	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
 }
 
 var invertedRoundedCornerColliders []collider = []collider{
-	pointCollider{Pos: origin},
-	lineCollider{Pos: origin, Dir: east},
-	pointCollider{Pos: east},
-	arcCollider{Pos: northeast, Radius: 100.0, Start: calc.NewVec(-1.0, 0.0), End: calc.NewVec(0.0, -1.0)},
-	pointCollider{Pos: north},
-	lineCollider{Pos: north, Dir: south},
+	pointCollider{Pos: calc.NewVec(0, 0)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
+	pointCollider{Pos: calc.NewVec(100, 0)},
+	arcCollider{Pos: calc.NewVec(100, 100), Radius: 100, Start: calc.NewVec(-1, 0), End: calc.NewVec(0, -1)},
+	pointCollider{Pos: calc.NewVec(0, 100)},
+	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
 }
 
 var circleColliders []collider = []collider{
-	circleCollider{Pos: mid, Radius: 24.0},
+	circleCollider{Pos: calc.NewVec(50, 50), Radius: 2},
 }
 
 type CollisionPoint struct {
