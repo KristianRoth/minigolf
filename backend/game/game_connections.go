@@ -28,6 +28,11 @@ type initEvent struct {
 	GameMap  models.GameMapDto `json:"gameMap"`
 }
 
+type turnBeginEvent struct {
+	Type     string `json:"type"`
+	PlayerId int32  `json:"playerId"`
+}
+
 type updateEvent struct {
 	Type         string             `json:"type"`
 	PlayerStates []models.PlayerDto `json:"playerStates"`
@@ -61,6 +66,13 @@ func (g Game) sendInitEvent(p Player) {
 		Type:     "INIT",
 		PlayerId: 1,
 		GameMap:  GameMapToDto(g.game_map),
+	})
+}
+
+func (g Game) sendTurnBeginEvent(p Player) {
+	p.ws.WriteJSON(turnBeginEvent{
+		Type:     "TURN_BEGIN",
+		PlayerId: 1,
 	})
 }
 

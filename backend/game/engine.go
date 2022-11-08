@@ -33,18 +33,22 @@ func (g *Game) tick() {
 			continue
 		}
 		player.ball = ball
+		if !player.is_turn && player.ball.Vel.Length() <= 1.0 {
+			player.is_turn = true
+			g.sendTurnBeginEvent(*player)
+		}
 	}
 }
 func (g Game) getStartLocation() calc.Vector {
-	start := calc.NewVec(0.0, 0.0)
+	start := calc.Vector{}
 	for _, col := range g.game_map.Tiles {
 		for _, tile := range col {
-			if tile.Structure.Type == models.None {
+			if tile.Structure.Type == models.Start {
 				start = tile.Pos
 			}
 		}
 	}
-	return start.Add(calc.NewVec(50.0, 50.0))
+	return start.Add(calc.NewVec(50, 50))
 }
 
 func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
@@ -152,4 +156,5 @@ func (g *Game) doShotEvent(p *Player, event shotEvent) {
 	p.ball.Vel.X = event.X / 10
 	p.ball.Vel.Y = event.Y / 10
 	p.shot_count += 1
+	p.is_turn = false
 }
