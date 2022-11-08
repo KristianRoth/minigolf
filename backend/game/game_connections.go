@@ -45,13 +45,13 @@ type playerEvent struct {
 	message []byte
 }
 
-func (p Player) run() {
+func (p *Player) run() {
 	for {
 		_, message, err := p.ws.ReadMessage()
 		if err != nil {
 			break
 		}
-		*p.playerEvents <- playerEvent{&p, message}
+		*p.playerEvents <- playerEvent{p, message}
 	}
 }
 
@@ -89,19 +89,18 @@ func (g Game) sendUpdateEvent() {
 				Dy:        1,
 				Id:        1,
 				Name:      "Nimi",
-				ShotCount: 1,
+				ShotCount: int64(g.players["Nimi"].shot_count),
 			},
 		},
 	}
 }
 
-func (g Game) run() {
+func (g *Game) run() {
 
 	for {
 		select {
 		case message := <-g.broadcast:
-			for name, p := range g.players {
-				fmt.Println("Sending to name", name)
+			for _, p := range g.players {
 				p.ws.WriteJSON(message)
 			}
 		case playerEvent := <-g.playerChannel:

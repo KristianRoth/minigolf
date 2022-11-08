@@ -15,7 +15,7 @@ type Player struct {
 
 func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) Player {
 	start := calc.NewVec(200.0, 200.0)
-	vel := calc.NewVec(1.0, 1.0)
+	vel := calc.NewVec(0, 0)
 	return Player{
 		name: name,
 		ball: newBall(start, vel),
