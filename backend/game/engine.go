@@ -4,7 +4,6 @@ import (
 	"backend/calc"
 	"backend/models"
 	"errors"
-	"fmt"
 	"math"
 	"time"
 )
@@ -16,22 +15,21 @@ const (
 	NoEffect
 )
 
-func (g Game) runGame() {
+func (g *Game) runGame() {
 	for {
-		fmt.Println("Running game tick")
 		g.sendUpdateEvent()
 		g.tick()
-		<-time.After(time.Second)
+		<-time.After(time.Second / 20)
 	}
 }
 
-func (g Game) tick() {
+func (g *Game) tick() {
 	for _, player := range g.players {
 		ball, effect := g.Collide(player.ball)
 		if effect == HoleEffect {
 			player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
 			player.shot_count = 0
-			return
+			continue
 		}
 		player.ball = ball
 	}
@@ -50,11 +48,14 @@ func (g Game) getStartLocation() calc.Vector {
 
 func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
 	x_start := uint32(math.Max(0, (ball.Pos.X-100.0)/100.0))
+	x_end := uint32(math.Min(float64(x_start+5), SIZE_X))
+
 	y_start := uint32(math.Max(0, (ball.Pos.Y-100.0)/100.0))
+	y_end := uint32(math.Min(float64(y_start+5), SIZE_Y))
 
 	close_tiles := []GameMapTile{}
-	for x := x_start; x < x_start+5; x += 1 {
-		for y := y_start; y < y_start+5; y += 1 {
+	for x := x_start; x < x_end; x += 1 {
+		for y := y_start; y < y_end; y += 1 {
 			close_tiles = append(close_tiles, g.game_map.Tiles[x][y])
 		}
 	}
@@ -111,7 +112,8 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 	for {
 		collision, err := g.getClosestCollision(ball)
 		if err != nil {
-			return ball.Move(d_pos), NoEffect
+			ball = ball.Move(d_pos)
+			return ball, NoEffect
 		}
 
 		distance_to_wall := collision.Point.Distance(ball.Pos)
@@ -124,10 +126,11 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 		to_move := math.Min(d_pos, distance_to_wall-49.9)
 		ball = ball.Move(to_move)
 		d_pos -= to_move
-		if d_pos < 0.0001 {
+		if d_pos < 1.0 {
 			return ball, NoEffect
 		}
-		return ball, NoEffect
+		// fmt.Println("STILL HERE")
+		// return ball, NoEffect
 	}
 }
 
@@ -141,9 +144,8 @@ func doCollision(projectionPoint calc.Vector, ball Ball) Ball {
 	return newBall(pos, vel)
 }
 
-func (g Game) doShotEvent(p *Player, event shotEvent) {
-	fmt.Println("DOING PLAYER SHOT EVENT")
+func (g *Game) doShotEvent(p *Player, event shotEvent) {
 	p.ball.Vel.X = event.X / 10
 	p.ball.Vel.Y = event.Y / 10
-	p.shot_count++
+	p.shot_count += 1
 }

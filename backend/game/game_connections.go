@@ -45,14 +45,14 @@ type playerEvent struct {
 	message []byte
 }
 
-func (p Player) run() {
+func (p *Player) run() {
 	for {
 		_, message, err := p.ws.ReadMessage()
 		if err != nil {
 			//TODO: something went wrong with player disconnect him
 			break
 		}
-		*p.playerEvents <- playerEvent{&p, message}
+		*p.playerEvents <- playerEvent{p, message}
 	}
 }
 
@@ -67,7 +67,7 @@ func (g Game) sendInitEvent(p Player) {
 func (g Game) sendUpdateEvent() {
 	var playerStates []models.PlayerDto
 	for _, player := range g.players {
-		playerStates = append(playerStates, PlayerToDto(player))
+		playerStates = append(playerStates, PlayerToDto(*player))
 	}
 	g.broadcast <- updateEvent{
 		Type:         "UPDATE",
@@ -75,13 +75,12 @@ func (g Game) sendUpdateEvent() {
 	}
 }
 
-func (g Game) run() {
+func (g *Game) run() {
 
 	for {
 		select {
 		case message := <-g.broadcast:
-			for name, p := range g.players {
-				fmt.Println("Sending to name", name)
+			for _, p := range g.players {
 				p.ws.WriteJSON(message)
 			}
 		case playerEvent := <-g.playerChannel:

@@ -9,7 +9,7 @@ import (
 type Game struct {
 	GameConn
 	game_id  string
-	players  map[string]Player
+	players  map[string]*Player
 	game_map GameMap
 }
 
@@ -21,7 +21,7 @@ func NewGame(game_id string, game_map_id string) Game {
 	//
 	game := Game{
 		game_id:  game_id,
-		players:  make(map[string]Player),
+		players:  make(map[string]*Player),
 		game_map: game_map,
 		GameConn: GameConn{
 			broadcast:     make(chan interface{}),
@@ -35,7 +35,7 @@ func NewGame(game_id string, game_map_id string) Game {
 
 func (g Game) AddPlayer(name string, ws websocket.Conn) {
 	player := NewPlayer(name, ws, &g.playerChannel)
-	g.players[name] = player
+	g.players[name] = &player
 	go player.run()
 	g.sendInitEvent(player)
 }
