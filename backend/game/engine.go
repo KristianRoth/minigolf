@@ -140,3 +140,10 @@ func doCollision(projectionPoint calc.Vector, ball Ball) Ball {
 	pos := projectionPoint.Add(basis.Multiply(1.05 * BALL_SIZE))
 	return newBall(pos, vel)
 }
+
+func (g Game) doShotEvent(p *Player, event shotEvent) {
+	fmt.Println("DOING PLAYER SHOT EVENT")
+	p.ball.Vel.X = event.X / 10
+	p.ball.Vel.Y = event.Y / 10
+	p.shot_count++
+}

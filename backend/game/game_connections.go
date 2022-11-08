@@ -2,6 +2,7 @@ package game
 
 import (
 	"backend/models"
+	"encoding/json"
 	"fmt"
 
 	"github.com/gorilla/websocket"
@@ -9,34 +10,16 @@ import (
 
 type GameConn struct {
 	broadcast     chan interface{}
-	playerChannel chan string
+	playerChannel chan playerEvent
 }
 
 type PlayerConn struct {
-	playerEvents *chan string
+	playerEvents *chan playerEvent
 	ws           websocket.Conn
 }
 
-func (p Player) run() {
-	for {
-		_, message, err := p.ws.ReadMessage()
-		if err != nil {
-			break
-		}
-		*p.playerEvents <- string(message)
-	}
-}
-
-func (p Player) SendPlayerEvent() {
-}
-
-func (p Player) leave() {
-
-}
-
-func (g Game) sendAllPlayers(s string) {
-	fmt.Println("Sending message:", s)
-	go func() { g.broadcast <- s }()
+type Event struct {
+	Type string `json:"type"`
 }
 
 type initEvent struct {
@@ -45,17 +28,44 @@ type initEvent struct {
 	GameMap  models.GameMapDto `json:"gameMap"`
 }
 
+type updateEvent struct {
+	Type         string        `json:"type"`
+	PlayerStates []playerState `json:"playerStates"`
+}
+
+type shotEvent struct {
+	Type string  `json:"type"`
+	Id   int64   `json:"id"`
+	X    float64 `json:"x"`
+	Y    float64 `json:"y"`
+}
+
+type playerEvent struct {
+	player  *Player
+	message []byte
+}
+
+func (p Player) run() {
+	for {
+		_, message, err := p.ws.ReadMessage()
+		if err != nil {
+			break
+		}
+		*p.playerEvents <- playerEvent{&p, message}
+	}
+}
+
+func (g Game) sendAllPlayers(s string) {
+	fmt.Println("Sending message:", s)
+	go func() { g.broadcast <- s }()
+}
+
 func (g Game) sendInitEvent() {
 	g.broadcast <- initEvent{
 		Type:     "INIT",
 		PlayerId: 1,
 		GameMap:  GameToDto(g.game_map),
 	}
-}
-
-type updateEvent struct {
-	Type         string        `json:"type"`
-	PlayerStates []playerState `json:"playerStates"`
 }
 
 type playerState struct {
@@ -94,8 +104,25 @@ func (g Game) run() {
 				fmt.Println("Sending to name", name)
 				p.ws.WriteJSON(message)
 			}
-		case message := <-g.playerChannel:
-			fmt.Println("Received message:", message)
+		case playerEvent := <-g.playerChannel:
+			player, message := playerEvent.player, playerEvent.message
+			fmt.Println("Received message:", string(message))
+			var event Event
+			err := json.Unmarshal(message, &event)
+			if err != nil {
+				fmt.Println(fmt.Errorf("Unknow message from player, %v, %s", err, message))
+				break
+			}
+			switch event.Type {
+			case "SHOT":
+				var shotEvent shotEvent
+				err := json.Unmarshal(message, &shotEvent)
+				if err != nil {
+					fmt.Println(fmt.Errorf("Unable to parse shot event, %v, %s", err, message))
+					break
+				}
+				g.doShotEvent(player, shotEvent)
+			}
 		}
 	}
 }

@@ -25,7 +25,7 @@ func NewGame(game_id string, game_map_id string) Game {
 		game_map: game_map,
 		GameConn: GameConn{
 			broadcast:     make(chan interface{}),
-			playerChannel: make(chan string),
+			playerChannel: make(chan playerEvent),
 		},
 	}
 	go game.run()

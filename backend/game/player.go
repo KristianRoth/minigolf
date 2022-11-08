@@ -13,7 +13,7 @@ type Player struct {
 	shot_count int
 }
 
-func NewPlayer(name string, ws websocket.Conn, playerChannel *chan string) Player {
+func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) Player {
 	start := calc.NewVec(200.0, 200.0)
 	vel := calc.NewVec(1.0, 1.0)
 	return Player{
