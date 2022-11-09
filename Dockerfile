@@ -11,22 +11,29 @@ COPY ./frontend ./
 
 RUN npm run build
 
-FROM rust:1.59 as backend
+FROM golang:1.19-alpine as backend
 
-WORKDIR /usr/src/backend
+WORKDIR /app
+COPY ./backend/go.mod ./
+COPY ./backend/go.sum ./
+
+RUN go mod download
+
 COPY ./backend ./
 
-RUN cargo build --release
+RUN go build
 
-FROM debian:buster-slim as app
-#RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
+FROM alpine as app
 WORKDIR /home/app
 
+COPY ./.env ./
 COPY --from=frontend /app/build ./frontend/build
-COPY --from=backend /usr/src/backend/target/release/backend ./backend/backend
+COPY --from=backend /app/backend ./backend/backend
 
 EXPOSE 8080
 
-ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
+ENTRYPOINT [ "/bin/sh", "-l", "-c" ]
+
+ENV GIN_MODE=release
 
 CMD [ "cd backend && ./backend" ]
