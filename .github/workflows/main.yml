@@ -23,6 +23,8 @@ env:
   PROJECT_ID: ${{ secrets.GCE_PROJECT }}
   GCE_INSTANCE: minigolf
   GCE_INSTANCE_ZONE: us-central1-a
+  MINIGOLF_DB_USER: ${{ secrets.MINIGOLF_DB_USER }}
+  MINIGOLF_DB_PASSWORD: ${{ secrets.MINIGOLF_DB_PASSWORD }}
 
 jobs:
   setup-build-publish-deploy:
@@ -55,7 +57,10 @@ jobs:
     # Build the Docker image
     - name: Build
       run: |-
-        docker build --tag "gcr.io/$PROJECT_ID/$GCE_INSTANCE-image:$GITHUB_SHA" .
+        docker build \
+          --build-arg MINIGOLF_DB_USER=$MINIGOLF_DB_USER \
+          --build-arg MINIGOLF_DB_PASSWORD=$MINIGOLF_DB_PASSWORD \
+          --tag "gcr.io/$PROJECT_ID/$GCE_INSTANCE-image:$GITHUB_SHA" .
     # Push the Docker image to Google Container Registry
     - name: Publish
       run: |-

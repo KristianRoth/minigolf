@@ -2,12 +2,16 @@ package routes
 
 import (
 	"backend/communications"
+	"backend/database"
 	"backend/game"
 	"backend/models"
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
@@ -37,5 +41,40 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		}
 		g_id := gameH.GameFromMapDto(game_dto)
 		c.JSON(200, gin.H{"gameId": g_id})
+	})
+
+	router.GET("/db/hello/:name", func(c *gin.Context) {
+		log.Println("Doing db test")
+		name := c.Param("name")
+		insert := struct {
+			name string
+		}{
+			name: name,
+		}
+		db := database.NewDatabaseConnection()
+		log.Println("Got new Database", insert)
+
+		collection := db.Database("minigolf").Collection("helloWorld")
+		log.Println("Got new collection")
+
+		res, err := collection.InsertOne(context.Background(), bson.D{{"name", name}})
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(res.InsertedID)
+		log.Println("Insert succesful")
+
+		cur, err := collection.Find(context.Background(), bson.D{{"name", bson.D{{"$exists", true}}}})
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("Got cursor")
+		var result []bson.D
+
+		cur.All(context.Background(), &result)
+		log.Println("result", result)
+		log.Println("Got data")
+
+		c.JSON(200, result)
 	})
 }
