@@ -58,6 +58,7 @@ func (p *Player) run() {
 			_, message, err := p.ws.ReadMessage()
 			if err != nil {
 				//TODO: something went wrong with player disconnect him
+				log.Println("Player read json failed", err)
 				break
 			}
 			*p.playerEventsIn <- playerEvent{p, message}
@@ -67,7 +68,7 @@ func (p *Player) run() {
 		for {
 			err := p.ws.WriteJSON(<-p.PlayerEventsOut)
 			if err != nil {
-				log.Println("Write to json", err)
+				log.Println("Player write to failed", err)
 			}
 		}
 	}()
