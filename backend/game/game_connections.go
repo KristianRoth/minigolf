@@ -76,18 +76,18 @@ func (p *Player) run() {
 }
 
 func (g Game) sendInitEvent(p Player) {
-	p.ws.WriteJSON(initEvent{
+	p.PlayerEventsOut <- initEvent{
 		Type:     "INIT",
 		PlayerId: 1,
 		GameMap:  GameMapToDto(g.game_map),
-	})
+	}
 }
 
 func (g Game) sendTurnBeginEvent(p Player) {
-	p.ws.WriteJSON(turnBeginEvent{
+	p.PlayerEventsOut <- turnBeginEvent{
 		Type:     "TURN_BEGIN",
 		PlayerId: 1,
-	})
+	}
 }
 
 func (g Game) sendUpdateEvent() {
