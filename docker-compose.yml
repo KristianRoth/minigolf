@@ -10,8 +10,11 @@ services:
       - mongodb
     volumes:
       - ./backend:/app
-    env_file:
-      - .env
+    environment:
+      - MINIGOLF_DB_USER=root
+      - MINIGOLF_DB_PASSWORD=rootpassword
+      - MINIGOLF_DB_PROTOCOL=mongodb
+      - MINIGOLF_DB_HOST=mongodb:27017
 
   frontend:
     container_name: frontend

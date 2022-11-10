@@ -68,5 +68,7 @@ jobs:
           gcloud compute instances update-container "$GCE_INSTANCE" \
             --zone "$GCE_INSTANCE_ZONE" \
             --container-image "gcr.io/$PROJECT_ID/$GCE_INSTANCE-image:$GITHUB_SHA" \
+            --container-env MINIGOLF_DB_PROTOCOL=mongodb+srv \
             --container-env MINIGOLF_DB_USER=$MINIGOLF_DB_USER \
-            --container-env MINIGOLF_DB_PASSWORD=$MINIGOLF_DB_PASSWORD
+            --container-env MINIGOLF_DB_PASSWORD=$MINIGOLF_DB_PASSWORD \
+            --container-env MINIGOLF_DB_HOST=minigolf-mongo-atlas.nxtkiht.mongodb.net
