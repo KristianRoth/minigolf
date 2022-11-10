@@ -23,8 +23,9 @@ func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) 
 		ball:    newBall(start, vel),
 		is_turn: false,
 		PlayerConn: PlayerConn{
-			playerEvents: playerChannel,
-			ws:           ws,
+			playerEventsIn:  playerChannel,
+			PlayerEventsOut: make(chan interface{}),
+			ws:              ws,
 		},
 	}
 }

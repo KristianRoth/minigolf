@@ -4,6 +4,7 @@ import (
 	"backend/models"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/gorilla/websocket"
 )
@@ -14,8 +15,9 @@ type GameConn struct {
 }
 
 type PlayerConn struct {
-	playerEvents *chan playerEvent
-	ws           websocket.Conn
+	playerEventsIn  *chan playerEvent
+	PlayerEventsOut chan interface{}
+	ws              websocket.Conn
 }
 
 type event struct {
@@ -51,14 +53,24 @@ type playerEvent struct {
 }
 
 func (p *Player) run() {
-	for {
-		_, message, err := p.ws.ReadMessage()
-		if err != nil {
-			//TODO: something went wrong with player disconnect him
-			break
+	go func() {
+		for {
+			_, message, err := p.ws.ReadMessage()
+			if err != nil {
+				//TODO: something went wrong with player disconnect him
+				break
+			}
+			*p.playerEventsIn <- playerEvent{p, message}
 		}
-		*p.playerEvents <- playerEvent{p, message}
-	}
+	}()
+	go func() {
+		for {
+			err := p.ws.WriteJSON(<-p.PlayerEventsOut)
+			if err != nil {
+				log.Println("Write to json", err)
+			}
+		}
+	}()
 }
 
 func (g Game) sendInitEvent(p Player) {
@@ -93,7 +105,7 @@ func (g *Game) run() {
 		select {
 		case message := <-g.broadcast:
 			for _, p := range g.players {
-				p.ws.WriteJSON(message)
+				p.PlayerEventsOut <- message
 			}
 		case playerEvent := <-g.playerChannel:
 			player, message := playerEvent.player, playerEvent.message
