@@ -7,8 +7,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var Id int64 = 0
+
 type Player struct {
 	PlayerConn
+	id         int64
 	name       string
 	ball       Ball
 	shot_count int64
@@ -18,8 +21,10 @@ type Player struct {
 func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) Player {
 	start := calc.NewVec(600.0, 2000.0)
 	vel := calc.NewVec(0, 0)
+	Id++
 	return Player{
 		name:    name,
+		id:      Id,
 		ball:    newBall(start, vel),
 		is_turn: false,
 		PlayerConn: PlayerConn{
@@ -38,6 +43,6 @@ func PlayerToDto(player Player) models.PlayerDto {
 		Dy:        player.ball.Vel.Y,
 		ShotCount: int64(player.shot_count),
 		Name:      player.name,
-		Id:        1,
+		Id:        player.id,
 	}
 }

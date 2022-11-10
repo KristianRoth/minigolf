@@ -26,13 +26,13 @@ type event struct {
 
 type initEvent struct {
 	Type     string            `json:"type"`
-	PlayerId int32             `json:"playerId"`
+	PlayerId int64             `json:"playerId"`
 	GameMap  models.GameMapDto `json:"gameMap"`
 }
 
 type turnBeginEvent struct {
 	Type     string `json:"type"`
-	PlayerId int32  `json:"playerId"`
+	PlayerId int64  `json:"playerId"`
 }
 
 type updateEvent struct {
@@ -78,7 +78,7 @@ func (p *Player) run() {
 func (g Game) sendInitEvent(p Player) {
 	p.PlayerEventsOut <- initEvent{
 		Type:     "INIT",
-		PlayerId: 1,
+		PlayerId: p.id,
 		GameMap:  GameMapToDto(g.game_map),
 	}
 }
@@ -86,7 +86,7 @@ func (g Game) sendInitEvent(p Player) {
 func (g Game) sendTurnBeginEvent(p Player) {
 	p.PlayerEventsOut <- turnBeginEvent{
 		Type:     "TURN_BEGIN",
-		PlayerId: 1,
+		PlayerId: p.id,
 	}
 }
 
