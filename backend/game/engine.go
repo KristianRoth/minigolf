@@ -27,19 +27,29 @@ func (g *Game) runGame() {
 func (g *Game) tick() {
 	for _, player := range g.players {
 		ball, effect := g.Collide(player.ball)
-		if effect == HoleEffect {
-			player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
-			player.shot_count = 0
-			continue
-		}
 		player.ball = ball
+		g.handleEffect(player, effect)
 		if !player.is_turn && player.ball.Vel.Length() <= 1.0 {
 			player.is_turn = true
 			g.sendTurnBeginEvent(*player)
 		}
 	}
 }
-func (g Game) getStartLocation() calc.Vector {
+
+func (g *Game) handleEffect(p *Player, effect SpecialEffect) {
+	switch effect {
+	case HoleEffect:
+		p.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
+		p.shot_count = 0
+		fmt.Println("Holeeffect", g.GamePreviewMode)
+		if g.GamePreviewMode {
+			g.sendMapGameSaveEvent()
+			g.won = true
+		}
+	}
+}
+
+func (g *Game) getStartLocation() calc.Vector {
 	start := calc.Vector{}
 	for _, col := range g.game_map.Tiles {
 		for _, tile := range col {
@@ -51,7 +61,7 @@ func (g Game) getStartLocation() calc.Vector {
 	return start.Add(calc.NewVec(50, 50))
 }
 
-func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
+func (g *Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
 	x_start := uint32(math.Max(0, (ball.Pos.X-100.0)/100.0))
 	x_end := uint32(math.Min(float64(x_start+5), SIZE_X))
 
@@ -84,7 +94,7 @@ func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
 	return closest, nil
 }
 
-func (g Game) doGroundEffect(ball Ball) Ball {
+func (g *Game) doGroundEffect(ball Ball) Ball {
 	x := uint32(ball.Pos.X / 100)
 	y := uint32(ball.Pos.Y / 100)
 	tile := g.game_map.Tiles[x][y]
@@ -107,7 +117,7 @@ func (g Game) doGroundEffect(ball Ball) Ball {
 	return ball.Clone()
 }
 
-func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
+func (g *Game) Collide(ball Ball) (Ball, SpecialEffect) {
 	ball = newBall(ball.Pos, ball.Vel.Multiply(0.97))
 	ball = g.doGroundEffect(ball)
 	d_pos := ball.Vel.Length()

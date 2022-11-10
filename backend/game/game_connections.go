@@ -47,6 +47,10 @@ type shotEvent struct {
 	Y    float64 `json:"y"`
 }
 
+type gameMapSaveEvent struct {
+	Type string `json:"type"`
+}
+
 type playerEvent struct {
 	player  *Player
 	message []byte
@@ -75,7 +79,7 @@ func (p *Player) run() {
 	}()
 }
 
-func (g Game) sendInitEvent(p Player) {
+func (g *Game) sendInitEvent(p Player) {
 	p.PlayerEventsOut <- initEvent{
 		Type:     "INIT",
 		PlayerId: p.id,
@@ -83,14 +87,14 @@ func (g Game) sendInitEvent(p Player) {
 	}
 }
 
-func (g Game) sendTurnBeginEvent(p Player) {
+func (g *Game) sendTurnBeginEvent(p Player) {
 	p.PlayerEventsOut <- turnBeginEvent{
 		Type:     "TURN_BEGIN",
 		PlayerId: p.id,
 	}
 }
 
-func (g Game) sendUpdateEvent() {
+func (g *Game) sendUpdateEvent() {
 	var playerStates []models.PlayerDto
 	for _, player := range g.players {
 		playerStates = append(playerStates, PlayerToDto(*player))
@@ -98,6 +102,12 @@ func (g Game) sendUpdateEvent() {
 	g.broadcast <- updateEvent{
 		Type:         "UPDATE",
 		PlayerStates: playerStates,
+	}
+}
+
+func (g *Game) sendMapGameSaveEvent() {
+	g.broadcast <- gameMapSaveEvent{
+		Type: "SAVE_GAME_MAP",
 	}
 }
 
@@ -127,6 +137,10 @@ func (g *Game) run() {
 					break
 				}
 				g.doShotEvent(player, shotEvent)
+			case "SAVE_GAME_MAP":
+				if g.GamePreviewMode && g.won {
+
+				}
 			}
 		}
 	}

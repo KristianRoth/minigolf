@@ -123,6 +123,13 @@ function Game() {
     navigate(`/editor/${gameMap.id}`);
   };
 
+  const saveMap = () => {
+    const saveEvent = {
+      type: "SAVE_GAME_MAP"
+    }
+    sendMessage(JSON.stringify(saveEvent))
+  }
+
   const menu = (
     <>
       <div>
@@ -133,6 +140,9 @@ function Game() {
       </div>
       <div>
         <button onClick={() => goToEdit()}>Edit</button>
+      </div>
+      <div>
+        <button onClick={() => saveMap()}>Save Map</button>
       </div>
     </>
   );

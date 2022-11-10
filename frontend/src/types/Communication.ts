@@ -37,6 +37,10 @@ export type GameEvent =
       player: string;
     }
   | {
+      type: 'SAVE_GAME_MAP';
+      player: string;
+    }
+  | {
       type: 'CHAT';
       message: string;
     };

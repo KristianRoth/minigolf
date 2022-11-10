@@ -1,24 +1,25 @@
 package game
 
 import (
-	"fmt"
-
 	"github.com/gorilla/websocket"
 )
 
 type Game struct {
 	GameConn
-	game_id  string
-	players  map[int64]*Player
-	game_map GameMap
+	game_id         string
+	players         map[int64]*Player
+	game_map        GameMap
+	GamePreviewMode bool
+	won             bool
 }
 
-func NewGame(game_id string, game_map GameMap) Game {
-	fmt.Println("Making new game:", game_id)
+func NewGame(game_id string, game_map GameMap) *Game {
 	game := Game{
-		game_id:  game_id,
-		players:  make(map[int64]*Player),
-		game_map: game_map,
+		game_id:         game_id,
+		players:         make(map[int64]*Player),
+		game_map:        game_map,
+		GamePreviewMode: false,
+		won:             false,
 		GameConn: GameConn{
 			broadcast:     make(chan interface{}),
 			playerChannel: make(chan playerEvent),
@@ -26,7 +27,7 @@ func NewGame(game_id string, game_map GameMap) Game {
 	}
 	go game.run()
 	go game.runGame()
-	return game
+	return &game
 }
 
 func (g *Game) AddPlayer(name string, ws websocket.Conn) {
@@ -37,6 +38,6 @@ func (g *Game) AddPlayer(name string, ws websocket.Conn) {
 	g.sendInitEvent(player)
 }
 
-func (g Game) RemovePlayer(player *Player) {
+func (g *Game) RemovePlayer(player *Player) {
 	delete(g.players, player.id)
 }
