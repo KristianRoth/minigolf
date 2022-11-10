@@ -4,6 +4,7 @@ import (
 	"backend/communications"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -22,6 +23,7 @@ func WebSocket(router *gin.Engine, gameH *communications.GameHandler) {
 		name := c.Query("name")
 		fmt.Println("Adding player:", name, "to game:", gameId)
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		<-time.After(time.Second)
 		if err != nil {
 			fmt.Println(err)
 			return
