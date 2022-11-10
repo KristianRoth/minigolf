@@ -69,6 +69,7 @@ func (p *Player) run() {
 			err := p.ws.WriteJSON(<-p.PlayerEventsOut)
 			if err != nil {
 				log.Println("Player write to failed", err)
+				break
 			}
 		}
 	}()
