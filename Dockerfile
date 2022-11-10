@@ -25,11 +25,6 @@ RUN go build
 
 FROM alpine as app
 WORKDIR /home/app
-ARG MINIGOLF_DB_USER
-ARG MINIGOLF_DB_PASSWORD
-
-ENV MINIGOLF_DB_USER=$MINIGOLF_DB_USER
-ENV MINIGOLF_DB_PASSWORD=$MINIGOLF_DB_PASSWORD
 
 COPY ./.env ./
 COPY --from=frontend /app/build ./frontend/build
