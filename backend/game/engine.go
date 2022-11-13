@@ -2,6 +2,7 @@ package game
 
 import (
 	"backend/calc"
+	"backend/database"
 	"backend/models"
 	"errors"
 	"fmt"
@@ -34,6 +35,12 @@ func (g *Game) tick() {
 	for _, player := range g.players {
 		ball, effect := g.Collide(player.ball)
 		if effect == HoleEffect {
+			score := player.shot_count
+			err := database.UpdateGameMapStats(g.game_map.Id, score)
+			if err != nil {
+				fmt.Printf("Stat update failed: %s\n", err)
+			}
+
 			player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
 			player.shot_count = 0
 			continue

@@ -48,6 +48,7 @@ func tileFromDto(tdto models.TileDto) GameMapTile {
 type GameMap struct {
 	Id    string
 	Tiles [][]GameMapTile
+	Stats models.Stats
 }
 
 func NewGameMap() GameMap {
@@ -92,6 +93,7 @@ func GameMapToDto(gameMap GameMap) models.GameMapDto {
 	return models.GameMapDto{
 		Id:    gameMap.Id,
 		Tiles: tile_dtos,
+		Stats: gameMap.Stats,
 	}
 }
 
@@ -109,5 +111,6 @@ func GameMapFromDto(gdto models.GameMapDto) GameMap {
 	return GameMap{
 		Id:    gdto.Id,
 		Tiles: tiles,
+		Stats: gdto.Stats,
 	}
 }

@@ -29,10 +29,16 @@ type TileDto struct {
 	Structure Structure `json:"structure"`
 }
 
+type Stats struct {
+	Sum   int64 `json:"sum"`
+	Count int64 `json:"count"`
+}
+
 // GameMap
 type GameMapDto struct {
 	Id    string    `json:"id"`
 	Tiles []TileDto `json:"tiles"`
+	Stats Stats     `json:"stats"`
 }
 
 // This could be used to determine whether a map with the same content already exists.

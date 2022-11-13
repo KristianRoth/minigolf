@@ -11,30 +11,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 	router.GET("/api/game-maps", func(c *gin.Context) {
-		collection := database.Client.Database("minigolf").Collection("gameMap")
+		result, err := database.GetGameMaps()
 
-		cur, err := collection.Find(context.Background(), bson.M{"tiles": bson.M{"$exists": true}})
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			c.JSON(500, gin.H{"error": "Something went wrong"})
+			return
 		}
 
-		// Must initialize with an empty slice. Otherwise jsonMarshal return null -> now an empty array.
-		var result []models.GameMapDto = make([]models.GameMapDto, 0)
-		cur.All(context.Background(), &result)
 		c.JSON(200, result)
 	})
 
 	router.GET("/api/game-maps/:id", func(c *gin.Context) {
 		id := c.Param("id")
-		collection := database.Client.Database("minigolf").Collection("gameMap")
 
-		var result models.GameMapDto
-		err := collection.FindOne(context.Background(), bson.M{"id": id}).Decode(&result)
+		result, err := database.GetGameMap(id)
 		if err != nil {
 			log.Println(err)
 			if err == mongo.ErrNoDocuments {
@@ -49,10 +44,8 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 
 	router.GET("/api/init-game/:mapId", func(c *gin.Context) {
 		map_id := c.Param("mapId")
-		collection := database.Client.Database("minigolf").Collection("gameMap")
+		result, err := database.GetGameMap(map_id)
 
-		var result models.GameMapDto
-		err := collection.FindOne(context.Background(), bson.M{"id": map_id}).Decode(&result)
 		if err != nil {
 			log.Println(err)
 			if err == mongo.ErrNoDocuments {
@@ -76,16 +69,16 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		game_map_hash := game_dto.Hash()
 		game_dto.Id = game_map_hash
 
-		collection := database.Client.Database("minigolf").Collection("gameMap")
-		res, err := collection.UpdateOne(context.Background(), bson.M{"id": game_dto.Id}, bson.M{"$setOnInsert": game_dto}, options.Update().SetUpsert(true))
+		createdId, err := database.CreateGameMap(game_dto)
+
 		if err != nil {
 			log.Println(err)
 		}
 
-		if res.UpsertedID == nil {
+		if createdId == nil {
 			log.Println("Duplicate map. Skipped insert")
 		} else {
-			log.Printf("Inserted map %s\n", res.UpsertedID)
+			log.Printf("Inserted map %s\n", createdId)
 		}
 
 		g_id := gameH.GameFromMapDto(game_dto)

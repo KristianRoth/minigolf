@@ -5,6 +5,8 @@ import { GameMap } from '../types';
 import MapController from '../controllers/MapController';
 import Button from '../components/Button';
 
+const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
 const RootPage: React.FC = () => {
   const [gameId, setGameId] = useState('');
   const [name, setName] = useState('');
@@ -91,7 +93,12 @@ const RootPage: React.FC = () => {
             <div className='column'>
               <h2>Kartta {m.id}</h2>
               <img src={m.img} width={400}></img>
-              <Button onClick={() => handleStartGame(m.id)}>Pelaa</Button>
+              <Row>
+                <Button onClick={() => handleStartGame(m.id)}>Pelaa</Button>
+                <span style={{ marginLeft: '5px' }}>
+                  Pelattu: {m.stats.count}, Keskiarvo: {round(m.stats.sum / m.stats.count)}
+                </span>
+              </Row>
             </div>
           </Row>
         );
