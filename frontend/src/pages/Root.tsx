@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import Row from '../components/Row';
 import { GameMap } from '../types';
 import MapController from '../controllers/MapController';
+import Button from '../components/Button';
 
 const RootPage: React.FC = () => {
   const [gameId, setGameId] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [maps, setMaps] = useState<GameMap[]>([]);
+  const [maps, setMaps] = useState<(GameMap & { img: string })[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,7 +20,16 @@ const RootPage: React.FC = () => {
     const fetchMaps = async () => {
       const response = await fetch(`/api/game-maps`);
       const data = await response.json();
-      setMaps(data);
+
+      const maps = data.map((m: GameMap) => {
+        const canvas = document.createElement('canvas');
+        const controller = new MapController(canvas);
+        controller.setGameMap(m);
+        controller.init();
+        const imageSrc = canvas.toDataURL();
+        return { ...m, img: imageSrc };
+      });
+      setMaps(maps);
     };
     fetchMaps();
   }, []);
@@ -33,6 +43,15 @@ const RootPage: React.FC = () => {
       setError('Syötä arvot');
     }
   };
+
+  const handleStartGame = async (mapId: string) => {
+    const response = await fetch(`/api/init-game/${mapId}`);
+    const { gameId } = await response.json();
+    if (gameId) {
+      navigate(`/${gameId}`);
+    }
+  };
+
   return (
     <div className='column'>
       <h1>Minigolfpeli</h1>
@@ -67,17 +86,12 @@ const RootPage: React.FC = () => {
       </p>
 
       {maps.map((m) => {
-        // TODO: The images should probably be set in state.
-        const canvas = document.createElement('canvas');
-        const controller = new MapController(canvas);
-        controller.setGameMap(m);
-        controller.init();
-        const imageSrc = canvas.toDataURL();
         return (
           <Row key={m.id}>
             <div className='column'>
               <h2>Kartta {m.id}</h2>
-              <img src={imageSrc} width={400}></img>
+              <img src={m.img} width={400}></img>
+              <Button onClick={() => handleStartGame(m.id)}>Pelaa</Button>
             </div>
           </Row>
         );

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -32,16 +33,41 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		id := c.Param("id")
 		collection := database.Client.Database("minigolf").Collection("gameMap")
 
-		cur, err := collection.Find(context.Background(), bson.M{"id": id})
+		var result models.GameMapDto
+		err := collection.FindOne(context.Background(), bson.M{"id": id}).Decode(&result)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			if err == mongo.ErrNoDocuments {
+				c.JSON(404, gin.H{"error": "Map not found"})
+			} else {
+				c.JSON(500, gin.H{"error": "Something went wrong"})
+			}
+			return
 		}
-		var result []models.GameMapDto = make([]models.GameMapDto, 0)
-		cur.All(context.Background(), &result)
 		c.JSON(200, result)
 	})
 
-	router.POST("/api/game", func(c *gin.Context) {
+	router.GET("/api/init-game/:mapId", func(c *gin.Context) {
+		map_id := c.Param("mapId")
+		collection := database.Client.Database("minigolf").Collection("gameMap")
+
+		var result models.GameMapDto
+		err := collection.FindOne(context.Background(), bson.M{"id": map_id}).Decode(&result)
+		if err != nil {
+			log.Println(err)
+			if err == mongo.ErrNoDocuments {
+				c.JSON(404, gin.H{"error": "Map not found"})
+			} else {
+				c.JSON(500, gin.H{"error": "Something went wrong"})
+			}
+			return
+		}
+
+		g_id := gameH.GameFromMapDto(result)
+		c.JSON(200, gin.H{"gameId": g_id})
+	})
+
+	router.POST("/api/init-game", func(c *gin.Context) {
 		var game_dto models.GameMapDto
 		if err := c.BindJSON(&game_dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})

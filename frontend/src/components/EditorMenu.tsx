@@ -35,7 +35,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
   const onStartGame = async () => {
     GameStorage.setGameMap(gameMap);
 
-    const response = await fetch(`/api/game`, {
+    const response = await fetch(`/api/init-game`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
