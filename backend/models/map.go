@@ -37,7 +37,7 @@ type GameMapDto struct {
 
 // This could be used to determine whether a map with the same content already exists.
 func (gm GameMapDto) Hash() string {
-	str, _ := json.Marshal(gm)
+	str, _ := json.Marshal(gm.Tiles)
 	hash := md5.Sum(str)
 	return hex.EncodeToString(hash[:])
 }

@@ -5,36 +5,25 @@ import (
 	"backend/database"
 	"backend/models"
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
-	router.GET("/api", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"data": "Hello World!",
-		})
-	})
-
-	router.GET("/api/:name", func(c *gin.Context) {
-		name := c.Param("name")
-		c.JSON(200, gin.H{
-			"data": fmt.Sprintf("Hello %s!", name),
-		})
-	})
-
 	router.GET("/api/game-maps", func(c *gin.Context) {
 		collection := database.Client.Database("minigolf").Collection("gameMap")
 
-		cur, err := collection.Find(context.Background(), bson.D{{"tiles", bson.D{{"$exists", true}}}})
+		cur, err := collection.Find(context.Background(), bson.M{"tiles": bson.M{"$exists": true}})
 		if err != nil {
 			log.Fatal(err)
 		}
-		var result []models.GameMapDto
+
+		// Must initialize with an empty slice. Otherwise jsonMarshal return null -> now an empty array.
+		var result []models.GameMapDto = make([]models.GameMapDto, 0)
 		cur.All(context.Background(), &result)
 		c.JSON(200, result)
 	})
@@ -43,16 +32,16 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		id := c.Param("id")
 		collection := database.Client.Database("minigolf").Collection("gameMap")
 
-		cur, err := collection.Find(context.Background(), bson.D{{"id", id}})
+		cur, err := collection.Find(context.Background(), bson.M{"id": id})
 		if err != nil {
 			log.Fatal(err)
 		}
-		var result []models.GameMapDto
+		var result []models.GameMapDto = make([]models.GameMapDto, 0)
 		cur.All(context.Background(), &result)
 		c.JSON(200, result)
 	})
 
-	router.POST("/game", func(c *gin.Context) {
+	router.POST("/api/game", func(c *gin.Context) {
 		var game_dto models.GameMapDto
 		if err := c.BindJSON(&game_dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})
@@ -62,17 +51,22 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		game_dto.Id = game_map_hash
 
 		collection := database.Client.Database("minigolf").Collection("gameMap")
-		res, err := collection.InsertOne(context.Background(), game_dto)
+		res, err := collection.UpdateOne(context.Background(), bson.M{"id": game_dto.Id}, bson.M{"$setOnInsert": game_dto}, options.Update().SetUpsert(true))
 		if err != nil {
 			log.Println(err)
 		}
-		log.Printf("Inserted game %s\n", res.InsertedID)
+
+		if res.UpsertedID == nil {
+			log.Println("Duplicate map. Skipped insert")
+		} else {
+			log.Printf("Inserted map %s\n", res.UpsertedID)
+		}
 
 		g_id := gameH.GameFromMapDto(game_dto)
 		c.JSON(200, gin.H{"gameId": g_id})
 	})
 
-	router.GET("/db/hello/:name", func(c *gin.Context) {
+	router.GET("/api/hello/:name", func(c *gin.Context) {
 		log.Println("Doing db test")
 		name := c.Param("name")
 		insert := struct {
@@ -86,14 +80,14 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		collection := db.Database("minigolf").Collection("helloWorld")
 		log.Println("Got new collection")
 
-		res, err := collection.InsertOne(context.Background(), bson.D{{"name", name}})
+		res, err := collection.InsertOne(context.Background(), bson.M{"name": name})
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Println(res.InsertedID)
 		log.Println("Insert succesful")
 
-		cur, err := collection.Find(context.Background(), bson.D{{"name", bson.D{{"$exists", true}}}})
+		cur, err := collection.Find(context.Background(), bson.M{"name": bson.M{"$exists": true}})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -105,5 +99,10 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		log.Println("Got data")
 
 		c.JSON(200, result)
+	})
+
+	router.GET("/api/unsafe-drop-db", func(c *gin.Context) {
+		database.Client.Database("minigolf").Drop(context.Background())
+		c.JSON(200, gin.H{"success": true})
 	})
 }

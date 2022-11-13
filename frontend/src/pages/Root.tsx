@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Row from '../components/Row';
 import { GameMap } from '../types';
-import { BASE_URL } from '../utils/api';
 import MapController from '../controllers/MapController';
 
 const RootPage: React.FC = () => {
@@ -18,7 +17,7 @@ const RootPage: React.FC = () => {
 
   useEffect(() => {
     const fetchMaps = async () => {
-      const response = await fetch(`http://${BASE_URL}/api/game-maps`);
+      const response = await fetch(`/api/game-maps`);
       const data = await response.json();
       setMaps(data);
     };
