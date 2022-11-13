@@ -3,7 +3,6 @@ package routes
 import (
 	"backend/communications"
 	"backend/database"
-	"backend/game"
 	"backend/models"
 	"context"
 	"fmt"
@@ -28,17 +27,47 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		})
 	})
 
-	router.GET("/api/game", func(c *gin.Context) {
-		game_map := game.NewGameMap()
-		dto := game.GameMapToDto(game_map)
-		c.JSON(200, dto)
+	router.GET("/api/game-maps", func(c *gin.Context) {
+		collection := database.Client.Database("minigolf").Collection("gameMap")
+
+		cur, err := collection.Find(context.Background(), bson.D{{"tiles", bson.D{{"$exists", true}}}})
+		if err != nil {
+			log.Fatal(err)
+		}
+		var result []models.GameMapDto
+		cur.All(context.Background(), &result)
+		c.JSON(200, result)
+	})
+
+	router.GET("/api/game-maps/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		collection := database.Client.Database("minigolf").Collection("gameMap")
+
+		cur, err := collection.Find(context.Background(), bson.D{{"id", id}})
+		if err != nil {
+			log.Fatal(err)
+		}
+		var result []models.GameMapDto
+		cur.All(context.Background(), &result)
+		c.JSON(200, result)
 	})
 
 	router.POST("/game", func(c *gin.Context) {
 		var game_dto models.GameMapDto
 		if err := c.BindJSON(&game_dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})
+			return
 		}
+		game_map_hash := game_dto.Hash()
+		game_dto.Id = game_map_hash
+
+		collection := database.Client.Database("minigolf").Collection("gameMap")
+		res, err := collection.InsertOne(context.Background(), game_dto)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Printf("Inserted game %s\n", res.InsertedID)
+
 		g_id := gameH.GameFromMapDto(game_dto)
 		c.JSON(200, gin.H{"gameId": g_id})
 	})
@@ -51,7 +80,7 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		}{
 			name: name,
 		}
-		db := database.NewDatabaseConnection()
+		db := database.Client
 		log.Println("Got new Database", insert)
 
 		collection := db.Database("minigolf").Collection("helloWorld")

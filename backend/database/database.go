@@ -33,3 +33,5 @@ func NewDatabaseConnection() *mongo.Client {
 	}
 	return client
 }
+
+var Client *mongo.Client = NewDatabaseConnection()
