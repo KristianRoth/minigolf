@@ -128,7 +128,8 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 	})
 
 	router.GET("/api/unsafe-drop-db", func(c *gin.Context) {
-		database.Client.Database("minigolf").Drop(context.Background())
+		database.Client.Database("minigolf").Collection("gameMap").Drop(context.Background())
+		database.Client.Database("minigolf").Collection("helloWorld").Drop(context.Background())
 		c.JSON(200, gin.H{"success": true})
 	})
 }
