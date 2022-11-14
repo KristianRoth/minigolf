@@ -16,7 +16,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebSocket(router *gin.Engine, gameH *communications.GameHandler) {
-	router.GET("/game/:gameId", func(c *gin.Context) {
+	router.GET("/ws/game/:gameId", func(c *gin.Context) {
 		//upgrade get request to websocket protocol
 		gameId := c.Param("gameId")
 		name := c.Query("name")

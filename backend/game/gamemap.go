@@ -3,6 +3,7 @@ package game
 import (
 	"backend/calc"
 	"backend/models"
+	"fmt"
 	"strconv"
 )
 
@@ -16,6 +17,10 @@ type GameMapTile struct {
 	Pos       calc.Vector
 	Ground    models.Ground
 	Structure models.Structure
+}
+
+func (gmt GameMapTile) getId() string {
+	return fmt.Sprintf("%f_%f", gmt.Pos.X, gmt.Pos.Y)
 }
 
 func tileToDto(gmt GameMapTile) models.TileDto {
@@ -43,6 +48,7 @@ func tileFromDto(tdto models.TileDto) GameMapTile {
 type GameMap struct {
 	Id    string
 	Tiles [][]GameMapTile
+	Stats models.Stats
 }
 
 func NewGameMap() GameMap {
@@ -87,18 +93,11 @@ func GameMapToDto(gameMap GameMap) models.GameMapDto {
 	return models.GameMapDto{
 		Id:    gameMap.Id,
 		Tiles: tile_dtos,
+		Stats: gameMap.Stats,
 	}
 }
 
 func GameMapFromDto(gdto models.GameMapDto) GameMap {
-	// var tiles [][]GameMapTile = [][]GameMapTile{}
-	// for x := 0; x < SIZE_X; x += 1 {
-	// 	tiles_col := []GameMapTile{}
-	// 	for y := 0; y < SIZE_Y; y += 1 {
-	// 		tiles_col = append(tiles_col, GameMapTile{})
-	// 	}
-	// 	tiles = append(tiles, tiles_col)
-	// }
 	tiles := make([][]GameMapTile, SIZE_X)
 	for x := 0; x < SIZE_X; x += 1 {
 		tiles[x] = make([]GameMapTile, SIZE_Y)
@@ -112,5 +111,6 @@ func GameMapFromDto(gdto models.GameMapDto) GameMap {
 	return GameMap{
 		Id:    gdto.Id,
 		Tiles: tiles,
+		Stats: gdto.Stats,
 	}
 }

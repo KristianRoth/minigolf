@@ -37,6 +37,10 @@ export type GameMap = {
   creator: Creator;
   highscores: Score[];
   tiles: Tile[];
+  stats: {
+    sum: number;
+    count: number;
+  };
 };
 
 export type Tile = {

@@ -2,6 +2,7 @@ package game
 
 import (
 	"backend/calc"
+	"backend/database"
 	"backend/models"
 	"errors"
 	"fmt"
@@ -10,6 +11,11 @@ import (
 )
 
 type SpecialEffect int64
+
+// func timeTrack(start time.Time, name string) {
+// 	elapsed := time.Since(start)
+// 	fmt.Printf("%s took %s\n", name, elapsed)
+// }
 
 const (
 	HoleEffect SpecialEffect = iota
@@ -25,9 +31,16 @@ func (g *Game) runGame() {
 }
 
 func (g *Game) tick() {
+	// defer timeTrack(time.Now(), "tick")
 	for _, player := range g.players {
 		ball, effect := g.Collide(player.ball)
 		if effect == HoleEffect {
+			score := player.shot_count
+			err := database.UpdateGameMapStats(g.game_map.Id, score)
+			if err != nil {
+				fmt.Printf("Stat update failed: %s\n", err)
+			}
+
 			player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
 			player.shot_count = 0
 			continue
@@ -51,7 +64,7 @@ func (g Game) getStartLocation() calc.Vector {
 	return start.Add(calc.NewVec(50, 50))
 }
 
-func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
+func (g Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 	x_start := uint32(math.Max(0, (ball.Pos.X-100.0)/100.0))
 	x_end := uint32(math.Min(float64(x_start+5), SIZE_X))
 
@@ -65,13 +78,13 @@ func (g Game) getClosestCollision(ball Ball) (CollisionPoint, error) {
 		}
 	}
 	// Find closest from close_tiles
-	collision_points := []CollisionPoint{}
+	collision_points := []collisionPoint{}
 	for _, tile := range close_tiles {
-		collision_points = append(collision_points, getCollisionPoints(tile.Structure, tile.Pos, ball)...)
+		collision_points = append(collision_points, g.mesh.getCollisionPoints(tile, ball)...)
 	}
 
 	if len(collision_points) == 0 {
-		return CollisionPoint{}, errors.New("no collision points")
+		return collisionPoint{}, errors.New("no collision points")
 	}
 
 	closest := collision_points[0]

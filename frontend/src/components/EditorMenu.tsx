@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { STRUCTURE_TYPES, GROUND_TYPES, EditorState, GameMap, ROTATIONS } from '../types';
-import { GameStorage, BASE_URL } from '../utils/api';
+import { GameStorage } from '../utils/api';
 import { modulo } from '../utils/calculation';
 import Button from './Button';
 import Input from './Input';
@@ -35,7 +35,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
   const onStartGame = async () => {
     GameStorage.setGameMap(gameMap);
 
-    const response = await fetch(`http://${BASE_URL}/game`, {
+    const response = await fetch(`/api/init-game`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

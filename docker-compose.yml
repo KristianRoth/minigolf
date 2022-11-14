@@ -24,6 +24,8 @@ services:
       - 3000:3000
     volumes:
       - ./frontend/src:/app/src
+    environment:
+      - DEV_BACKEND_URL=backend:8080
 
   mongodb:
     container_name: mongodb

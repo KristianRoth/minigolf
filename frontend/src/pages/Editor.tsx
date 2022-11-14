@@ -82,6 +82,7 @@ function Editor() {
       name: mapName,
       creator,
       highscores: [],
+      stats: { sum: 0, count: 0 },
     };
   };
 

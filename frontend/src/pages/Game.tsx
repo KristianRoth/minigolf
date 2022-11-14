@@ -5,11 +5,10 @@ import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useWebsocket from '../hooks/useWebsocket';
 import { CanvasMouseEvent, GameEvent, GameMap } from '../types';
-import { BASE_URL, GameStorage } from '../utils/api';
+import { GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
-import templates from '../utils/templates';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
@@ -17,7 +16,10 @@ const getUrl = (gameId: string) => {
   const name = GameStorage.getPlayerName(gameId);
   const id = GameStorage.getPlayerId(gameId);
 
-  let url = `ws://${BASE_URL}/game/${gameId}?name=${name}`;
+  const protocol = window.location.protocol === 'https' ? 'wss' : 'ws';
+  const { host } = window.location;
+
+  let url = `${protocol}://${host}/ws/game/${gameId}?name=${name}`;
   if (id) {
     url = `${url}&id=${id}`;
   }

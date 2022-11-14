@@ -11,6 +11,7 @@ type Game struct {
 	game_id  string
 	players  map[int64]*Player
 	game_map GameMap
+	mesh     colliderMesh
 }
 
 func NewGame(game_id string, game_map GameMap) Game {
@@ -23,6 +24,7 @@ func NewGame(game_id string, game_map GameMap) Game {
 			broadcast:     make(chan interface{}),
 			playerChannel: make(chan playerEvent),
 		},
+		mesh: newColliderMesh(game_map),
 	}
 	go game.run()
 	go game.runGame()
