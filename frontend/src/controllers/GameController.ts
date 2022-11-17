@@ -42,6 +42,7 @@ class GameController extends CanvasController {
     });
     this.setHasTurn(false);
     this.doEffect('SHOT');
+    this.shotRotationIdx = 0;
   }
 
   doEffect(effect: string) {
