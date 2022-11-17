@@ -13,6 +13,7 @@ type Player struct {
 	PlayerConn
 	id         int64
 	name       string
+	prev_ball  Ball
 	ball       Ball
 	shot_count int64
 	is_turn    bool
@@ -22,11 +23,13 @@ func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) 
 	start := calc.NewVec(600.0, 2000.0)
 	vel := calc.NewVec(0, 0)
 	Id++
+	ball := newBall(start, vel)
 	return Player{
-		name:    name,
-		id:      Id,
-		ball:    newBall(start, vel),
-		is_turn: false,
+		name:      name,
+		id:        Id,
+		prev_ball: ball.Clone(),
+		ball:      ball,
+		is_turn:   false,
 		PlayerConn: PlayerConn{
 			playerEventsIn:  playerChannel,
 			PlayerEventsOut: make(chan interface{}),

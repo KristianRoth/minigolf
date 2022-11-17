@@ -46,7 +46,11 @@ func (a Vector) Normal() Vector {
 }
 
 func (a Vector) Unit() Vector {
-	return a.Multiply(1.0 / a.Length())
+	return a.SetLength(1)
+}
+
+func (a Vector) SetLength(len float64) Vector {
+	return a.Multiply(len / a.Length())
 }
 
 func (a Vector) Project(b Vector) Vector {

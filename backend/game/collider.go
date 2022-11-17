@@ -42,7 +42,7 @@ func (cc circleCollider) toTilePosition(tile GameMapTile) collider {
 
 func (cc circleCollider) projectionPoint(ball_pos calc.Vector) (calc.Vector, error) {
 	centre := cc.Pos
-	dir := ball_pos.Subtract(centre).Unit().Multiply(cc.Radius)
+	dir := ball_pos.Subtract(centre).SetLength(cc.Radius)
 	return centre.Add(dir), nil
 }
 

@@ -97,7 +97,7 @@ func (g Game) sendTurnBeginEvent(p Player) {
 }
 
 func (g Game) sendEffectEvent(p Player, effect SpecialEffect) {
-	p.PlayerEventsOut <- effectEvent{
+	g.broadcast <- effectEvent{
 		Type:     "EFFECT",
 		PlayerId: p.id,
 		Value:    effect,
@@ -113,13 +113,6 @@ func (g Game) sendUpdateEvent() {
 		Type:         "UPDATE",
 		PlayerStates: playerStates,
 	}
-}
-
-func (g *Game) handleShotEvent(p *Player, event shotEvent) {
-	p.ball.Vel.X = event.X / 10
-	p.ball.Vel.Y = event.Y / 10
-	p.shot_count += 1
-	p.is_turn = false
 }
 
 func (g *Game) run() {
@@ -147,7 +140,7 @@ func (g *Game) run() {
 					fmt.Println(fmt.Errorf("unable to parse shot event, %v, %s", err, message))
 					break
 				}
-				g.handleShotEvent(player, shotEvent)
+				g.doShot(player, shotEvent)
 			}
 		}
 	}

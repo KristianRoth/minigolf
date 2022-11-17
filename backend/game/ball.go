@@ -19,7 +19,7 @@ func (ball Ball) Clone() Ball {
 }
 
 func (ball Ball) Move(amount float64) Ball {
-	pos := ball.Pos.Add(ball.Vel.Unit().Multiply(amount))
+	pos := ball.Pos.Add(ball.Vel.SetLength(amount))
 	return newBall(pos, ball.Vel)
 }
 
