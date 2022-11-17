@@ -37,6 +37,7 @@ func (g *Game) AddPlayer(name string, ws websocket.Conn) {
 	g.players[player.id] = &player
 	player.run()
 	g.sendInitEvent(player)
+	g.sendUpdateEvent()
 }
 
 func (g Game) RemovePlayer(player *Player) {

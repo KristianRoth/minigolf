@@ -22,3 +22,8 @@ func (ball Ball) Move(amount float64) Ball {
 	pos := ball.Pos.Add(ball.Vel.Unit().Multiply(amount))
 	return newBall(pos, ball.Vel)
 }
+
+func (ball Ball) Stop() Ball {
+	vel := calc.NewVec(0, 0)
+	return newBall(ball.Pos, vel)
+}

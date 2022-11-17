@@ -44,6 +44,10 @@ class MapController extends CanvasController {
     this.gameMap = gameMap;
     this.render();
   }
+
+  getMap() {
+    return this.gameMap;
+  }
 }
 
 export default MapController;

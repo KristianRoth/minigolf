@@ -40,6 +40,12 @@ type updateEvent struct {
 	PlayerStates []models.PlayerDto `json:"playerStates"`
 }
 
+type effectEvent struct {
+	Type     string        `json:"type"` // Effect
+	Value    SpecialEffect `json:"value"`
+	PlayerId int64         `json:"playerId"`
+}
+
 type shotEvent struct {
 	Type string  `json:"type"`
 	Id   int64   `json:"id"`
@@ -90,6 +96,14 @@ func (g Game) sendTurnBeginEvent(p Player) {
 	}
 }
 
+func (g Game) sendEffectEvent(p Player, effect SpecialEffect) {
+	p.PlayerEventsOut <- effectEvent{
+		Type:     "EFFECT",
+		PlayerId: p.id,
+		Value:    effect,
+	}
+}
+
 func (g Game) sendUpdateEvent() {
 	var playerStates []models.PlayerDto
 	for _, player := range g.players {
@@ -99,6 +113,13 @@ func (g Game) sendUpdateEvent() {
 		Type:         "UPDATE",
 		PlayerStates: playerStates,
 	}
+}
+
+func (g *Game) handleShotEvent(p *Player, event shotEvent) {
+	p.ball.Vel.X = event.X / 10
+	p.ball.Vel.Y = event.Y / 10
+	p.shot_count += 1
+	p.is_turn = false
 }
 
 func (g *Game) run() {
@@ -115,7 +136,7 @@ func (g *Game) run() {
 			var event event
 			err := json.Unmarshal(message, &event)
 			if err != nil {
-				fmt.Println(fmt.Errorf("Unknow message from player, %v, %s", err, message))
+				fmt.Println(fmt.Errorf("unknow message from player, %v, %s", err, message))
 				break
 			}
 			switch event.Type {
@@ -123,10 +144,10 @@ func (g *Game) run() {
 				var shotEvent shotEvent
 				err := json.Unmarshal(message, &shotEvent)
 				if err != nil {
-					fmt.Println(fmt.Errorf("Unable to parse shot event, %v, %s", err, message))
+					fmt.Println(fmt.Errorf("unable to parse shot event, %v, %s", err, message))
 					break
 				}
-				g.doShotEvent(player, shotEvent)
+				g.handleShotEvent(player, shotEvent)
 			}
 		}
 	}

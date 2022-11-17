@@ -12,6 +12,7 @@ class GameController extends CanvasController {
   private playerColor = '';
   private shotRotationIdx = 0;
   private touchDrag: { start: Point; end: Point } | null = null;
+  private effect = '';
   private fpsCounter = new PerSecondCounter(50);
   private tickCounter = new PerSecondCounter(50);
 
@@ -40,6 +41,14 @@ class GameController extends CanvasController {
       id: ball.id,
     });
     this.setHasTurn(false);
+    this.doEffect('SHOT');
+  }
+
+  doEffect(effect: string) {
+    this.effect = effect;
+    setTimeout(() => {
+      this.effect = '';
+    }, 2000);
   }
 
   handleMouseDown(event: CanvasMouseEvent, onShot: OnShotHandler) {
@@ -105,7 +114,7 @@ class GameController extends CanvasController {
     this.context.font = `${0.8 * this.blockSize}px serif`;
     this.context.fillStyle = this.playerColor;
 
-    const state = {
+    const state: Record<string, any> = {
       name: this.playerName,
       shot: this.ball?.shotCount || 0,
       x: Math.round(x),
@@ -113,6 +122,9 @@ class GameController extends CanvasController {
       fps: Math.round(this.fpsCounter.value),
       tick: Math.round(this.tickCounter.value),
     };
+    if (this.effect) {
+      state.effect = this.effect;
+    }
 
     const text = JSON.stringify(state).slice(1, -1).replaceAll('"', '').replaceAll(',', ', ').replaceAll(':', ': ');
     this.context.fillText(text, 7, 0.75 * this.blockSize);
@@ -166,7 +178,7 @@ class GameController extends CanvasController {
 
   get debug() {
     return {
-      mouseAt: this.mouseAt,
+      playerId: this.playerId,
       balls: this.balls,
     };
   }

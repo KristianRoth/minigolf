@@ -39,4 +39,8 @@ export type GameEvent =
   | {
       type: 'CHAT';
       message: string;
+    }
+  | {
+      type: 'EFFECT';
+      value: string;
     };

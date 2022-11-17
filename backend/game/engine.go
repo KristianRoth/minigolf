@@ -10,20 +10,23 @@ import (
 	"time"
 )
 
-type SpecialEffect int64
-
 // func timeTrack(start time.Time, name string) {
 // 	elapsed := time.Since(start)
 // 	fmt.Printf("%s took %s\n", name, elapsed)
 // }
 
+type SpecialEffect string
+
 const (
-	HoleEffect SpecialEffect = iota
-	NoEffect
+	NoEffect        SpecialEffect = "NONE"
+	HoleEffect      SpecialEffect = "HOLE"
+	CollisionEffect SpecialEffect = "COLLISION"
+	WaterEffect     SpecialEffect = "WATER"
 )
 
 func (g *Game) runGame() {
 	for {
+		// TODO: Skip if there is no state-change.
 		g.sendUpdateEvent()
 		g.tick()
 		<-time.After(time.Second / 60)
@@ -34,6 +37,9 @@ func (g *Game) tick() {
 	// defer timeTrack(time.Now(), "tick")
 	for _, player := range g.players {
 		ball, effect := g.Collide(player.ball)
+		if effect != NoEffect {
+			g.sendEffectEvent(*player, effect)
+		}
 		if effect == HoleEffect {
 			score := player.shot_count
 			err := database.UpdateGameMapStats(g.game_map.Id, score)
@@ -52,6 +58,7 @@ func (g *Game) tick() {
 		}
 	}
 }
+
 func (g Game) getStartLocation() calc.Vector {
 	start := calc.Vector{}
 	for _, col := range g.game_map.Tiles {
@@ -97,35 +104,40 @@ func (g Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 	return closest, nil
 }
 
-func (g Game) doGroundEffect(ball Ball) Ball {
+func (g Game) doGroundEffect(ball Ball) (Ball, SpecialEffect) {
 	x := uint32(ball.Pos.X / 100)
 	y := uint32(ball.Pos.Y / 100)
 	tile := g.game_map.Tiles[x][y]
 	switch tile.Ground.Type {
 	case models.Grass:
-		return ball.Clone()
+		return ball.Clone(), NoEffect
 	case models.Water:
-		return newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
+		return newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0)), WaterEffect
 	case models.Gravel:
-		return newBall(ball.Pos, ball.Vel.Multiply(0.8))
+		return newBall(ball.Pos, ball.Vel.Multiply(0.8)), NoEffect
 	case models.GravelHeavy:
-		return newBall(ball.Pos, ball.Vel.Multiply(0.5))
+		return newBall(ball.Pos, ball.Vel.Multiply(0.5)), NoEffect
 	case models.Slope:
 		slope := calc.NewVec(0.0, -1.0).Rotate(calc.NewVec(0.0, 0.0), tile.Ground.Rotation)
-		return newBall(ball.Pos, ball.Vel.Add(slope))
+		return newBall(ball.Pos, ball.Vel.Add(slope)), NoEffect
 	case models.SlopeDiagonal:
 		slope := calc.NewVec(-1.0, -1.0).Rotate(calc.NewVec(0.0, 0.0), tile.Ground.Rotation)
-		return newBall(ball.Pos, ball.Vel.Add(slope))
+		return newBall(ball.Pos, ball.Vel.Add(slope)), NoEffect
 	}
-	return ball.Clone()
+	return ball.Clone(), NoEffect
 }
 
 func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 	ball = newBall(ball.Pos, ball.Vel.Multiply(0.97))
-	ball = g.doGroundEffect(ball)
+	ball, effect := g.doGroundEffect(ball)
+
+	if effect == WaterEffect {
+		return ball, effect
+	}
+
 	d_pos := ball.Vel.Length()
 	if d_pos < 1.0 {
-		return ball, NoEffect
+		return ball.Stop(), NoEffect
 	}
 	for {
 		collision, err := g.getClosestCollision(ball)
@@ -142,6 +154,7 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 			fmt.Printf("Seinä %f, %f\n", collision.Point.X, collision.Point.Y)
 			fmt.Printf("Pallo %f, %f\n", ball.Pos.X, ball.Pos.Y)
 			ball = doCollision(collision.Point, ball)
+			return ball, CollisionEffect
 		}
 		to_move := math.Max(1, math.Min(d_pos, distance_to_wall-49.9))
 
@@ -163,11 +176,4 @@ func doCollision(projectionPoint calc.Vector, ball Ball) Ball {
 	vel := basis_changed.NormalBase(basis)
 	pos := projectionPoint.Add(basis.Multiply(50.1))
 	return newBall(pos, vel)
-}
-
-func (g *Game) doShotEvent(p *Player, event shotEvent) {
-	p.ball.Vel.X = event.X / 10
-	p.ball.Vel.Y = event.Y / 10
-	p.shot_count += 1
-	p.is_turn = false
 }

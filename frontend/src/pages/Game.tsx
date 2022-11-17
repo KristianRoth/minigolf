@@ -28,10 +28,7 @@ const getUrl = (gameId: string) => {
 
 function Game() {
   const [debug, setDebug] = useState(false);
-  const [playerId, setPlayerId] = useState(0);
-  const [balls, setBalls] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
-  const [gameMap, setGameMap] = useState<GameMap | null>(null);
 
   const [mapRef, mapController] = useCanvasController(MapController);
   const [gameRef, gameController] = useCanvasController(GameController);
@@ -67,27 +64,34 @@ function Game() {
     (payload: any) => {
       try {
         const event: GameEvent = JSON.parse(payload.data as any);
-        if (event.type === 'UPDATE') {
-          const newBalls = event.playerStates.map(({ id, x, y, name, shotCount }) => {
-            return {
-              id,
-              x,
-              y,
-              name,
-              shotCount,
-              color: colors[id % colors.length],
-            };
-          });
-          gameController?.setBalls(newBalls);
-          setBalls(newBalls);
-        } else if (event.type === 'INIT') {
-          GameStorage.setPlayerId(gameId, event.playerId.toString());
-          gameController?.setPlayerId(event.playerId);
-          mapController?.setGameMap(event.gameMap);
-          setPlayerId(event.playerId);
-          setGameMap(event.gameMap);
-        } else if (event.type === 'TURN_BEGIN') {
-          gameController?.setHasTurn(true);
+        switch (event.type) {
+          case 'UPDATE': {
+            const newBalls = event.playerStates.map(({ id, x, y, name, shotCount }) => {
+              return {
+                id,
+                x,
+                y,
+                name,
+                shotCount,
+                color: colors[id % colors.length],
+              };
+            });
+            gameController?.setBalls(newBalls);
+            break;
+          }
+          case 'INIT': {
+            GameStorage.setPlayerId(gameId, event.playerId.toString());
+            gameController?.setPlayerId(event.playerId);
+            mapController?.setGameMap(event.gameMap);
+            break;
+          }
+          case 'TURN_BEGIN': {
+            gameController?.setHasTurn(true);
+            break;
+          }
+          case 'EFFECT': {
+            gameController?.doEffect(event.value);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -120,6 +124,7 @@ function Game() {
   };
 
   const goToEdit = () => {
+    const gameMap = mapController?.getMap();
     if (!gameMap) return;
     GameStorage.setGameMap(gameMap);
     navigate(`/editor/${gameMap.id}`);
@@ -140,15 +145,13 @@ function Game() {
   );
   return (
     <>
-      <CanvasGroup menu={menu} help={<p>Siperia opettaa.</p>}>
+      <CanvasGroup menu={menu} help={<p>Tekemällä oppii.</p>}>
         <Canvas ref={mapRef} />
         <Canvas ref={gameRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
       </CanvasGroup>
-      {debug && (
+      {debug && gameController && (
         <Row>
-          <pre style={{ width: '50%', marginLeft: 10 }}>
-            {JSON.stringify({ playerId, len: balls.length, balls }, undefined, 2)}
-          </pre>
+          <pre style={{ width: '50%', marginLeft: 10 }}>{JSON.stringify(gameController.debug, undefined, 2)}</pre>
         </Row>
       )}
     </>
