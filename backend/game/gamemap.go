@@ -9,7 +9,7 @@ import (
 
 const SIZE_X = 49
 const SIZE_Y = 25
-const BALL_SIZE = 50.0
+const BALL_SIZE = 40.0
 
 var next_id = 1
 
