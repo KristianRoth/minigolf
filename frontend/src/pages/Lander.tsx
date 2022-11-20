@@ -1,5 +1,6 @@
 import React from "react"
 import { Tab, TabGroup } from "../components/Tab"
+import CreateTab from "./CreateTab"
 import EditorTab from "./EditorTab"
 import Maps from "./Maps"
 import RootPage from "./Root"
@@ -18,7 +19,7 @@ const Lander: React.FC = () => {
     },
     {
       label: "CREATE",
-      view: <h1>Testi content</h1>
+      view: <CreateTab />
     },
     {
       label: "MAPS",

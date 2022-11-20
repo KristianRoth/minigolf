@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  input[type="range"]::-webkit-slider-thumb {
+    @apply rounded-full appearance-none w-8 h-8 bg-green-600 border-green-800 border-solid border-2
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    @apply appearance-none
+  }
+  input[type="range"] {
+    @apply px-1 w-full h-10 appearance-none rounded-full border-yellow-600 bg-yellow-300 border-2 border-solid
+  }
+  .range-value {
+    @apply text-lg font-semibold pl-3 items-center flex rounded-l-full bg-yellow-600 text-yellow-300 w-20 mr-[-20px]
+  }
+  .range-value input {
+    @apply bg-yellow-600 focus:outline-none
+  }
+}
+
 .flex-container {
   height: 1000px;
   width: 100%;
@@ -19,9 +37,9 @@
   width: 100vw;
   z-index: -999;
   background: url('/public/background.png'); 
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
+  -webkit-background-size: 25%;
+  -moz-background-size: 25%;
+  -o-background-size: 25%;
   background-size: 25%;
   transform: rotate3d(-25deg) scale(200%);
   -webkit-transform: rotate(-25deg) scale(200%);
