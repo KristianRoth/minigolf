@@ -1,4 +1,4 @@
-import { Ball, CanvasMouseEvent, Ground, Point, Rotation, Structure } from '../types';
+import { Ball, CanvasMouseEvent, GroundType, Point, Rotation, Structure, StructureType } from '../types';
 import { clamp } from '../utils/calculation';
 import { GAME_WIDTH, RATIO, BALL_RADIUS, CIRCLE_RADIUS, BLOCK_SIZE, HALF_BLOCK } from '../utils/constants';
 
@@ -57,13 +57,13 @@ class CanvasController {
 
   protected getRotationAngle(rot: Rotation) {
     switch (rot) {
-      case 'North':
+      case Rotation.North:
         return 0;
-      case 'East':
+      case Rotation.East:
         return Math.PI / 2;
-      case 'South':
+      case Rotation.South:
         return Math.PI;
-      case 'West':
+      case Rotation.West:
         return -Math.PI / 2;
     }
   }
@@ -151,7 +151,7 @@ class CanvasController {
     this.context.closePath();
   }
 
-  protected renderElement(callback: () => void, middle: Point, rotation: Rotation = 'North') {
+  protected renderElement(callback: () => void, middle: Point, rotation = Rotation.North) {
     this.context.save();
     const scale = this.canvas.width / GAME_WIDTH;
     this.context.scale(scale, scale);
@@ -161,7 +161,7 @@ class CanvasController {
     this.context.restore();
   }
 
-  private renderWallElement(callback: () => void, doShadow: boolean, middle: Point, rotation: Rotation = 'North') {
+  private renderWallElement(callback: () => void, doShadow: boolean, middle: Point, rotation = Rotation.North) {
     this.renderElement(
       () => {
         if (doShadow) {
@@ -292,11 +292,12 @@ class CanvasController {
   }
 
   protected renderSlope(point: Point, rotation: Rotation, isDiagonal: boolean) {
+    const rotString = Rotation[rotation] as keyof typeof colors.slope;
     this.renderElement(
       () => {
         this.context.lineWidth = 5;
-        this.context.fillStyle = colors.slope[rotation];
-        this.context.strokeStyle = colors.slope[rotation];
+        this.context.fillStyle = colors.slope[rotString];
+        this.context.strokeStyle = colors.slope[rotString];
         this.drawSquare();
         this.context.strokeStyle = colors.wallBorder;
         this.context.lineWidth = 3;
@@ -320,55 +321,55 @@ class CanvasController {
   protected renderStructure(
     point: Point,
     structureType: Structure['type'],
-    rotation: Rotation = 'North',
+    rotation = Rotation.North,
     doShadow = false
   ) {
     switch (structureType) {
-      case 'Start':
+      case StructureType.Start:
         this.renderStart(point);
         return;
-      case 'Hole':
+      case StructureType.Hole:
         this.renderHole(point);
         return;
-      case 'Circle':
+      case StructureType.Circle:
         this.renderCircleWall(point, doShadow);
         return;
-      case 'Wall':
+      case StructureType.Wall:
         this.renderWall(point, doShadow);
         return;
-      case 'Wedge':
+      case StructureType.Wedge:
         this.renderWedge(point, rotation, doShadow);
         return;
-      case 'RoundedCorner':
+      case StructureType.RoundedCorner:
         this.renderRoundedCorner(point, rotation, doShadow);
         return;
-      case 'InvertedRoundedCorner':
+      case StructureType.InvertedRoundedCorner:
         this.renderInvertedRoundedCorner(point, rotation, doShadow);
         return;
-      case 'Portal':
-        this.renderPortal(point);
-        return;
+      // case StructureType.Portal:
+      //   this.renderPortal(point);
+      //   return;
     }
   }
 
-  protected renderGround(point: Point, groundType: Ground['type'], rotation: Rotation = 'North') {
+  protected renderGround(point: Point, groundType: GroundType, rotation = Rotation.North) {
     switch (groundType) {
-      case 'Grass':
+      case GroundType.Grass:
         this.renderStaticGround(point, colors.grass);
         return;
-      case 'Water':
+      case GroundType.Water:
         this.renderStaticGround(point, colors.water);
         return;
-      case 'Gravel':
+      case GroundType.Gravel:
         this.renderStaticGround(point, colors.gravel);
         return;
-      case 'GravelHeavy':
+      case GroundType.GravelHeavy:
         this.renderStaticGround(point, colors.gravelHeavy);
         return;
-      case 'Slope':
+      case GroundType.Slope:
         this.renderSlope(point, rotation, false);
         return;
-      case 'SlopeDiagonal':
+      case GroundType.SlopeDiagonal:
         this.renderSlope(point, rotation, true);
         return;
     }

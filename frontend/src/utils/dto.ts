@@ -1,38 +1,5 @@
-import { GameMap, Tile, Rotation } from '../types';
+import { GameMap, Tile } from '../types';
 import { BLOCK_SIZE, GAME_HEIGHT } from './constants';
-
-enum Rot {
-  North,
-  East,
-  South,
-  West,
-}
-
-enum Struct {
-  None,
-  Wall,
-  Circle,
-  Start,
-  Hole,
-  Wedge,
-  RoundedCorner,
-  InvertedRoundedCorner,
-}
-
-enum Grnd {
-  Grass,
-  Water,
-  Gravel,
-  GravelHeavy,
-  Slope,
-  SlopeDiagonal,
-}
-
-const rotations: Rotation[] = ['North', 'East', 'South', 'West'];
-
-const structures = ['None', 'Wall', 'Circle', 'Start', 'Hole', 'Wedge', 'RoundedCorner', 'InvertedRoundedCorner'];
-
-const grounds = ['Grass', 'Water', 'Gravel', 'GravelHeavy', 'Slope', 'SlopeDiagonal'];
 
 export const gameMapFromDTO = (dto: any): GameMap => {
   const tiles: Tile[] = [];
@@ -40,18 +7,18 @@ export const gameMapFromDTO = (dto: any): GameMap => {
     col.forEach((tileStr, y) => {
       const [gType, gRot, sType, sRot] = tileStr.split(',').map((val) => parseInt(val));
 
-      const tile = {
+      const tile: Tile = {
         pos: {
           x: x * BLOCK_SIZE,
           y: y * BLOCK_SIZE,
         },
         ground: {
-          type: grounds[gType] as any,
-          rotation: rotations[gRot],
+          type: gType,
+          rotation: gRot,
         },
         structure: {
-          type: structures[sType] as any,
-          rotation: rotations[sRot],
+          type: sType,
+          rotation: sRot,
         },
       };
       tiles.push(tile);
@@ -69,12 +36,7 @@ export const gameMapToDTO = (gameMap: GameMap): any => {
   const tiles: string[][] = [];
   for (let i = 0; i < gameMap.tiles.length; i += cols) {
     const tile_strings = gameMap.tiles.slice(i, i + cols).map((tile) => {
-      return [
-        grounds.indexOf(tile.ground.type),
-        rotations.indexOf((tile.ground as any).rotation || 'North'),
-        structures.indexOf(tile.structure.type),
-        rotations.indexOf((tile.structure as any).rotation || 'North'),
-      ].join(',');
+      return [tile.ground.type, tile.ground.rotation, tile.structure.type, tile.structure.rotation].join(',');
     });
     tiles.push(tile_strings);
   }

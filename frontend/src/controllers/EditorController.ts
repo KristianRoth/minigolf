@@ -1,16 +1,4 @@
-import {
-  CanvasMouseEvent,
-  EditorState,
-  GameMap,
-  Ground,
-  GROUND_TYPES,
-  Point,
-  Rotation,
-  ROTATIONS,
-  StructureType,
-  STRUCTURE_TYPES,
-  Tile,
-} from '../types';
+import { CanvasMouseEvent, EditorState, GameMap, GroundType, Point, Rotation, StructureType, Tile } from '../types';
 import { BLOCK_SIZE } from '../utils/constants';
 import CanvasController from './CanvasController';
 
@@ -18,12 +6,12 @@ type SetTileHandler = (tile: Partial<Tile>) => void;
 
 class EditorController extends CanvasController {
   protected gameMap: GameMap | null = null;
-  private structureType: StructureType = 'None';
-  private groundType: Ground['type'] = 'Grass';
+  private structureType = StructureType.None;
+  private groundType = GroundType.Grass;
   private mode: 'Structure' | 'Ground' = 'Structure';
   private tilePosition: Point | null = null;
   private dragStatus: 'insert' | 'delete' | null = null;
-  private rotation: Rotation = 'North';
+  private rotation = Rotation.North;
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
   }
@@ -34,16 +22,16 @@ class EditorController extends CanvasController {
       return {
         pos: this.tilePosition as Point,
         structure: {
-          type: isDelete ? 'None' : this.structureType,
-          rotation: isDelete ? 'North' : this.rotation,
+          type: isDelete ? StructureType.None : this.structureType,
+          rotation: isDelete ? Rotation.North : this.rotation,
         },
       };
     }
     return {
       pos: this.tilePosition as Point,
       ground: {
-        type: isDelete ? 'Grass' : this.groundType,
-        rotation: isDelete ? 'North' : this.rotation,
+        type: isDelete ? GroundType.Grass : this.groundType,
+        rotation: isDelete ? Rotation.North : this.rotation,
       },
     };
   }
@@ -113,7 +101,7 @@ class EditorController extends CanvasController {
 
     if (!this.tilePosition) return;
 
-    if (this.dragStatus === 'delete' || (this.mode === 'Structure' && this.structureType === 'None')) {
+    if (this.dragStatus === 'delete' || (this.mode === 'Structure' && this.structureType === StructureType.None)) {
       this.renderEraser(this.tilePosition);
       return;
     }
@@ -139,9 +127,9 @@ class EditorController extends CanvasController {
   }
 
   setEditorState(state: EditorState) {
-    this.structureType = STRUCTURE_TYPES[state.structureIdx];
-    this.groundType = GROUND_TYPES[state.groundIdx];
-    this.rotation = ROTATIONS[state.rotationIdx];
+    this.structureType = state.structureIdx;
+    this.groundType = state.groundIdx;
+    this.rotation = state.rotationIdx;
     this.mode = state.mode;
   }
 }

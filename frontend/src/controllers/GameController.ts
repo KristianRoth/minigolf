@@ -1,4 +1,4 @@
-import { Ball, CanvasMouseEvent, GameEvent, Point, ROTATIONS } from '../types';
+import { Ball, CanvasMouseEvent, GameEvent, Point, Rotation, ROTATIONS } from '../types';
 import { calculateLineEndPoints, modulo, PerSecondCounter } from '../utils/calculation';
 import CanvasController from './CanvasController';
 
@@ -22,7 +22,7 @@ class GameController extends CanvasController {
 
   private findTouchLineEndPoint(ball: Ball): Point {
     const { start, end } = this.touchDrag as { start: Point; end: Point };
-    const { shot } = calculateLineEndPoints(start, end, 'South');
+    const { shot } = calculateLineEndPoints(start, end, Rotation.South);
     const dx = shot.x - start.x;
     const dy = shot.y - start.y;
     return { x: ball.x + dx || ball.x, y: ball.y + dy || ball.y };
@@ -69,7 +69,7 @@ class GameController extends CanvasController {
       return;
     }
     // MOUSE
-    const { shot } = calculateLineEndPoints(this.ball, clickedAt, ROTATIONS[this.shotRotationIdx]);
+    const { shot } = calculateLineEndPoints(this.ball, clickedAt, this.shotRotationIdx);
     this.doShot(shot, this.ball, onShot);
   }
 
@@ -102,7 +102,7 @@ class GameController extends CanvasController {
     }
 
     const rotation = ROTATIONS[this.shotRotationIdx];
-    const { shot, guide } = calculateLineEndPoints(ball, this.mouseAt, ROTATIONS[this.shotRotationIdx]);
+    const { shot, guide } = calculateLineEndPoints(ball, this.mouseAt, this.shotRotationIdx);
     if (rotation !== 'North') {
       this.drawLine(ball, guide, true);
     }

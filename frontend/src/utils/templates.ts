@@ -1,13 +1,14 @@
-import { StructureType, Tile } from '../types';
+import { GroundType, Rotation, StructureType, Tile } from '../types';
 
 const empty = (): Tile[] => {
   const tiles: Tile[] = [];
   for (let y = 0; y < 25; y += 1) {
     for (let x = 0; x < 49; x += 1) {
       tiles.push({
-        ground: { type: 'Grass' },
+        ground: { type: GroundType.Grass, rotation: Rotation.North },
         structure: {
-          type: 'None',
+          type: StructureType.None,
+          rotation: Rotation.North,
         },
         pos: {
           x: x * 100,
@@ -27,14 +28,15 @@ const borders = (): Tile[] => {
       const isSpawn = x === 2 && y === 12;
       const isHole = x === 46 && y === 12;
 
-      let type: StructureType = 'None';
-      if (isBorder) type = 'Wall';
-      if (isSpawn) type = 'Start';
-      if (isHole) type = 'Hole';
+      let type: StructureType = StructureType.None;
+      if (isBorder) type = StructureType.Wall;
+      if (isSpawn) type = StructureType.Start;
+      if (isHole) type = StructureType.Hole;
       tiles.push({
-        ground: { type: 'Grass' },
+        ground: { type: GroundType.Grass, rotation: Rotation.North },
         structure: {
           type,
+          rotation: Rotation.North,
         },
         pos: {
           x: x * 100,

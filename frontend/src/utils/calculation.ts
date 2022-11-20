@@ -41,19 +41,19 @@ export const calculateLineEndPoints = (
     const dx = guide.x - ballAt.x;
     const dy = guide.y - ballAt.y;
     switch (rotation) {
-      case 'North':
+      case Rotation.North:
         return guide;
-      case 'East':
+      case Rotation.East:
         return {
           x: ballAt.x - dy,
           y: ballAt.y + dx,
         };
-      case 'South':
+      case Rotation.South:
         return {
           x: ballAt.x - dx,
           y: ballAt.y - dy,
         };
-      case 'West':
+      case Rotation.West:
         return {
           x: ballAt.x + dy,
           y: ballAt.y - dx,
