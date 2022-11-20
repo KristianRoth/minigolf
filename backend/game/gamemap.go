@@ -24,6 +24,7 @@ func tileToString(tile GameMapTile) string {
 	return fmt.Sprintf("%d,%d,%d,%d", tile.Ground.Type, tile.Ground.Rotation, tile.Structure.Type, tile.Structure.Rotation)
 }
 
+// TODO: Add validation.
 func tileFromString(tile_string string, pos calc.Vector) GameMapTile {
 	var result []int
 	for _, val := range strings.Split(tile_string, ",") {

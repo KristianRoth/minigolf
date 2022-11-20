@@ -178,6 +178,26 @@ func (cm *colliderMesh) createColliders(tile GameMapTile) {
 	for _, bc := range base_colliders {
 		colliders = append(colliders, bc.toTilePosition(tile))
 	}
+
+	// Add borders to the map.
+	// TODO: Looks ugly.
+	x := uint32(tile.Pos.X / TILE_SIZE)
+	y := uint32(tile.Pos.Y / TILE_SIZE)
+	if x == 0 {
+		collider := lineCollider{Pos: tile.Pos, Dir: calc.NewVec(0, TILE_SIZE)}
+		colliders = append(colliders, collider)
+	} else if x == SIZE_X-1 {
+		collider := lineCollider{Pos: calc.NewVec(tile.Pos.X+TILE_SIZE, tile.Pos.Y), Dir: calc.NewVec(0, TILE_SIZE)}
+		colliders = append(colliders, collider)
+	}
+	if y == 0 {
+		collider := lineCollider{Pos: tile.Pos, Dir: calc.NewVec(TILE_SIZE, 0)}
+		colliders = append(colliders, collider)
+	} else if y == SIZE_Y-1 {
+		collider := lineCollider{Pos: calc.NewVec(tile.Pos.X, tile.Pos.Y+TILE_SIZE), Dir: calc.NewVec(TILE_SIZE, 0)}
+		colliders = append(colliders, collider)
+	}
+
 	cm.colliders[tile.getId()] = colliders
 }
 
