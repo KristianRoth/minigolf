@@ -15,21 +15,12 @@ import (
 // 	fmt.Printf("%s took %s\n", name, elapsed)
 // }
 
-type SpecialEffect string
-
-const (
-	NoEffect        SpecialEffect = "NONE"
-	HoleEffect      SpecialEffect = "HOLE"
-	CollisionEffect SpecialEffect = "COLLISION"
-	WaterEffect     SpecialEffect = "WATER"
-)
-
 func (g *Game) runGame() {
 	for {
 		// TODO: Skip if there is no state-change.
 		g.sendUpdateEvent()
 		g.tick()
-		<-time.After(time.Second / 60)
+		<-time.After(time.Second / TICK)
 	}
 }
 
@@ -72,14 +63,14 @@ func (g Game) getStartLocation() calc.Vector {
 			}
 		}
 	}
-	return start.Add(calc.NewVec(50, 50))
+	return start.Add(calc.NewVec(TILE_SIZE/2, TILE_SIZE/2))
 }
 
 func (g Game) getClosestCollision(ball Ball) (collisionPoint, error) {
-	x_start := uint32(math.Max(0, (ball.Pos.X-100)/100))
+	x_start := uint32(math.Max(0, (ball.Pos.X-TILE_SIZE)/TILE_SIZE))
 	x_end := uint32(math.Min(float64(x_start+5), SIZE_X))
 
-	y_start := uint32(math.Max(0, (ball.Pos.Y-100)/100))
+	y_start := uint32(math.Max(0, (ball.Pos.Y-TILE_SIZE)/TILE_SIZE))
 	y_end := uint32(math.Min(float64(y_start+5), SIZE_Y))
 
 	close_tiles := []GameMapTile{}
@@ -109,30 +100,31 @@ func (g Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 }
 
 func (g Game) doGroundEffect(ball Ball) (Ball, SpecialEffect) {
-	x := uint32(ball.Pos.X / 100)
-	y := uint32(ball.Pos.Y / 100)
+	x := uint32(ball.Pos.X / TILE_SIZE)
+	y := uint32(ball.Pos.Y / TILE_SIZE)
 	tile := g.game_map.Tiles[x][y]
+
+	ball = newBall(ball.Pos, ball.Vel.Multiply(FRICTION)) // Previously 0.97
 	switch tile.Ground.Type {
 	case models.Grass:
 		return ball.Clone(), NoEffect
 	case models.Water:
 		return ball.Clone(), WaterEffect
 	case models.Gravel:
-		return newBall(ball.Pos, ball.Vel.Multiply(0.8)), NoEffect
+		return newBall(ball.Pos, ball.Vel.Multiply(GRAVEL_FRICTION)), NoEffect
 	case models.GravelHeavy:
-		return newBall(ball.Pos, ball.Vel.Multiply(0.6)), NoEffect
+		return newBall(ball.Pos, ball.Vel.Multiply(GRAVEL_HEAVY_FRICTION)), NoEffect
 	case models.Slope:
-		slope := calc.NewVec(0, -1).SetLength(0.75).Rotate(calc.NewVec(0, 0), tile.Ground.Rotation)
+		slope := calc.NewVec(0, -1).SetLength(SLOPE_GRAVITY).Rotate(calc.NewVec(0, 0), tile.Ground.Rotation)
 		return newBall(ball.Pos, ball.Vel.Add(slope)), NoEffect
 	case models.SlopeDiagonal:
-		slope := calc.NewVec(-1, -1).SetLength(0.75).Rotate(calc.NewVec(0, 0), tile.Ground.Rotation)
+		slope := calc.NewVec(-1, -1).SetLength(SLOPE_GRAVITY).Rotate(calc.NewVec(0, 0), tile.Ground.Rotation)
 		return newBall(ball.Pos, ball.Vel.Add(slope)), NoEffect
 	}
 	return ball.Clone(), NoEffect
 }
 
 func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
-	ball = newBall(ball.Pos, ball.Vel.Multiply(0.985)) // Previously 0.97
 	ball, effect := g.doGroundEffect(ball)
 
 	if effect == WaterEffect {
@@ -162,7 +154,7 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 			ball = doCollision(collision.Point, ball)
 			collision_effect = CollisionEffect
 		}
-		to_move := math.Max(1, math.Min(d_pos, distance_to_wall-49.9))
+		to_move := math.Max(1, math.Min(d_pos, distance_to_wall-BALL_SIZE+0.1))
 
 		fmt.Printf("adding some: %f/%f\n", to_move, ball.Vel.Length())
 
@@ -179,8 +171,8 @@ func doCollision(projectionPoint calc.Vector, ball Ball) Ball {
 	basis_changed := ball.Vel.ChangeBase(basis)
 	basis_changed.X = -basis_changed.X
 
-	vel := basis_changed.NormalBase(basis)
-	pos := projectionPoint.Add(basis.Multiply(50.1))
+	vel := basis_changed.NormalBase(basis).Multiply(WALL_COLLISION_BOUNCE)
+	pos := projectionPoint.Add(basis.Multiply(BALL_SIZE + 0.1))
 	return newBall(pos, vel)
 }
 

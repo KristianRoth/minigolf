@@ -5,7 +5,7 @@ import (
 	"backend/models"
 )
 
-var mid = calc.NewVec(50.0, 50.0)
+var mid = calc.NewVec(TILE_SIZE/2, TILE_SIZE/2)
 
 type collider interface {
 	toTilePosition(tile GameMapTile) collider
@@ -92,40 +92,40 @@ func (ac arcCollider) projectionPoint(ball_pos calc.Vector) (calc.Vector, error)
 
 var boxColliders []collider = []collider{
 	pointCollider{Pos: calc.NewVec(0, 0)},
-	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
-	pointCollider{Pos: calc.NewVec(100, 0)},
-	lineCollider{Pos: calc.NewVec(100, 0), Dir: calc.NewVec(0, 100)},
-	pointCollider{Pos: calc.NewVec(100, 100)},
-	lineCollider{Pos: calc.NewVec(100, 100), Dir: calc.NewVec(-100, 0)},
-	pointCollider{Pos: calc.NewVec(0, 100)},
-	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(TILE_SIZE, 0)},
+	pointCollider{Pos: calc.NewVec(TILE_SIZE, 0)},
+	lineCollider{Pos: calc.NewVec(TILE_SIZE, 0), Dir: calc.NewVec(0, TILE_SIZE)},
+	pointCollider{Pos: calc.NewVec(TILE_SIZE, TILE_SIZE)},
+	lineCollider{Pos: calc.NewVec(TILE_SIZE, TILE_SIZE), Dir: calc.NewVec(-TILE_SIZE, 0)},
+	pointCollider{Pos: calc.NewVec(0, TILE_SIZE)},
+	lineCollider{Pos: calc.NewVec(0, TILE_SIZE), Dir: calc.NewVec(0, -TILE_SIZE)},
 }
 
 var wedgeColliders []collider = []collider{
 	pointCollider{Pos: calc.NewVec(0, 0)},
-	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
-	pointCollider{Pos: calc.NewVec(100, 0)},
-	lineCollider{Pos: calc.NewVec(100, 0), Dir: calc.NewVec(-100, 100)},
-	pointCollider{Pos: calc.NewVec(0, 100)},
-	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(TILE_SIZE, 0)},
+	pointCollider{Pos: calc.NewVec(TILE_SIZE, 0)},
+	lineCollider{Pos: calc.NewVec(TILE_SIZE, 0), Dir: calc.NewVec(-TILE_SIZE, TILE_SIZE)},
+	pointCollider{Pos: calc.NewVec(0, TILE_SIZE)},
+	lineCollider{Pos: calc.NewVec(0, TILE_SIZE), Dir: calc.NewVec(0, -TILE_SIZE)},
 }
 
 var roundedCornerColliders []collider = []collider{
 	pointCollider{Pos: calc.NewVec(0, 0)},
-	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
-	pointCollider{Pos: calc.NewVec(100, 0)},
-	arcCollider{Pos: calc.NewVec(0, 0), Radius: 100, Start: calc.NewVec(1, 0), End: calc.NewVec(0, 1)},
-	pointCollider{Pos: calc.NewVec(0, 100)},
-	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(TILE_SIZE, 0)},
+	pointCollider{Pos: calc.NewVec(TILE_SIZE, 0)},
+	arcCollider{Pos: calc.NewVec(0, 0), Radius: TILE_SIZE, Start: calc.NewVec(1, 0), End: calc.NewVec(0, 1)},
+	pointCollider{Pos: calc.NewVec(0, TILE_SIZE)},
+	lineCollider{Pos: calc.NewVec(0, TILE_SIZE), Dir: calc.NewVec(0, -TILE_SIZE)},
 }
 
 var invertedRoundedCornerColliders []collider = []collider{
 	pointCollider{Pos: calc.NewVec(0, 0)},
-	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(100, 0)},
-	pointCollider{Pos: calc.NewVec(100, 0)},
-	arcCollider{Pos: calc.NewVec(100, 100), Radius: 100, Start: calc.NewVec(-1, 0), End: calc.NewVec(0, -1)},
-	pointCollider{Pos: calc.NewVec(0, 100)},
-	lineCollider{Pos: calc.NewVec(0, 100), Dir: calc.NewVec(0, -100)},
+	lineCollider{Pos: calc.NewVec(0, 0), Dir: calc.NewVec(TILE_SIZE, 0)},
+	pointCollider{Pos: calc.NewVec(TILE_SIZE, 0)},
+	arcCollider{Pos: calc.NewVec(TILE_SIZE, TILE_SIZE), Radius: TILE_SIZE, Start: calc.NewVec(-1, 0), End: calc.NewVec(0, -1)},
+	pointCollider{Pos: calc.NewVec(0, TILE_SIZE)},
+	lineCollider{Pos: calc.NewVec(0, TILE_SIZE), Dir: calc.NewVec(0, -TILE_SIZE)},
 }
 
 var circleColliders []collider = []collider{

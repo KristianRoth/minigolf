@@ -3,7 +3,9 @@ package communications
 import (
 	"backend/game"
 	"backend/models"
+	"backend/util"
 	"fmt"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -18,11 +20,8 @@ func NewGameHandler() GameHandler {
 	}
 }
 
-var Id = 12345
-
 func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto) string {
-	g_id := fmt.Sprint(Id)
-	Id += 1
+	g_id := strings.ToUpper(util.RandomString(5))
 	game_map := game.GameMapFromDto(mapDto)
 	game := game.NewGame(g_id, game_map)
 	handler.games[g_id] = &game

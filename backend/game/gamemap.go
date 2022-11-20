@@ -7,10 +7,6 @@ import (
 	"strconv"
 )
 
-const SIZE_X = 49
-const SIZE_Y = 25
-const BALL_SIZE = 40.0
-
 var next_id = 1
 
 type GameMapTile struct {
@@ -67,10 +63,13 @@ func NewGameMap() GameMap {
 			if x == 1 && y == 1 {
 				structure_type = models.Start
 			}
+			if x == SIZE_X-2 && y == SIZE_Y-2 {
+				structure_type = models.Hole
+			}
 			tiles_col = append(
 				tiles_col,
 				GameMapTile{
-					Pos:       calc.NewVec(float64(x)*100.0, float64(y)*100.0),
+					Pos:       calc.NewVec(float64(x)*TILE_SIZE, float64(y)*TILE_SIZE),
 					Ground:    models.Ground{Type: models.Grass, Rotation: models.North},
 					Structure: models.Structure{Type: structure_type, Rotation: models.North},
 				})
@@ -104,8 +103,8 @@ func GameMapFromDto(gdto models.GameMapDto) GameMap {
 	}
 
 	for _, tile_dto := range gdto.Tiles {
-		x := tile_dto.Pos.X / 100
-		y := tile_dto.Pos.Y / 100
+		x := tile_dto.Pos.X / TILE_SIZE
+		y := tile_dto.Pos.Y / TILE_SIZE
 		tiles[int(x)][int(y)] = tileFromDto(tile_dto)
 	}
 	return GameMap{
