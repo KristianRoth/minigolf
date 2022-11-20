@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +18,7 @@ func main() {
 	gameH := communications.NewGameHandler()
 
 	router := gin.Default()
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Use(cors.Default()) // TODO: This allows all origins.
 
 	routes.GameRoutes(router, &gameH)
