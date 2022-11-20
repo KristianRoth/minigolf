@@ -1,19 +1,9 @@
-/* @tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-.btn {
-  @apply font-bold py-2 px-4 rounded;
-}
-.btn-blue {
-  @apply bg-blue-500 text-white;
-}
-.btn-blue:hover {
-  @apply bg-blue-700;
-} */
-
 .flex-container {
-  height: 100%;
+  height: 1000px;
   width: 100%;
   padding: 0;
   margin: 0;
@@ -21,6 +11,22 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+}
+
+.bg-image { 
+  position: fixed;
+  height: 100vh;
+  width: 100vw;
+  z-index: -999;
+  background: url('/public/background.png'); 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: 25%;
+  transform: rotate3d(-25deg) scale(200%);
+  -webkit-transform: rotate(-25deg) scale(200%);
+  filter: blur(3px);
+  -webkit-filter: blur(3px);
 }
 
 .row {
