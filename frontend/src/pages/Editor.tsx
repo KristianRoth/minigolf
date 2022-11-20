@@ -146,6 +146,10 @@ function Editor() {
     };
 
     const keyHandler = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement)?.tagName.toUpperCase() === 'INPUT') {
+        return;
+      }
+
       event.preventDefault();
       const { shiftKey, ctrlKey } = event;
       const key = event.key.toUpperCase();

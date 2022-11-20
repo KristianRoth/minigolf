@@ -46,7 +46,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
     navigate(`/${gameId}`);
   };
 
-  const Toolbar = () => (
+  const toolbar = (
     <>
       <div className='column'>
         <Row style={{ width: '100%' }}>
@@ -140,7 +140,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
 
   return (
     <div className='row'>
-      {page === 'toolbar' && <Toolbar />}
+      {page === 'toolbar' && toolbar}
       {page === 'maps' && <MapMenu setPage={() => setPage('toolbar')} />}
     </div>
   );
