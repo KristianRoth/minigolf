@@ -9,6 +9,7 @@ import { GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
+import { gameMapFromDTO } from '../utils/dto';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
@@ -82,7 +83,7 @@ function Game() {
           case 'INIT': {
             GameStorage.setPlayerId(gameId, event.playerId.toString());
             gameController?.setPlayerId(event.playerId);
-            mapController?.setGameMap(event.gameMap);
+            mapController?.setGameMap(gameMapFromDTO(event.gameMap));
             break;
           }
           case 'TURN_BEGIN': {

@@ -5,6 +5,7 @@ import (
 	"backend/database"
 	"backend/models"
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -63,6 +64,7 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 	router.POST("/api/init-game", func(c *gin.Context) {
 		var game_dto models.GameMapDto
 		if err := c.BindJSON(&game_dto); err != nil {
+			fmt.Println(err)
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})
 			return
 		}

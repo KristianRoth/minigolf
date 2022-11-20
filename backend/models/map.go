@@ -36,9 +36,9 @@ type Stats struct {
 
 // GameMap
 type GameMapDto struct {
-	Id    string    `json:"id"`
-	Tiles []TileDto `json:"tiles"`
-	Stats Stats     `json:"stats"`
+	Id    string     `json:"id"`
+	Tiles [][]string `json:"tiles"`
+	Stats Stats      `json:"stats"`
 }
 
 // This could be used to determine whether a map with the same content already exists.

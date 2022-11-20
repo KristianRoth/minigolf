@@ -5,6 +5,7 @@ import (
 	"backend/models"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 var next_id = 1
@@ -19,25 +20,26 @@ func (gmt GameMapTile) getId() string {
 	return fmt.Sprintf("%f_%f", gmt.Pos.X, gmt.Pos.Y)
 }
 
-func tileToDto(gmt GameMapTile) models.TileDto {
-	return models.TileDto{
-		Pos: models.Point{
-			X: gmt.Pos.X,
-			Y: gmt.Pos.Y,
-		},
-		Ground:    gmt.Ground,
-		Structure: gmt.Structure,
-	}
+func tileToString(tile GameMapTile) string {
+	return fmt.Sprintf("%d,%d,%d,%d", tile.Ground.Type, tile.Ground.Rotation, tile.Structure.Type, tile.Structure.Rotation)
 }
 
-func tileFromDto(tdto models.TileDto) GameMapTile {
+func tileFromString(tile_string string, pos calc.Vector) GameMapTile {
+	var result []int
+	for _, val := range strings.Split(tile_string, ",") {
+		as_int, _ := strconv.Atoi(val)
+		result = append(result, as_int)
+	}
 	return GameMapTile{
-		Pos: calc.Vector{
-			X: tdto.Pos.X,
-			Y: tdto.Pos.Y,
+		Pos: pos,
+		Ground: models.Ground{
+			Type:     models.GroundType(result[0]),
+			Rotation: models.Rotation(result[1]),
 		},
-		Ground:    tdto.Ground,
-		Structure: tdto.Structure,
+		Structure: models.Structure{
+			Type:     models.StructureType(result[2]),
+			Rotation: models.Rotation(result[3]),
+		},
 	}
 }
 
@@ -66,13 +68,12 @@ func NewGameMap() GameMap {
 			if x == SIZE_X-2 && y == SIZE_Y-2 {
 				structure_type = models.Hole
 			}
-			tiles_col = append(
-				tiles_col,
-				GameMapTile{
-					Pos:       calc.NewVec(float64(x)*TILE_SIZE, float64(y)*TILE_SIZE),
-					Ground:    models.Ground{Type: models.Grass, Rotation: models.North},
-					Structure: models.Structure{Type: structure_type, Rotation: models.North},
-				})
+			tile := GameMapTile{
+				Pos:       calc.NewVec(float64(x)*TILE_SIZE, float64(y)*TILE_SIZE),
+				Ground:    models.Ground{Type: models.Grass, Rotation: models.North},
+				Structure: models.Structure{Type: structure_type, Rotation: models.North},
+			}
+			tiles_col = append(tiles_col, tile)
 		}
 		tiles = append(tiles, tiles_col)
 	}
@@ -83,11 +84,13 @@ func NewGameMap() GameMap {
 }
 
 func GameMapToDto(gameMap GameMap) models.GameMapDto {
-	var tile_dtos []models.TileDto = []models.TileDto{}
+	var tile_dtos [][]string
 	for _, col := range gameMap.Tiles {
+		new_col := []string{}
 		for _, tile := range col {
-			tile_dtos = append(tile_dtos, tileToDto(tile))
+			new_col = append(new_col, tileToString(tile))
 		}
+		tile_dtos = append(tile_dtos, new_col)
 	}
 	return models.GameMapDto{
 		Id:    gameMap.Id,
@@ -97,16 +100,17 @@ func GameMapToDto(gameMap GameMap) models.GameMapDto {
 }
 
 func GameMapFromDto(gdto models.GameMapDto) GameMap {
-	tiles := make([][]GameMapTile, SIZE_X)
-	for x := 0; x < SIZE_X; x += 1 {
-		tiles[x] = make([]GameMapTile, SIZE_Y)
+	tiles := [][]GameMapTile{}
+
+	for i, col_tiles := range gdto.Tiles {
+		col := []GameMapTile{}
+		for j, tile_str := range col_tiles {
+			tile := tileFromString(tile_str, calc.NewVec(float64(i*TILE_SIZE), float64(j*TILE_SIZE)))
+			col = append(col, tile)
+		}
+		tiles = append(tiles, col)
 	}
 
-	for _, tile_dto := range gdto.Tiles {
-		x := tile_dto.Pos.X / TILE_SIZE
-		y := tile_dto.Pos.Y / TILE_SIZE
-		tiles[int(x)][int(y)] = tileFromDto(tile_dto)
-	}
 	return GameMap{
 		Id:    gdto.Id,
 		Tiles: tiles,

@@ -5,6 +5,7 @@ import { GameMap } from '../types';
 import MapController from '../controllers/MapController';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { gameMapFromDTO } from '../utils/dto';
 
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -19,19 +20,19 @@ const Maps: React.FC = () => {
       const response = await fetch(`/api/game-maps`);
       const data = await response.json();
 
-      const maps = data.map((m: GameMap) => {
+      const maps = data.map((m: unknown) => {
+        const map = gameMapFromDTO(m);
         const canvas = document.createElement('canvas');
         const controller = new MapController(canvas);
-        controller.setGameMap(m);
+        controller.setGameMap(map);
         controller.init();
         const imageSrc = canvas.toDataURL();
-        return { ...m, img: imageSrc };
+        return { ...map, img: imageSrc };
       });
       setMaps(maps);
     };
     fetchMaps();
   }, []);
-
 
   const handleStartGame = async (mapId: string) => {
     const response = await fetch(`/api/init-game/${mapId}`);
@@ -44,11 +45,7 @@ const Maps: React.FC = () => {
   return (
     <div className='column'>
       <h1 className='text-2xl text-center mb-4 font-bold'>MINIGOLFPELI</h1>
-      <Input
-        label="NAME"
-        value={name}
-        onChange={({ target }) => setName(target.value)}
-      />
+      <Input label='NAME' value={name} onChange={({ target }) => setName(target.value)} />
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {maps.map((m) => {
         return (

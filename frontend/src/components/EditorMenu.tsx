@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { STRUCTURE_TYPES, GROUND_TYPES, EditorState, GameMap, ROTATIONS } from '../types';
 import { GameStorage } from '../utils/api';
 import { modulo } from '../utils/calculation';
+import { gameMapToDTO } from '../utils/dto';
 import Button from './Button';
 import Input from './Input';
 import Row from './Row';
@@ -40,7 +41,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({ state, gameMap, setState, goBac
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id: gameMap.id, tiles: gameMap.tiles }),
+      body: JSON.stringify(gameMapToDTO(gameMap)),
     });
     const { gameId } = await response.json();
     navigate(`/${gameId}`);
