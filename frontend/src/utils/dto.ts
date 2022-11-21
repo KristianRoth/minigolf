@@ -1,5 +1,5 @@
 import { GameMap, Tile } from '../types';
-import { BLOCK_SIZE, GAME_HEIGHT } from './constants';
+import { BLOCK_SIZE, SIZE_X, SIZE_Y } from './constants';
 
 export const gameMapFromDTO = (dto: any): GameMap => {
   const tiles: Tile[] = [];
@@ -32,13 +32,13 @@ export const gameMapFromDTO = (dto: any): GameMap => {
 };
 
 export const gameMapToDTO = (gameMap: GameMap): any => {
-  const cols = GAME_HEIGHT / BLOCK_SIZE;
-  const tiles: string[][] = [];
-  for (let i = 0; i < gameMap.tiles.length; i += cols) {
-    const tile_strings = gameMap.tiles.slice(i, i + cols).map((tile) => {
-      return [tile.ground.type, tile.ground.rotation, tile.structure.type, tile.structure.rotation].join(',');
-    });
-    tiles.push(tile_strings);
+  const tiles: string[][] = Array(SIZE_X)
+    .fill('')
+    .map(() => Array(SIZE_Y).fill(''));
+  for (const tile of gameMap.tiles) {
+    const x = Math.round(tile.pos.x / BLOCK_SIZE);
+    const y = Math.round(tile.pos.y / BLOCK_SIZE);
+    tiles[x][y] = [tile.ground.type, tile.ground.rotation, tile.structure.type, tile.structure.rotation].join(',');
   }
 
   return {

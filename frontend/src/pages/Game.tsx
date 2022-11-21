@@ -4,12 +4,12 @@ import GameController from '../controllers/GameController';
 import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useWebsocket from '../hooks/useWebsocket';
-import { CanvasMouseEvent, GameEvent, GameMap } from '../types';
+import { CanvasMouseEvent, GameEvent } from '../types';
 import { GameStorage } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
-import { gameMapFromDTO } from '../utils/dto';
+import { gameMapFromDTO, gameMapToDTO } from '../utils/dto';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
@@ -27,9 +27,16 @@ const getUrl = (gameId: string) => {
   return url;
 };
 
+class OverlayState {
+  isDemo = false;
+  isOpen = false;
+  saveDemoJWT = '';
+}
+
 function Game() {
   const [debug, setDebug] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [overlayState, setOverlayState] = useState<OverlayState>(new OverlayState());
 
   const [mapRef, mapController] = useCanvasController(MapController);
   const [gameRef, gameController] = useCanvasController(GameController);
@@ -84,6 +91,7 @@ function Game() {
             GameStorage.setPlayerId(gameId, event.playerId.toString());
             gameController?.setPlayerId(event.playerId);
             mapController?.setGameMap(gameMapFromDTO(event.gameMap));
+            setOverlayState({ ...overlayState, isDemo: event.isDemo });
             break;
           }
           case 'TURN_BEGIN': {
@@ -92,13 +100,20 @@ function Game() {
           }
           case 'EFFECT': {
             gameController?.doEffect(event.value);
+            break;
+          }
+          case 'SAVE_DEMO_MAP': {
+            setTimeout(() => {
+              setOverlayState({ ...overlayState, isOpen: true, saveDemoJWT: event.jwt });
+            }, 200);
+            break;
           }
         }
       } catch (err) {
         console.error(err);
       }
     },
-    [gameController, mapController, gameId]
+    [gameController, mapController, gameId, overlayState]
   );
 
   const { connect, sendMessage, close } = useWebsocket({
@@ -117,6 +132,34 @@ function Game() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!overlayState.isDemo || !overlayState.isOpen) return;
+    const confirm = window.confirm("Do you wan't to save the map?");
+    setOverlayState({ ...overlayState, isOpen: false });
+    if (!confirm) return;
+
+    (async () => {
+      const map = mapController?.getMap();
+      if (!map || !overlayState.saveDemoJWT) return;
+      try {
+        const res = await fetch('/api/game-maps', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${overlayState.saveDemoJWT}`,
+          },
+          body: JSON.stringify(gameMapToDTO(map)),
+        });
+        const data = await res.json();
+        if (data.gameMap) {
+          close();
+          navigate(`/editor/${data.gameMap}`);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    })();
+  }, [overlayState, mapController]);
+
   const disconnect = () => {
     close();
     GameStorage.removePlayerId(gameId);
@@ -128,6 +171,7 @@ function Game() {
     const gameMap = mapController?.getMap();
     if (!gameMap) return;
     GameStorage.setGameMap(gameMap);
+    close();
     navigate(`/editor/${gameMap.id}`);
   };
 

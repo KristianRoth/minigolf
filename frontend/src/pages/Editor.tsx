@@ -8,8 +8,8 @@ import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useUndoRedo from '../hooks/useUndoRedo';
 import { CanvasMouseEvent, EditorState, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
-import { GameStorage } from '../utils/api';
 import { modulo } from '../utils/calculation';
+import { gameMapFromDTO } from '../utils/dto';
 import templates from '../utils/templates';
 
 function Editor() {
@@ -97,17 +97,22 @@ function Editor() {
   };
 
   useEffect(() => {
-    const savedMap = GameStorage.getGameMap(mapId);
-    if (savedMap) {
-      const { id, tiles, name, creator } = savedMap;
+    const fetchMap = async () => {
+      const res = await fetch(`/api/game-maps/${mapId}`);
+      const data = await res.json();
+      if (!data.id) {
+        setId((Date.now() + '').slice(-6));
+        setTiles(templates.borders());
+        return;
+      }
+      const parsed = gameMapFromDTO(data);
+      const { id, tiles, name, creator } = parsed;
       setId(id);
       setTiles(tiles);
       setMapName(name);
       setCreator(creator);
-    } else {
-      setId((Date.now() + '').slice(-6));
-      setTiles(templates.borders());
-    }
+    };
+    fetchMap();
   }, [mapId]);
 
   useEffect(() => {

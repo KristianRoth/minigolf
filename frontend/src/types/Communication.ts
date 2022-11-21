@@ -23,6 +23,7 @@ export type GameEvent =
       type: 'INIT';
       playerId: number;
       gameMap: GameMap;
+      isDemo: boolean;
       // players: string[];
     }
   | {
@@ -43,4 +44,8 @@ export type GameEvent =
   | {
       type: 'EFFECT';
       value: string;
+    }
+  | {
+      type: 'SAVE_DEMO_MAP';
+      jwt: string;
     };

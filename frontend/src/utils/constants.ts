@@ -1,6 +1,8 @@
-export const GAME_WIDTH = 4900;
-export const GAME_HEIGHT = 2500;
 export const BLOCK_SIZE = 100;
+export const SIZE_X = 49;
+export const SIZE_Y = 25;
+export const GAME_WIDTH = SIZE_X * BLOCK_SIZE;
+export const GAME_HEIGHT = SIZE_Y * BLOCK_SIZE;
 export const BALL_RADIUS = 40;
 export const HALF_BLOCK = BLOCK_SIZE / 2;
 export const CIRCLE_RADIUS = 24;

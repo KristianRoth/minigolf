@@ -2,6 +2,7 @@ package game
 
 import (
 	"backend/models"
+	"backend/util"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -28,6 +29,7 @@ type initEvent struct {
 	Type     string            `json:"type"`
 	PlayerId int64             `json:"playerId"`
 	GameMap  models.GameMapDto `json:"gameMap"`
+	IsDemo   bool              `json:"isDemo"`
 }
 
 type turnBeginEvent struct {
@@ -44,6 +46,16 @@ type effectEvent struct {
 	Type     string        `json:"type"` // Effect
 	Value    SpecialEffect `json:"value"`
 	PlayerId int64         `json:"playerId"`
+}
+
+type saveDemoMapEvent struct {
+	Type string `json:"type"` // "SAVE_DEMO_MAP"
+	Jwt  string `json:"jwt"`
+}
+
+type errorEvent struct {
+	Type  string `json:"type"` // "ERROR"
+	Value string `json:"value"`
 }
 
 type shotEvent struct {
@@ -86,6 +98,7 @@ func (g Game) sendInitEvent(p Player) {
 		Type:     "INIT",
 		PlayerId: p.id,
 		GameMap:  GameMapToDto(g.game_map),
+		IsDemo:   g.is_demo,
 	}
 }
 
@@ -115,8 +128,30 @@ func (g Game) sendUpdateEvent() {
 	}
 }
 
-func (g *Game) run() {
+func (g Game) sendError(p Player, value string) {
+	p.PlayerEventsOut <- errorEvent{
+		Type:  "ERROR",
+		Value: value,
+	}
+}
 
+func (g Game) sendSaveDemoMapEvent(p Player) {
+	hash := GameMapToDto(g.game_map).Hash()
+	jwt, jwt_err := util.GenerateSaveMapJWT(hash)
+
+	if jwt_err != nil {
+		fmt.Println(jwt_err)
+		g.sendError(p, "Something went wrong")
+		return
+	}
+
+	p.PlayerEventsOut <- saveDemoMapEvent{
+		Type: "SAVE_DEMO_MAP",
+		Jwt:  jwt,
+	}
+}
+
+func (g *Game) run() {
 	for {
 		select {
 		case message := <-g.broadcast:

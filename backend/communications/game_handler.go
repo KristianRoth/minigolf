@@ -20,10 +20,10 @@ func NewGameHandler() GameHandler {
 	}
 }
 
-func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto) string {
+func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto, is_demo bool) string {
 	g_id := strings.ToUpper(util.RandomString(5))
 	game_map := game.GameMapFromDto(mapDto)
-	game := game.NewGame(g_id, game_map)
+	game := game.NewGame(g_id, game_map, is_demo)
 	handler.games[g_id] = &game
 	return g_id
 }
@@ -35,7 +35,7 @@ func (handler *GameHandler) getDefaultGame(gameId string) game.Game {
 	}
 	fmt.Println(gameId, "Doesnt exist")
 	game_map := game.NewGameMap()
-	game := game.NewGame(gameId, game_map)
+	game := game.NewGame(gameId, game_map, true)
 	handler.games[gameId] = &game
 	return game
 }

@@ -12,9 +12,10 @@ type Game struct {
 	players  map[int64]*Player
 	game_map GameMap
 	mesh     colliderMesh
+	is_demo  bool // If is testing a new map.
 }
 
-func NewGame(game_id string, game_map GameMap) Game {
+func NewGame(game_id string, game_map GameMap, is_demo bool) Game {
 	fmt.Println("Making new game:", game_id)
 	game := Game{
 		game_id:  game_id,
@@ -24,7 +25,8 @@ func NewGame(game_id string, game_map GameMap) Game {
 			broadcast:     make(chan interface{}),
 			playerChannel: make(chan playerEvent),
 		},
-		mesh: newColliderMesh(game_map),
+		mesh:    newColliderMesh(game_map),
+		is_demo: is_demo,
 	}
 	go game.run()
 	go game.runGame()

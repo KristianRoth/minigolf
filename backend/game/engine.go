@@ -34,13 +34,7 @@ func (g *Game) tick() {
 
 		switch effect {
 		case HoleEffect:
-			score := player.shot_count
-			err := database.UpdateGameMapStats(g.game_map.Id, score)
-			if err != nil {
-				fmt.Printf("Stat update failed: %s\n", err)
-			}
-			player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
-			player.shot_count = 0
+			g.handleHole(player)
 		case WaterEffect:
 			player.ball = newBall(player.prev_ball.Pos, calc.NewVec(0.0, 0.0))
 		default:
@@ -182,4 +176,19 @@ func (g *Game) doShot(p *Player, event shotEvent) {
 	p.ball.Vel.Y = event.Y / 10
 	p.shot_count += 1
 	p.is_turn = false
+}
+
+func (g *Game) handleHole(player *Player) {
+	score := player.shot_count
+	player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
+	player.shot_count = 0
+
+	if g.is_demo {
+		g.sendSaveDemoMapEvent(*player)
+	} else {
+		err := database.UpdateGameMapStats(g.game_map.Id, score)
+		if err != nil {
+			fmt.Printf("Stat update failed: %s\n", err)
+		}
+	}
 }
