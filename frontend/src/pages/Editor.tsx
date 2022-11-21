@@ -97,6 +97,7 @@ function Editor() {
   };
 
   useEffect(() => {
+    if (!mapId) return;
     const fetchMap = async () => {
       const res = await fetch(`/api/game-maps/${mapId}`);
       const data = await res.json();
