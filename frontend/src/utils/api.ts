@@ -1,16 +1,10 @@
 import { GameMap } from '../types';
 
-export const BASE_URL = (() => {
-  if (process.env.NODE_ENV === 'development') {
-    return 'localhost:8080';
-  }
-  return window.location.host;
-})();
-
 const n = (gameId: string) => `game-${gameId}-name`;
 const i = (gameId: string) => `game-${gameId}-id`;
 const m = (mapId: string) => `gameMap-${mapId}`;
 
+// TODO: Deprecate this.
 export const GameStorage = {
   // Player-name
   setPlayerName: (gameId: string, name: string) => {
@@ -61,4 +55,48 @@ export const GameStorage = {
     }
     return maps;
   },
+};
+
+type FetchErrorDetails = {
+  status: number;
+  data: unknown;
+};
+class FetchError extends Error {
+  details: FetchErrorDetails;
+
+  constructor(msg: string, details: FetchErrorDetails) {
+    super(msg);
+
+    this.details = details;
+
+    Object.setPrototypeOf(this, FetchError.prototype);
+  }
+}
+
+export const isFetchError = (err: unknown): err is FetchError => {
+  return err instanceof FetchError;
+};
+
+type JSONFetchOptions =
+  | {
+      method?: RequestInit['method'];
+      body?: Record<string, any>;
+      headers?: RequestInit['headers'];
+    }
+  | undefined;
+
+export const JSONFetch = async (url: string, options: JSONFetchOptions = {}): Promise<Record<string, any>> => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Content-Type': 'application/json',
+    },
+    body: options?.body ? JSON.stringify(options.body) : undefined,
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new FetchError(response.statusText, { status: response.status, data });
+  }
+  return data;
 };

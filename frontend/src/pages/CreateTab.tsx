@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Slider from '../components/Slider';
 import { Option } from '../types/Options';
+import { JSONFetch } from '../utils/api';
 
 const CreateTab: React.FC = () => {
   const [name, setName] = useState('');
@@ -12,8 +13,7 @@ const CreateTab: React.FC = () => {
 
   useEffect(() => {
     const fetchOptions = async () => {
-      const response = await fetch(`/api/game-options`);
-      const data = await response.json();
+      const data = await JSONFetch(`/api/game-options`);
       setOptions(data);
       setLoading(false);
     };

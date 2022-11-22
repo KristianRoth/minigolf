@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import EditorMenu from '../components/EditorMenu';
@@ -7,7 +7,8 @@ import EditorController from '../controllers/EditorController';
 import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useUndoRedo from '../hooks/useUndoRedo';
-import { CanvasMouseEvent, EditorState, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
+import { EditorState, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
+import { isFetchError, JSONFetch } from '../utils/api';
 import { modulo } from '../utils/calculation';
 import { gameMapFromDTO } from '../utils/dto';
 import templates from '../utils/templates';
@@ -30,6 +31,8 @@ function Editor() {
   const [structureIdx, setStructureIdx] = useState<number>(0);
   const [groundIdx, setGroundIdx] = useState<number>(0);
   const [rotationIdx, setRotationIdx] = useState<number>(0);
+
+  const navigate = useNavigate();
 
   const editorState: EditorState = useMemo(
     () => ({
@@ -86,32 +89,28 @@ function Editor() {
     };
   };
 
-  const onPointerDown = (event: CanvasMouseEvent) => {
-    editorController?.handleMouseDown(event, setTile);
-  };
-  const onPointerMove = (event: CanvasMouseEvent) => {
-    editorController?.handleMouseMove(event, setTile);
-  };
-  const onPointerUp = (event: CanvasMouseEvent) => {
-    editorController?.handleMouseUp(event);
-  };
-
   useEffect(() => {
-    if (!mapId) return;
+    if (!mapId) {
+      setId((Date.now() + '').slice(-6));
+      setTiles(templates.borders());
+      return;
+    }
     const fetchMap = async () => {
-      const res = await fetch(`/api/game-maps/${mapId}`);
-      const data = await res.json();
-      if (!data.id) {
-        setId((Date.now() + '').slice(-6));
-        setTiles(templates.borders());
-        return;
+      try {
+        const data = await JSONFetch(`/api/game-maps/${mapId}`);
+        const { id, tiles, name, creator } = gameMapFromDTO(data);
+        setId(id);
+        setTiles(tiles);
+        setMapName(name);
+        setCreator(creator);
+      } catch (err) {
+        console.log(err);
+        if (isFetchError(err) && err.details.status === 404) {
+          console.log("Map doesn't exist, return to editor-root");
+          navigate('/editor');
+        }
+        console.log('TODO: FATAL ERROR');
       }
-      const parsed = gameMapFromDTO(data);
-      const { id, tiles, name, creator } = parsed;
-      setId(id);
-      setTiles(tiles);
-      setMapName(name);
-      setCreator(creator);
     };
     fetchMap();
   }, [mapId]);
@@ -208,7 +207,12 @@ function Editor() {
   return (
     <CanvasGroup menu={menu} help={<Instructions />}>
       <Canvas ref={mapRef} />
-      <Canvas ref={editorRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
+      <Canvas
+        ref={editorRef}
+        onPointerDown={(event) => editorController?.handleMouseDown(event, setTile)}
+        onPointerMove={(event) => editorController?.handleMouseMove(event, setTile)}
+        onPointerUp={(event) => editorController?.handleMouseUp(event)}
+      />
     </CanvasGroup>
   );
 }

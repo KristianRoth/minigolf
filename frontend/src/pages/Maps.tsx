@@ -6,6 +6,7 @@ import MapController from '../controllers/MapController';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { gameMapFromDTO } from '../utils/dto';
+import { JSONFetch } from '../utils/api';
 
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -17,28 +18,33 @@ const Maps: React.FC = () => {
 
   useEffect(() => {
     const fetchMaps = async () => {
-      const response = await fetch(`/api/game-maps`);
-      const data = await response.json();
-
-      const maps = data.map((m: unknown) => {
-        const map = gameMapFromDTO(m);
-        const canvas = document.createElement('canvas');
-        const controller = new MapController(canvas);
-        controller.setGameMap(map);
-        controller.init();
-        const imageSrc = canvas.toDataURL();
-        return { ...map, img: imageSrc };
-      });
-      setMaps(maps);
+      try {
+        const data = await JSONFetch(`/api/game-maps`);
+        const maps = data.map((m: unknown) => {
+          const map = gameMapFromDTO(m);
+          const canvas = document.createElement('canvas');
+          const controller = new MapController(canvas);
+          controller.setGameMap(map);
+          controller.init();
+          const imageSrc = canvas.toDataURL();
+          return { ...map, img: imageSrc };
+        });
+        setMaps(maps);
+      } catch (e) {
+        console.log(e);
+      }
     };
     fetchMaps();
   }, []);
 
   const handleStartGame = async (mapId: string) => {
-    const response = await fetch(`/api/init-game/${mapId}`);
-    const { gameId } = await response.json();
-    if (gameId) {
-      navigate(`/${gameId}`);
+    try {
+      const { gameId } = await JSONFetch(`/api/init-game/${mapId}`);
+      if (gameId) {
+        navigate(`/${gameId}`);
+      }
+    } catch (e) {
+      console.log(e);
     }
   };
 

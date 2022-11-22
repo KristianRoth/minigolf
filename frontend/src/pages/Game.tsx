@@ -5,7 +5,7 @@ import MapController from '../controllers/MapController';
 import useCanvasController from '../hooks/useCanvasController';
 import useWebsocket from '../hooks/useWebsocket';
 import { CanvasMouseEvent, GameEvent } from '../types';
-import { GameStorage } from '../utils/api';
+import { GameStorage, JSONFetch } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
@@ -46,16 +46,6 @@ function Game() {
 
   const onShot = (value: GameEvent) => {
     sendMessage(JSON.stringify(value));
-  };
-
-  const onPointerDown = (event: CanvasMouseEvent) => {
-    gameController?.handleMouseDown(event, onShot);
-  };
-  const onPointerMove = (event: CanvasMouseEvent) => {
-    gameController?.handleMouseMove(event);
-  };
-  const onPointerUp = (event: CanvasMouseEvent) => {
-    gameController?.handleMouseUp(event, onShot);
   };
 
   const onOpen = useCallback(() => {
@@ -126,7 +116,6 @@ function Game() {
   useEffect(() => {
     if (connected) return;
     connect();
-
     return () => {
       close();
     };
@@ -142,14 +131,13 @@ function Game() {
       const map = mapController?.getMap();
       if (!map || !overlayState.saveDemoJWT) return;
       try {
-        const res = await fetch('/api/game-maps', {
+        const data = await JSONFetch('/api/game-maps', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${overlayState.saveDemoJWT}`,
           },
-          body: JSON.stringify(gameMapToDTO(map)),
+          body: gameMapToDTO(map),
         });
-        const data = await res.json();
         if (data.gameMap) {
           close();
           navigate(`/editor/${data.gameMap}`);
@@ -192,7 +180,12 @@ function Game() {
     <>
       <CanvasGroup menu={menu} help={<p>Tekemällä oppii.</p>}>
         <Canvas ref={mapRef} />
-        <Canvas ref={gameRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} />
+        <Canvas
+          ref={gameRef}
+          onPointerDown={(event) => gameController?.handleMouseDown(event, onShot)}
+          onPointerMove={(event) => gameController?.handleMouseMove(event)}
+          onPointerUp={(event) => gameController?.handleMouseUp(event, onShot)}
+        />
       </CanvasGroup>
       {debug && gameController && (
         <Row>
