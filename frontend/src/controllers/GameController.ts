@@ -1,5 +1,6 @@
 import { Ball, CanvasMouseEvent, GameEvent, Point, Rotation, ROTATIONS } from '../types';
-import { calculateLineEndPoints, modulo, PerSecondCounter } from '../utils/calculation';
+import { calcEndpoint, calculateLineEndPoints, modulo, PerSecondCounter } from '../utils/calculation';
+import { BALL_RADIUS } from '../utils/constants';
 import CanvasController from './CanvasController';
 
 type OnShotHandler = (action: GameEvent) => void;
@@ -26,6 +27,11 @@ class GameController extends CanvasController {
     const dx = shot.x - start.x;
     const dy = shot.y - start.y;
     return { x: ball.x + dx || ball.x, y: ball.y + dy || ball.y };
+  }
+
+  private drawLineFromBall(ball: Ball, endpoint: Point, isDashed = false) {
+    const start = calcEndpoint(ball, endpoint, BALL_RADIUS + 2);
+    this.drawLine(start, endpoint, isDashed);
   }
 
   doShot(point: Point, ball: Ball, onShot: OnShotHandler) {
@@ -97,16 +103,16 @@ class GameController extends CanvasController {
 
     if (this.touchDrag) {
       const lineEndPoint = this.findTouchLineEndPoint(ball);
-      this.drawLine(ball, lineEndPoint);
+      this.drawLineFromBall(ball, lineEndPoint);
       return;
     }
 
     const rotation = ROTATIONS[this.shotRotationIdx];
     const { shot, guide } = calculateLineEndPoints(ball, this.mouseAt, this.shotRotationIdx);
     if (rotation !== 'North') {
-      this.drawLine(ball, guide, true);
+      this.drawLineFromBall(ball, guide, true);
     }
-    this.drawLine(ball, shot);
+    this.drawLineFromBall(ball, shot);
   }
 
   protected renderStatus() {
@@ -138,28 +144,11 @@ class GameController extends CanvasController {
 
     this.renderShotLine();
 
-    let playerBall: Ball | undefined = undefined;
-    for (const ball of this.balls) {
-      if (ball.id === this.playerId) {
-        playerBall = ball;
-      } else {
-        this.renderBall(ball);
-      }
-    }
-    if (playerBall) {
-      this.renderBall(playerBall);
-    }
-
     this.renderCursor();
     this.renderStatus();
   }
 
   setBalls(balls: Ball[]) {
-    if (!this.playerName && this.playerId) {
-      const ball = balls.find((b) => b.id === this.playerId);
-      this.playerName = ball?.name || '';
-      this.playerColor = ball?.color || '';
-    }
     this.balls = balls;
     this.tickCounter.add();
   }

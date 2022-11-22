@@ -13,7 +13,7 @@ export const distance = (point1: Point, point2: Point): number => {
   return Math.sqrt(distanceSquared(point1, point2));
 };
 
-const calcEndpoint = (start: Point, end: Point) => {
+export const calcEndpoint = (start: Point, end: Point, maxLen: number) => {
   const lineLength = distance(start, end);
 
   const vect = {
@@ -21,7 +21,7 @@ const calcEndpoint = (start: Point, end: Point) => {
     y: (end.y - start.y) / lineLength,
   };
 
-  const realLength = Math.min(MAX_LINE_LEN, lineLength);
+  const realLength = Math.min(maxLen, lineLength);
 
   const point: Point = {
     x: start.x + vect.x * realLength,
@@ -36,7 +36,7 @@ export const calculateLineEndPoints = (
   mouseAt: Point,
   rotation: Rotation
 ): { shot: Point; guide: Point } => {
-  const guide = calcEndpoint(ballAt, mouseAt);
+  const guide = calcEndpoint(ballAt, mouseAt, MAX_LINE_LEN);
   const shot = (() => {
     const dx = guide.x - ballAt.x;
     const dy = guide.y - ballAt.y;

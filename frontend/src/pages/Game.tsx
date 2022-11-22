@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import GameController from '../controllers/GameController';
-import MapController from '../controllers/MapController';
-import useCanvasController from '../hooks/useCanvasController';
-import useWebsocket from '../hooks/useWebsocket';
-import { CanvasMouseEvent, GameEvent } from '../types';
-import { GameStorage, JSONFetch } from '../utils/api';
 import Canvas from '../components/Canvas';
 import CanvasGroup from '../components/CanvasGroup';
 import Row from '../components/Row';
+import GameController from '../controllers/GameController';
+import { GroundController, StructureController } from '../controllers/MapController';
+import SpriteController from '../controllers/SpriteController';
+import useCanvasController from '../hooks/useCanvasController';
+import useWebsocket from '../hooks/useWebsocket';
+import { GameEvent } from '../types';
+import { GameStorage, JSONFetch } from '../utils/api';
 import { gameMapFromDTO, gameMapToDTO } from '../utils/dto';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
@@ -38,7 +39,9 @@ function Game() {
   const [connected, setConnected] = useState(false);
   const [overlayState, setOverlayState] = useState<OverlayState>(new OverlayState());
 
-  const [mapRef, mapController] = useCanvasController(MapController);
+  const [spriteRef, spriteController] = useCanvasController(SpriteController);
+  const [groundRef, groundController] = useCanvasController(GroundController);
+  const [structRef, structController] = useCanvasController(StructureController);
   const [gameRef, gameController] = useCanvasController(GameController);
 
   const navigate = useNavigate();
@@ -75,12 +78,17 @@ function Game() {
               };
             });
             gameController?.setBalls(newBalls);
+            spriteController?.setBalls(newBalls);
             break;
           }
           case 'INIT': {
             GameStorage.setPlayerId(gameId, event.playerId.toString());
             gameController?.setPlayerId(event.playerId);
-            mapController?.setGameMap(gameMapFromDTO(event.gameMap));
+            spriteController?.setPlayerId(event.playerId);
+
+            const map = gameMapFromDTO(event.gameMap);
+            groundController?.setGameMap(map);
+            structController?.setGameMap(map);
             setOverlayState({ ...overlayState, isDemo: event.isDemo });
             break;
           }
@@ -103,7 +111,7 @@ function Game() {
         console.error(err);
       }
     },
-    [gameController, mapController, gameId, overlayState]
+    [gameController, groundController, structController, spriteController, gameId, overlayState]
   );
 
   const { connect, sendMessage, close } = useWebsocket({
@@ -128,7 +136,7 @@ function Game() {
     if (!confirm) return;
 
     (async () => {
-      const map = mapController?.getMap();
+      const map = groundController?.getMap();
       if (!map || !overlayState.saveDemoJWT) return;
       try {
         const data = await JSONFetch('/api/game-maps', {
@@ -146,7 +154,7 @@ function Game() {
         console.log(e);
       }
     })();
-  }, [overlayState, mapController]);
+  }, [overlayState, groundController]);
 
   const disconnect = () => {
     close();
@@ -156,7 +164,7 @@ function Game() {
   };
 
   const goToEdit = () => {
-    const gameMap = mapController?.getMap();
+    const gameMap = groundController?.getMap();
     if (!gameMap) return;
     GameStorage.setGameMap(gameMap);
     close();
@@ -179,7 +187,9 @@ function Game() {
   return (
     <>
       <CanvasGroup menu={menu} help={<p>Tekemällä oppii.</p>}>
-        <Canvas ref={mapRef} />
+        <Canvas ref={groundRef} />
+        <Canvas ref={spriteRef} />
+        <Canvas ref={structRef} />
         <Canvas
           ref={gameRef}
           onPointerDown={(event) => gameController?.handleMouseDown(event, onShot)}

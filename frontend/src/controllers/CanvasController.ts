@@ -274,9 +274,11 @@ class CanvasController {
     }, point);
   }
 
-  protected renderBall(ball: Ball) {
+  protected renderBall(ball: Ball, skipShadow = false) {
     this.renderElement(() => {
-      this.setShadowOpts();
+      if (!skipShadow) {
+        this.setShadowOpts();
+      }
       this.context.fillStyle = ball.color;
       this.drawCircle({ x: -HALF_BLOCK, y: -HALF_BLOCK }, BALL_RADIUS);
     }, ball);
