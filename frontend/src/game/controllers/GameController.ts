@@ -1,9 +1,7 @@
-import { Ball, CanvasMouseEvent, GameEvent, Point, Rotation, ROTATIONS } from '../types';
-import { calcEndpoint, calculateLineEndPoints, modulo, PerSecondCounter } from '../utils/calculation';
-import { BALL_RADIUS } from '../utils/constants';
+import { Ball, CanvasMouseEvent, Point, Rotation, ROTATIONS } from 'types';
+import { calcEndpoint, calculateLineEndPoints, modulo, PerSecondCounter } from 'utils/calculation';
+import { BALL_RADIUS } from 'utils/constants';
 import CanvasController from './CanvasController';
-
-type OnShotHandler = (action: GameEvent) => void;
 
 class GameController extends CanvasController {
   private balls: Ball[] = [];
@@ -34,13 +32,13 @@ class GameController extends CanvasController {
     this.drawLine(start, endpoint, isDashed);
   }
 
-  doShot(point: Point, ball: Ball, onShot: OnShotHandler) {
+  private doShot(point: Point, ball: Ball) {
     const x = point.x - ball.x;
     const y = point.y - ball.y;
 
     if (x === 0 && y === 0) return;
 
-    onShot({
+    this.emit('message', {
       type: 'SHOT',
       x,
       y,
@@ -58,7 +56,7 @@ class GameController extends CanvasController {
     }, 2000);
   }
 
-  handleMouseDown(event: CanvasMouseEvent, onShot: OnShotHandler) {
+  handleMouseDown(event: CanvasMouseEvent) {
     event.preventDefault();
     super.setMouseAt(event);
 
@@ -76,7 +74,7 @@ class GameController extends CanvasController {
     }
     // MOUSE
     const { shot } = calculateLineEndPoints(this.ball, clickedAt, this.shotRotationIdx);
-    this.doShot(shot, this.ball, onShot);
+    this.doShot(shot, this.ball);
   }
 
   handleMouseMove(event: CanvasMouseEvent) {
@@ -87,12 +85,12 @@ class GameController extends CanvasController {
     }
   }
 
-  handleMouseUp(event: CanvasMouseEvent, onShot: OnShotHandler) {
+  handleMouseUp(event: CanvasMouseEvent) {
     if (event.pointerType === 'mouse' || !this.touchDrag) return;
     if (!this.ball || !this.hasTurn) return;
 
     const shotPoint = this.findTouchLineEndPoint(this.ball);
-    this.doShot(shotPoint, this.ball, onShot);
+    this.doShot(shotPoint, this.ball);
     this.touchDrag = null;
   }
 

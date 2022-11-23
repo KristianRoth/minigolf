@@ -9,7 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-var jwt_secret = []byte(os.Getenv("MINGOLF_JWT_SECRET"))
+var jwt_secret = []byte(os.Getenv("MINIGOLF_JWT_SECRET"))
 
 type SaveMapClaims struct {
 	MapHash string `json:"mapHash"`

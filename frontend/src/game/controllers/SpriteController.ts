@@ -1,4 +1,4 @@
-import { Ball } from '../types';
+import { Ball } from 'types';
 import CanvasController from './CanvasController';
 
 class SpriteController extends CanvasController {

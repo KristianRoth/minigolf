@@ -1,5 +1,5 @@
+import { CanvasController } from 'game';
 import { useState, useCallback } from 'react';
-import CanvasController from '../controllers/CanvasController';
 
 /**
  * Creates a new Controller and calls its init-function, when the canvas has rendered.

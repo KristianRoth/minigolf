@@ -1,5 +1,5 @@
-import { CanvasMouseEvent, EditorState, GameMap, GroundType, Point, Rotation, StructureType, Tile } from '../types';
-import { BLOCK_SIZE } from '../utils/constants';
+import { CanvasMouseEvent, EditorState, GameMap, GroundType, Point, Rotation, StructureType, Tile } from 'types';
+import { BLOCK_SIZE } from 'utils/constants';
 import CanvasController from './CanvasController';
 
 type SetTileHandler = (tile: Partial<Tile>) => void;

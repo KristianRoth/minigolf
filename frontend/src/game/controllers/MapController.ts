@@ -1,4 +1,4 @@
-import { GameMap, GroundType, StructureType, Tile } from '../types';
+import { GameMap, GroundType, StructureType, Tile } from 'types';
 import CanvasController from './CanvasController';
 
 const shouldRenderStructure = (type: 'full' | 'floor' | 'struct', tile: Tile) => {

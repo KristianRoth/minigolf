@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import Button from 'components/Button';
+import Input from 'components/Input';
+import Row from 'components/Row';
+import { MapController } from 'game';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Row from '../components/Row';
-import { GameMap } from '../types';
-import MapController from '../controllers/MapController';
-import Button from '../components/Button';
-import Input from '../components/Input';
-import { gameMapFromDTO } from '../utils/dto';
-import { JSONFetch } from '../utils/api';
+import { GameMap } from 'types';
+import { JSONFetch } from 'utils/api';
+import { gameMapFromDTO } from 'utils/dto';
 
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 

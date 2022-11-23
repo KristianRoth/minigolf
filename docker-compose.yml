@@ -15,7 +15,7 @@ services:
       - MINIGOLF_DB_PASSWORD=rootpassword
       - MINIGOLF_DB_PROTOCOL=mongodb
       - MINIGOLF_DB_HOST=mongodb:27017
-      - MINGOLF_JWT_SECRET=super_secret_jwt_secret
+      - MINIGOLF_JWT_SECRET=super_secret_jwt_secret
 
   frontend:
     container_name: frontend
@@ -24,7 +24,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./frontend/src:/app/src
+      - ./frontend:/app
     environment:
       - DEV_BACKEND_URL=backend:8080
 

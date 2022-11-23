@@ -1,17 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import Canvas from 'components/Canvas';
+import CanvasGroup from 'components/CanvasGroup';
+import EditorMenu from 'components/EditorMenu';
+import { MapController, EditorController } from 'game';
+import useCanvasController from 'hooks/useCanvasController';
+import useUndoRedo from 'hooks/useUndoRedo';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Canvas from '../components/Canvas';
-import CanvasGroup from '../components/CanvasGroup';
-import EditorMenu from '../components/EditorMenu';
-import EditorController from '../controllers/EditorController';
-import MapController from '../controllers/MapController';
-import useCanvasController from '../hooks/useCanvasController';
-import useUndoRedo from '../hooks/useUndoRedo';
-import { EditorState, GameMap, GROUND_TYPES, ROTATIONS, STRUCTURE_TYPES, Tile } from '../types';
-import { isFetchError, JSONFetch } from '../utils/api';
-import { modulo } from '../utils/calculation';
-import { gameMapFromDTO } from '../utils/dto';
-import templates from '../utils/templates';
+import { Tile, EditorState, GameMap, STRUCTURE_TYPES, GROUND_TYPES, ROTATIONS } from 'types';
+import { JSONFetch, isFetchError } from 'utils/api';
+import { modulo } from 'utils/calculation';
+import { gameMapFromDTO } from 'utils/dto';
+import templates from 'utils/templates';
 
 function Editor() {
   const [id, setId] = useState('');
