@@ -10,7 +10,7 @@
     @apply appearance-none
   }
   input[type="range"] {
-    @apply px-1 w-full h-10 appearance-none rounded-full border-yellow-600 bg-yellow-300 border-2 border-solid
+    @apply outline-none px-1 w-full h-10 appearance-none rounded-full border-yellow-600 bg-yellow-300 border-2 border-solid
   }
   .range-value {
     @apply text-lg font-semibold pl-3 items-center flex rounded-l-full bg-yellow-600 text-yellow-300 w-20 mr-[-20px]
@@ -18,6 +18,32 @@
   .range-value input {
     @apply bg-yellow-600 focus:outline-none
   }
+
+  select {
+    @apply outline-none font-semibold text-yellow-800 text-center px-1 w-full h-10 appearance-none rounded-full border-yellow-600 bg-yellow-300 border-2 border-solid
+  }
+
+  h1 {
+    @apply text-2xl text-center font-bold
+  }
+
+  input[type="checkbox"] {
+    @apply outline-none px-1 h-10 w-20 appearance-none rounded-full border-yellow-600 bg-yellow-300 border-2 border-solid flex justify-start flex-row items-center
+  }
+
+  input[type="checkbox"]:after {
+    content: "";  
+    @apply outline-none h-8 w-8 top-1 rounded-full border-yellow-600 bg-yellow-300 border-2 border-solid
+  }
+
+  input[type="checkbox"]:checked {
+    @apply justify-end
+  }
+
+  input[type="checkbox"]:checked:after {
+    @apply border-green-800 bg-green-600
+  }
+
 }
 
 .flex-container {

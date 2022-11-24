@@ -25,9 +25,9 @@ const RootPage: React.FC = () => {
 
   return (
     <div className='column'>
-      <h1 className='text-2xl text-center mb-4 font-bold'>MINIGOLFPELI</h1>
+      <h1 className='mb-4'>MINIGOLFPELI</h1>
       <Input
-        label="GAME ID"
+        label='GAME ID'
         value={gameId}
         onChange={({ target }) => setGameId(target.value)}
         onKeyPress={(event) => {
@@ -37,7 +37,7 @@ const RootPage: React.FC = () => {
         }}
       />
       <Input
-        label="NAME"
+        label='NAME'
         value={name}
         onChange={({ target }) => setName(target.value)}
         onKeyPress={(event) => {
@@ -48,10 +48,9 @@ const RootPage: React.FC = () => {
       />
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      <Button className="justify-self-center dets" onClick={handleNavigate}>
+      <Button className='justify-self-center dets' onClick={handleNavigate}>
         JOIN
       </Button>
-
     </div>
   );
 };

@@ -15,4 +15,18 @@ export type SelectOption = {
   options: string[],
 }
 
-export type Option = FloatOption | SelectOption
+export type IntOption = {
+  type: "INT_OPTION"
+  name: string,
+  value: number,
+  min: number,
+  max: number,
+}
+
+export type BooleanOption = {
+  type: "BOOL_OPTION"
+  name: string,
+  value: boolean,
+}
+
+export type Option = FloatOption | SelectOption | IntOption | BooleanOption

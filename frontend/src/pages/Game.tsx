@@ -2,6 +2,7 @@ import Button from 'components/Button';
 import Canvas from 'components/Canvas';
 import CanvasGroup from 'components/CanvasGroup';
 import Row from 'components/Row';
+import { rmSync } from 'fs';
 import { SpriteController, GroundController, StructureController, GameController, GameEngine } from 'game';
 import useCanvasController from 'hooks/useCanvasController';
 import { useState, useEffect } from 'react';
@@ -16,6 +17,8 @@ class OverlayState {
 }
 
 function Game() {
+  const [gameExists, setGameExists] = useState(false);
+
   const [debug, setDebug] = useState(false);
   const [overlayState, setOverlayState] = useState<OverlayState>(new OverlayState());
 
@@ -30,7 +33,17 @@ function Game() {
   const [gameEngine, setGameEngine] = useState<GameEngine | null>(null);
 
   useEffect(() => {
-    if (!(gameController && groundController && structController && spriteController && gameId)) return;
+    fetch(`/api/game/${gameId}`).then((res) => {
+      if (res.ok) {
+        setGameExists(true);
+      } else {
+        navigate('/');
+      }
+    });
+  }, [gameId, navigate]);
+
+  useEffect(() => {
+    if (!gameExists || !(gameController && groundController && structController && spriteController && gameId)) return;
     const engine = new GameEngine(gameId, groundController, structController, spriteController, gameController);
     engine.init();
 
@@ -48,7 +61,7 @@ function Game() {
       setGameEngine(null);
       engine.destroy();
     };
-  }, [gameController, groundController, structController, spriteController, gameId]);
+  }, [gameController, groundController, structController, spriteController, gameId, gameExists]);
 
   const saveMap = async () => {
     const map = groundController?.getMap();

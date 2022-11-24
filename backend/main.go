@@ -22,7 +22,6 @@ func main() {
 	router.Use(cors.Default()) // TODO: This allows all origins.
 
 	routes.GameRoutes(router, &gameH)
-	routes.WebSocket(router, &gameH)
 	routes.FrontendFiles(router)
 
 	router.Run("0.0.0.0:8080")

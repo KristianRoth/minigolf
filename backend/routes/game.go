@@ -12,10 +12,44 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true }, //TODO: this is wrong
+}
+
 func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
+
+	router.GET("/api/game/:gameId", func(c *gin.Context) {
+		gameId := c.Param("gameId")
+		if gameH.GameExists(gameId) {
+			c.String(200, "OK")
+			return
+		}
+		c.String(404, "Not found")
+	})
+
+	router.GET("/ws/game/:gameId", func(c *gin.Context) {
+		//upgrade get request to websocket protocol
+		gameId := c.Param("gameId")
+		name := c.Query("name")
+		fmt.Println("Adding player:", name, "to game:", gameId)
+		if !gameH.GameExists(gameId) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		}
+
+		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		gameH.NewConnection(gameId, name, *ws)
+	})
+
 	router.GET("/api/game-maps", func(c *gin.Context) {
 		result, err := database.GetGameMaps()
 
@@ -108,8 +142,20 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		c.JSON(200, gin.H{"gameId": g_id})
 	})
 
+	router.POST("/api/create-game", func(c *gin.Context) {
+		var options interface{}
+		if err := c.BindJSON(&options); err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid options"})
+			return
+		}
+
+		g_id := gameH.CreateGame()
+		c.JSON(200, gin.H{"gameId": g_id})
+	})
+
 	router.GET("/api/game-options", func(c *gin.Context) {
-		c.JSON(200, game.NewGameOptions())
+		c.JSON(200, gin.H{"gameOptions": game.NewGameOptions(), "lobbyOptions": game.NewLobbyOptions()})
 	})
 
 	router.GET("/api/unsafe-drop-db", func(c *gin.Context) {

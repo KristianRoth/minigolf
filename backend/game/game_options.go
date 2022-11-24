@@ -7,11 +7,17 @@ type GameOptions struct {
 	ScoreMode GameOption[string]
 }
 
-type GameOption[T string | float64] interface {
+type LobbyOptions struct {
+	MaxPlayers   GameOption[int64]
+	PrivateGame  GameOption[bool]
+	MapGenerator GameOption[string]
+}
+
+type GameOption[T string | float64 | int64 | bool] interface {
 	GetValue() T
 }
 
-type GenericOption[T string | float64] struct {
+type GenericOption[T string | float64 | int64 | bool] struct {
 	Type  string `json:"type"`
 	Name  string `json:"name"`
 	Value T      `json:"value"`
@@ -30,6 +36,14 @@ func NewGameOptions() GameOptions {
 	}
 }
 
+func NewLobbyOptions() LobbyOptions {
+	return LobbyOptions{
+		MaxPlayers:   newIntOption("MAX PLAYERS", 10, 2, 100),
+		PrivateGame:  newBoolOption("PRIVATE GAME", true),
+		MapGenerator: newSelectOption("MAPS", "RANDOM", "HOLE IN ONE", ">4 SCORE", "LONG"),
+	}
+}
+
 type FloatOption struct {
 	GenericOption[float64]
 	Min float64 `json:"min"`
@@ -45,6 +59,38 @@ func newFloatOption(name string, value, min, max float64) FloatOption {
 		},
 		min,
 		max,
+	}
+}
+
+type IntOption struct {
+	GenericOption[int64]
+	Min int64 `json:"min"`
+	Max int64 `json:"max"`
+}
+
+func newIntOption(name string, value, min, max int64) IntOption {
+	return IntOption{
+		GenericOption[int64]{
+			Type:  "INT_OPTION",
+			Name:  name,
+			Value: value,
+		},
+		min,
+		max,
+	}
+}
+
+type BoolOption struct {
+	GenericOption[bool]
+}
+
+func newBoolOption(name string, value bool) BoolOption {
+	return BoolOption{
+		GenericOption[bool]{
+			Type:  "BOOL_OPTION",
+			Name:  name,
+			Value: value,
+		},
 	}
 }
 
