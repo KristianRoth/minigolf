@@ -49,7 +49,6 @@ class GameController extends CanvasController {
       type: 'SHOT',
       x,
       y,
-      id: ball.id,
     });
     this.setHasTurn(false);
     this.doEffect('SHOT');

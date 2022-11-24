@@ -1,5 +1,5 @@
 import mitt from 'mitt';
-import { GameEvent, InitEvent, UpdateEvent } from 'types';
+import { GameEvent, InitEvent, StartMapEvent, UpdateEvent } from 'types';
 import { GameStorage } from 'utils/api';
 import { gameMapFromDTO } from 'utils/dto';
 import GameController from './controllers/GameController';
@@ -23,7 +23,7 @@ const getUrl = (gameId: string) => {
 };
 
 type GameEngineEvents = {
-  init: any;
+  'start-map': any;
   'save-demo': any;
   connected: undefined;
   disconnected: undefined;
@@ -81,12 +81,20 @@ class GameEngine {
       return;
     }
     switch (event.type) {
-      case 'UPDATE': {
-        this.handleUpdate(event);
+      case 'JOIN': {
+        console.log(`Player ${event.name} has joined`);
         break;
       }
       case 'INIT': {
         this.handleInit(event);
+        break;
+      }
+      case 'START_MAP': {
+        this.handleStartMap(event);
+        break;
+      }
+      case 'UPDATE': {
+        this.handleUpdate(event);
         break;
       }
       case 'TURN_BEGIN': {
@@ -126,13 +134,15 @@ class GameEngine {
 
   private handleInit(event: InitEvent) {
     GameStorage.setPlayerId(this.gameId, event.playerId.toString());
-    this.gameController?.setPlayerId(event.playerId);
-    this.spriteController?.setPlayerId(event.playerId);
+    this.gameController.setPlayerId(event.playerId);
+    this.spriteController.setPlayerId(event.playerId);
+  }
 
+  private handleStartMap(event: StartMapEvent) {
     const map = gameMapFromDTO(event.gameMap);
     this.groundController?.setGameMap(map);
     this.structController?.setGameMap(map);
-    this.emitter.emit('init', event);
+    this.emitter.emit('start-map', event);
   }
 }
 

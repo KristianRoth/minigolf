@@ -16,12 +16,14 @@ import (
 // }
 
 func (g *Game) runGame() {
-	for {
-		// TODO: Skip if there is no state-change.
-		g.sendUpdateEvent()
-		g.tick()
-		<-time.After(time.Second / TICK)
-	}
+	go func() {
+		for g.isRunning() {
+			// TODO: Skip if there is no state-change.
+			g.sendUpdateEvent()
+			g.tick()
+			<-time.After(time.Second / TICK)
+		}
+	}()
 }
 
 func (g *Game) tick() {
@@ -183,7 +185,7 @@ func (g *Game) handleHole(player *Player) {
 	player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
 	player.shot_count = 0
 
-	if g.is_demo {
+	if g.isDemo() {
 		g.sendSaveDemoMapEvent(*player)
 	} else {
 		err := database.UpdateGameMapStats(g.game_map.Id, score)

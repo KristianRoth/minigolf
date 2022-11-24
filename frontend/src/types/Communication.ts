@@ -1,5 +1,29 @@
 import { GameMap } from './GameMap';
 
+export type InitEvent = {
+  type: 'INIT';
+  playerId: number;
+  name: string;
+};
+
+export type JoinEvent = {
+  type: 'JOIN';
+  playerId: number;
+  name: string;
+};
+
+export type StartMapEvent = {
+  type: 'START_MAP';
+  playerId: number;
+  gameMap: GameMap;
+  isDemo: boolean;
+};
+
+export type IsReadyEvent = {
+  type: 'IS_READY';
+  value: boolean;
+};
+
 export type UpdateEvent = {
   type: 'UPDATE';
   playerStates: {
@@ -15,25 +39,13 @@ export type UpdateEvent = {
 
 export type ShotEvent = {
   type: 'SHOT';
-  id: number;
   x: number;
   y: number;
-};
-
-export type InitEvent = {
-  type: 'INIT';
-  playerId: number;
-  gameMap: GameMap;
-  isDemo: boolean;
-  // players: string[];
 };
 
 export type TurnBeginEvent = {
   type: 'TURN_BEGIN';
   playerId: number;
-};
-export type JoinEvent = {
-  type: 'JOIN';
 };
 
 export type EffectEvent = {
@@ -57,12 +69,15 @@ export type ChatEvent = {
 };
 
 export type GameEvent =
+  | InitEvent
+  | JoinEvent
+  | StartMapEvent
   | UpdateEvent
   | ShotEvent
-  | InitEvent
   | TurnBeginEvent
   | JoinEvent
   | VictoryEvent
   | ChatEvent
   | EffectEvent
-  | SaveDemoMapEvent;
+  | SaveDemoMapEvent
+  | IsReadyEvent;

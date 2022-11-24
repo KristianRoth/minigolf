@@ -1,3 +1,4 @@
+import Button from 'components/Button';
 import Canvas from 'components/Canvas';
 import CanvasGroup from 'components/CanvasGroup';
 import Row from 'components/Row';
@@ -33,7 +34,7 @@ function Game() {
     const engine = new GameEngine(gameId, groundController, structController, spriteController, gameController);
     engine.init();
 
-    engine.emitter.on('init', (event) => {
+    engine.emitter.on('start-map', (event) => {
       setOverlayState((prev) => ({ ...prev, isDemo: event.isDemo }));
     });
 
@@ -61,7 +62,6 @@ function Game() {
         body: gameMapToDTO(map),
       });
       if (data.gameMap) {
-        close();
         navigate(`/editor/${data.gameMap}`);
       }
     } catch (e) {
@@ -120,9 +120,14 @@ function Game() {
         />
       </CanvasGroup>
       {debug && gameController && (
-        <Row>
-          <pre style={{ width: '50%', marginLeft: 10 }}>{JSON.stringify(gameController.debug, undefined, 2)}</pre>
-        </Row>
+        <>
+          <Row>
+            <pre style={{ width: '50%', marginLeft: 10 }}>{JSON.stringify(gameController.debug, undefined, 2)}</pre>
+          </Row>
+          <Row>
+            <Button onClick={() => gameEngine?.sendMessage({ type: 'IS_READY', value: true })}>IS_READY</Button>
+          </Row>
+        </>
       )}
     </>
   );

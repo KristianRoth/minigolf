@@ -17,10 +17,11 @@ type Player struct {
 	ball       Ball
 	shot_count int64
 	is_turn    bool
+	is_ready   bool
 }
 
 func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) Player {
-	start := calc.NewVec(600.0, 2000.0)
+	start := calc.NewVec(0, 0)
 	vel := calc.NewVec(0, 0)
 	Id++
 	ball := newBall(start, vel)
