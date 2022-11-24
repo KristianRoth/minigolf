@@ -25,6 +25,7 @@ env:
   GCE_INSTANCE_ZONE: us-central1-a
   MINIGOLF_DB_USER: ${{ secrets.MINIGOLF_DB_USER }}
   MINIGOLF_DB_PASSWORD: ${{ secrets.MINIGOLF_DB_PASSWORD }}
+  MINIGOLF_JWT_SECRET: ${{ secrets.MINIGOLF_JWT_SECRET }}
 
 jobs:
   setup-build-publish-deploy:
@@ -71,4 +72,6 @@ jobs:
             --container-env MINIGOLF_DB_PROTOCOL=mongodb+srv \
             --container-env MINIGOLF_DB_USER=$MINIGOLF_DB_USER \
             --container-env MINIGOLF_DB_PASSWORD=$MINIGOLF_DB_PASSWORD \
-            --container-env MINIGOLF_DB_HOST=minigolf-mongo-atlas.nxtkiht.mongodb.net
+            --container-env MINIGOLF_DB_HOST=minigolf-mongo-atlas.nxtkiht.mongodb.net \
+            --container-env MINIGOLF_JWT_SECRET=$MINIGOLF_JWT_SECRET
+            
