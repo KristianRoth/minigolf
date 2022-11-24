@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import { Ball, CanvasMouseEvent, GroundType, Point, Rotation, Structure, StructureType } from 'types';
 import { clamp } from 'utils/calculation';
 import { BALL_RADIUS, BLOCK_SIZE, CIRCLE_RADIUS, GAME_WIDTH, HALF_BLOCK, RATIO } from 'utils/constants';
@@ -24,7 +23,7 @@ const colors = {
   },
 } as const;
 
-class CanvasController extends EventEmitter {
+class CanvasController {
   protected animationReqId: number | null = null;
   protected tick = 0;
   protected canvas: HTMLCanvasElement;
@@ -32,7 +31,6 @@ class CanvasController extends EventEmitter {
   protected mouseAt: Point | null = null;
 
   constructor(canvas: HTMLCanvasElement, tick = 60) {
-    super();
     this.canvas = canvas;
     this.context = canvas.getContext('2d') as CanvasRenderingContext2D;
     this.tick = tick;
@@ -398,7 +396,6 @@ class CanvasController extends EventEmitter {
     if (this.animationReqId) {
       window.cancelAnimationFrame(this.animationReqId);
     }
-    this.removeAllListeners();
   }
 }
 

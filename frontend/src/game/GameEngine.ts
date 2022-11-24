@@ -1,10 +1,10 @@
+import mitt from 'mitt';
+import { GameEvent, InitEvent, UpdateEvent } from 'types';
+import { GameStorage } from 'utils/api';
+import { gameMapFromDTO } from 'utils/dto';
 import GameController from './controllers/GameController';
-import { GameStorage } from '../utils/api';
 import { GroundController, StructureController } from './controllers/MapController';
 import SpriteController from './controllers/SpriteController';
-import { GameEvent, InitEvent, UpdateEvent } from '../types';
-import { gameMapFromDTO } from '../utils/dto';
-import EventEmitter from 'events';
 
 const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 
@@ -22,8 +22,17 @@ const getUrl = (gameId: string) => {
   return url;
 };
 
-class GameEngine extends EventEmitter {
-  socket: WebSocket | null = null;
+type GameEngineEvents = {
+  init: any;
+  'save-demo': any;
+  connected: undefined;
+  disconnected: undefined;
+};
+
+class GameEngine {
+  private socket: WebSocket | null = null;
+
+  public emitter = mitt<GameEngineEvents>();
 
   constructor(
     private gameId: string,
@@ -31,12 +40,10 @@ class GameEngine extends EventEmitter {
     private structController: StructureController,
     private spriteController: SpriteController,
     private gameController: GameController
-  ) {
-    super();
-  }
+  ) {}
 
   public init() {
-    this.gameController.on('message', this.sendMessage.bind(this));
+    this.gameController.emitter.on('shot', this.sendMessage.bind(this));
     this.socket = new WebSocket(getUrl(this.gameId));
     this.socket.addEventListener('open', this.onOpen.bind(this));
     this.socket.addEventListener('message', this.onMessage.bind(this));
@@ -44,7 +51,7 @@ class GameEngine extends EventEmitter {
   }
 
   public destroy() {
-    this.removeAllListeners();
+    this.emitter.all.clear();
     if (!this.socket) return;
     this.socket.removeEventListener('open', this.onOpen);
     this.socket.removeEventListener('message', this.onMessage);
@@ -53,18 +60,16 @@ class GameEngine extends EventEmitter {
     this.socket = null;
   }
 
-  public sendMessage(payload: any) {
+  public sendMessage(payload: GameEvent) {
     this.socket?.send(JSON.stringify(payload));
   }
 
   private onOpen() {
-    console.log('connected');
-    this.emit('connected');
+    this.emitter.emit('connected');
   }
 
   private onClose() {
-    console.log('disconnected');
-    this.emit('disconnected');
+    this.emitter.emit('disconnected');
   }
 
   private onMessage(payload: any) {
@@ -95,7 +100,7 @@ class GameEngine extends EventEmitter {
       case 'SAVE_DEMO_MAP': {
         const newState = { isOpen: true, saveDemoJWT: event.jwt };
         setTimeout(() => {
-          this.emit('save-demo', newState);
+          this.emitter.emit('save-demo', newState);
         }, 200);
         break;
       }
@@ -127,7 +132,7 @@ class GameEngine extends EventEmitter {
     const map = gameMapFromDTO(event.gameMap);
     this.groundController?.setGameMap(map);
     this.structController?.setGameMap(map);
-    this.emit('init', event);
+    this.emitter.emit('init', event);
   }
 }
 

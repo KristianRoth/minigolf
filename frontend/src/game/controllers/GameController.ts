@@ -1,7 +1,12 @@
-import { Ball, CanvasMouseEvent, Point, Rotation, ROTATIONS } from 'types';
+import mitt from 'mitt';
+import { Ball, CanvasMouseEvent, Point, Rotation, ROTATIONS, ShotEvent } from 'types';
 import { calcEndpoint, calculateLineEndPoints, modulo, PerSecondCounter } from 'utils/calculation';
 import { BALL_RADIUS } from 'utils/constants';
 import CanvasController from './CanvasController';
+
+type GameControllerEvents = {
+  shot: ShotEvent;
+};
 
 class GameController extends CanvasController {
   private balls: Ball[] = [];
@@ -14,6 +19,8 @@ class GameController extends CanvasController {
   private effect = '';
   private fpsCounter = new PerSecondCounter(50);
   private tickCounter = new PerSecondCounter(50);
+
+  public emitter = mitt<GameControllerEvents>();
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
@@ -38,7 +45,7 @@ class GameController extends CanvasController {
 
     if (x === 0 && y === 0) return;
 
-    this.emit('message', {
+    this.emitter.emit('shot', {
       type: 'SHOT',
       x,
       y,
@@ -169,6 +176,11 @@ class GameController extends CanvasController {
       playerId: this.playerId,
       balls: this.balls,
     };
+  }
+
+  destroy(): void {
+    super.destroy();
+    this.emitter.all.clear();
   }
 }
 

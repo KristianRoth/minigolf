@@ -33,11 +33,11 @@ function Game() {
     const engine = new GameEngine(gameId, groundController, structController, spriteController, gameController);
     engine.init();
 
-    engine.on('init', (event) => {
+    engine.emitter.on('init', (event) => {
       setOverlayState((prev) => ({ ...prev, isDemo: event.isDemo }));
     });
 
-    engine.on('save-demo', (event: any) => {
+    engine.emitter.on('save-demo', (event) => {
       setOverlayState((prev) => ({ ...prev, ...event }));
     });
 
