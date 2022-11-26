@@ -10,30 +10,33 @@ import (
 var Id int64 = 0
 
 type Player struct {
-	PlayerConn
-	id         int64
-	name       string
-	prev_ball  Ball
-	ball       Ball
-	shot_count int64
-	is_turn    bool
-	is_ready   bool
+	*PlayerConn
+	id           int64
+	name         string
+	prev_ball    Ball
+	ball         Ball
+	shot_count   int64
+	is_turn      bool
+	is_ready     bool
+	is_connected bool
 }
 
-func NewPlayer(name string, ws websocket.Conn, playerChannel *chan playerEvent) Player {
+func NewPlayer(name string, ws *websocket.Conn, playerChannel *chan playerEvent) *Player {
 	start := calc.NewVec(0, 0)
 	vel := calc.NewVec(0, 0)
 	Id++
 	ball := newBall(start, vel)
-	return Player{
+
+	events_out := make(chan interface{})
+	return &Player{
 		name:      name,
 		id:        Id,
 		prev_ball: ball.Clone(),
 		ball:      ball,
 		is_turn:   false,
-		PlayerConn: PlayerConn{
+		PlayerConn: &PlayerConn{
 			playerEventsIn:  playerChannel,
-			PlayerEventsOut: make(chan interface{}),
+			playerEventsOut: &events_out,
 			ws:              ws,
 		},
 	}

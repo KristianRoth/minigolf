@@ -23,23 +23,17 @@ var upgrader = websocket.Upgrader{
 }
 
 func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
-
-	router.GET("/api/game/:gameId", func(c *gin.Context) {
-		gameId := c.Param("gameId")
-		if gameH.GameExists(gameId) {
-			c.String(200, "OK")
-			return
-		}
-		c.String(404, "Not found")
-	})
-
 	router.GET("/ws/game/:gameId", func(c *gin.Context) {
 		//upgrade get request to websocket protocol
 		gameId := c.Param("gameId")
 		name := c.Query("name")
-		fmt.Println("Adding player:", name, "to game:", gameId)
 		if !gameH.GameExists(gameId) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+			return
+		}
+
+		player_id, auth_ok := util.ValidatePlayerJWT(c.Query("token"), gameId)
+		if !gameH.GameJoinable(gameId) && !auth_ok {
+			return
 		}
 
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -47,7 +41,39 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 			fmt.Println(err)
 			return
 		}
-		gameH.NewConnection(gameId, name, *ws)
+
+		if auth_ok {
+			fmt.Println("Reconnecting player:", player_id, "to game:", gameId)
+			gameH.RenewConnection(gameId, player_id, ws)
+		} else {
+			fmt.Println("Adding player:", name, "to game:", gameId)
+			gameH.NewConnection(gameId, name, ws)
+		}
+	})
+
+	router.GET("/api/game/:gameId", func(c *gin.Context) {
+		gameId := c.Param("gameId")
+
+		if !gameH.GameExists(gameId) {
+			c.String(404, "Not found")
+			return
+		}
+
+		// Game exists and is joinable.
+		if gameH.GameJoinable(gameId) {
+			c.String(200, "OK")
+			return
+		}
+
+		// Player can reconnect even if game is not joinable.
+		jwt_string := util.ParseBearerToken(c)
+		_, auth_ok := util.ValidatePlayerJWT(jwt_string, gameId)
+		if auth_ok {
+			c.String(200, "OK")
+			return
+		}
+
+		c.String(403, "Unauthorized")
 	})
 
 	router.GET("/api/game-maps", func(c *gin.Context) {

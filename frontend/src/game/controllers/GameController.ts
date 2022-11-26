@@ -163,7 +163,6 @@ class GameController extends CanvasController {
 
   setPlayerId(playerId: number) {
     this.playerId = playerId;
-    this.hasTurn = true;
   }
 
   get ball(): Ball | null {

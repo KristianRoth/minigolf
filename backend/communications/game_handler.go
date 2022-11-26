@@ -23,24 +23,35 @@ func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto, is_demo boo
 	g_id := strings.ToUpper(util.RandomString(5))
 	game_map := game.GameMapFromDto(mapDto)
 	game := game.NewGame(g_id, game_map, is_demo)
-	handler.games[g_id] = &game
+	handler.games[g_id] = game
 	return g_id
 }
 
 func (handler *GameHandler) CreateGame() string {
 	g_id := strings.ToUpper(util.RandomString(5))
 	game := game.NewGame(g_id, game.NewGameMap(), false)
-	handler.games[g_id] = &game
+	handler.games[g_id] = game
 	return g_id
 }
 
-func (handler *GameHandler) NewConnection(gameId string, name string, ws websocket.Conn) {
+func (handler *GameHandler) NewConnection(gameId string, name string, ws *websocket.Conn) {
 	if currentGame, ok := handler.games[gameId]; ok {
 		currentGame.AddPlayer(name, ws)
+	}
+}
+
+func (handler *GameHandler) RenewConnection(gameId string, playerId int64, ws *websocket.Conn) {
+	if currentGame, ok := handler.games[gameId]; ok {
+		currentGame.ReconnectPlayer(playerId, ws)
 	}
 }
 
 func (handler *GameHandler) GameExists(gameId string) bool {
 	_, exists := handler.games[gameId]
 	return exists
+}
+
+func (handler *GameHandler) GameJoinable(gameId string) bool {
+	game, exists := handler.games[gameId]
+	return exists && game.IsJoinable()
 }

@@ -18,7 +18,7 @@ const (
 )
 
 type Game struct {
-	GameConn
+	*GameConn
 	game_id  string
 	players  map[int64]*Player
 	game_map GameMap
@@ -26,17 +26,20 @@ type Game struct {
 	status   GameStatus
 }
 
-func NewGame(game_id string, game_map GameMap, is_demo bool) Game {
+func NewGame(game_id string, game_map GameMap, is_demo bool) *Game {
 	fmt.Println("Making new game:", game_id)
+	broadcast := make(chan interface{})
+	playerChannel := make(chan playerEvent)
+	connections := GameConn{
+		broadcast:     &broadcast,
+		playerChannel: &playerChannel,
+	}
 	game := Game{
 		game_id:  game_id,
 		players:  make(map[int64]*Player),
 		game_map: game_map,
-		GameConn: GameConn{
-			broadcast:     make(chan interface{}),
-			playerChannel: make(chan playerEvent),
-		},
-		mesh: newColliderMesh(game_map),
+		GameConn: &connections,
+		mesh:     newColliderMesh(game_map),
 	}
 	game.startCommunications()
 
@@ -44,13 +47,13 @@ func NewGame(game_id string, game_map GameMap, is_demo bool) Game {
 		game.status = IsDemo
 		game.runGame()
 	}
-	return game
+	return &game
 }
 
-func (g *Game) AddPlayer(name string, ws websocket.Conn) {
-	player := NewPlayer(name, ws, &g.playerChannel)
+func (g *Game) AddPlayer(name string, ws *websocket.Conn) {
+	player := NewPlayer(name, ws, g.playerChannel)
 	player.ball.Pos = g.getStartLocation()
-	g.players[player.id] = &player
+	g.players[player.id] = player
 	player.run()
 	g.sendInitEvent(player)
 	g.sendJoinEvent(player)
@@ -60,7 +63,25 @@ func (g *Game) AddPlayer(name string, ws websocket.Conn) {
 	}
 }
 
-func (g Game) RemovePlayer(player *Player) {
+func (g *Game) ReconnectPlayer(id int64, ws *websocket.Conn) {
+	// TODO: what if player not found?
+	player := g.players[id]
+
+	// TODO: ?
+	// if player.is_connected {
+	//  what?
+	// }
+	player.PlayerConn.ws = ws
+	player.run()
+
+	if g.isRunning() {
+		g.sendReconnectEvent(player)
+	} else {
+		g.sendInitEvent(player)
+	}
+}
+
+func (g *Game) RemovePlayer(player *Player) {
 	delete(g.players, player.id)
 }
 
@@ -72,14 +93,14 @@ func (g *Game) getPlayerStates() []models.PlayerDto {
 	return playerStates
 }
 
-func (g Game) isRunning() bool {
+func (g *Game) isRunning() bool {
 	return g.status == IsGame || g.status == IsDemo
 }
 
-func (g Game) isDemo() bool {
+func (g *Game) isDemo() bool {
 	return g.status == IsDemo
 }
 
-func (g Game) isJoinable() bool {
+func (g *Game) IsJoinable() bool {
 	return g.status == IsLobby || g.status == IsDemo
 }

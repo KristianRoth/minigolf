@@ -21,13 +21,22 @@ type initEvent struct {
 	Type     string `json:"type"`
 	PlayerId int64  `json:"playerId"`
 	Name     string `json:"name"`
+	Token    string `json:"token"`
 }
 
-func (g Game) sendInitEvent(p Player) {
-	p.PlayerEventsOut <- initEvent{
+func (g *Game) sendInitEvent(p *Player) {
+	token, err := util.GeneratePlayerJWT(p.id, g.game_id)
+
+	if err != nil {
+		fmt.Println("failed to create token: ", err)
+		return
+	}
+
+	*p.playerEventsOut <- initEvent{
 		Type:     "INIT",
 		PlayerId: p.id,
 		Name:     p.name,
+		Token:    token,
 	}
 }
 
@@ -37,11 +46,32 @@ type joinEvent struct {
 	Name     string `json:"name"`
 }
 
-func (g Game) sendJoinEvent(p Player) {
-	g.broadcast <- joinEvent{
+func (g *Game) sendJoinEvent(p *Player) {
+	*g.broadcast <- joinEvent{
 		Type:     "JOIN",
 		PlayerId: p.id,
 		Name:     p.name,
+	}
+}
+
+// Combination of init, startMap and turn_begin
+type reconnectEvent struct {
+	Type     string            `json:"type"`
+	GameMap  models.GameMapDto `json:"gameMap"`
+	IsDemo   bool              `json:"isDemo"`
+	PlayerId int64             `json:"playerId"`
+	Name     string            `json:"name"`
+	IsTurn   bool              `json:"isTurn"`
+}
+
+func (g *Game) sendReconnectEvent(p *Player) {
+	*p.playerEventsOut <- reconnectEvent{
+		Type:     "RECONNECT",
+		GameMap:  GameMapToDto(g.game_map),
+		IsDemo:   g.isDemo(),
+		PlayerId: p.id,
+		Name:     p.name,
+		IsTurn:   p.is_turn,
 	}
 }
 
@@ -51,8 +81,8 @@ type startMapEvent struct {
 	IsDemo  bool              `json:"isDemo"`
 }
 
-func (g Game) sendStartMapEvent() {
-	g.broadcast <- startMapEvent{
+func (g *Game) sendStartMapEvent() {
+	*g.broadcast <- startMapEvent{
 		Type:    "START_MAP",
 		GameMap: GameMapToDto(g.game_map),
 		IsDemo:  g.isDemo(),
@@ -64,8 +94,8 @@ type turnBeginEvent struct {
 	PlayerId int64  `json:"playerId"`
 }
 
-func (g Game) sendTurnBeginEvent(p Player) {
-	p.PlayerEventsOut <- turnBeginEvent{
+func (g *Game) sendTurnBeginEvent(p *Player) {
+	*p.playerEventsOut <- turnBeginEvent{
 		Type:     "TURN_BEGIN",
 		PlayerId: p.id,
 	}
@@ -76,8 +106,8 @@ type updateEvent struct {
 	PlayerStates []models.PlayerDto `json:"playerStates"`
 }
 
-func (g Game) sendUpdateEvent() {
-	g.broadcast <- updateEvent{
+func (g *Game) sendUpdateEvent() {
+	*g.broadcast <- updateEvent{
 		Type:         "UPDATE",
 		PlayerStates: g.getPlayerStates(),
 	}
@@ -89,8 +119,8 @@ type effectEvent struct {
 	PlayerId int64         `json:"playerId"`
 }
 
-func (g Game) sendEffectEvent(p Player, effect SpecialEffect) {
-	g.broadcast <- effectEvent{
+func (g *Game) sendEffectEvent(p *Player, effect SpecialEffect) {
+	*g.broadcast <- effectEvent{
 		Type:     "EFFECT",
 		PlayerId: p.id,
 		Value:    effect,
@@ -102,7 +132,7 @@ type saveDemoMapEvent struct {
 	Jwt  string `json:"jwt"`
 }
 
-func (g Game) sendSaveDemoMapEvent(p Player) {
+func (g *Game) sendSaveDemoMapEvent(p *Player) {
 	hash := GameMapToDto(g.game_map).Hash()
 	jwt, jwt_err := util.GenerateSaveMapJWT(hash)
 
@@ -112,7 +142,7 @@ func (g Game) sendSaveDemoMapEvent(p Player) {
 		return
 	}
 
-	p.PlayerEventsOut <- saveDemoMapEvent{
+	*p.playerEventsOut <- saveDemoMapEvent{
 		Type: "SAVE_DEMO_MAP",
 		Jwt:  jwt,
 	}
@@ -123,8 +153,8 @@ type errorEvent struct {
 	Value string `json:"value"`
 }
 
-func (g Game) sendError(p Player, value string) {
-	p.PlayerEventsOut <- errorEvent{
+func (g *Game) sendError(p *Player, value string) {
+	*p.playerEventsOut <- errorEvent{
 		Type:  "ERROR",
 		Value: value,
 	}

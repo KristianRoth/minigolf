@@ -31,7 +31,7 @@ func (g *Game) tick() {
 	for _, player := range g.players {
 		ball, effect := g.Collide(player.ball)
 		if effect != NoEffect {
-			g.sendEffectEvent(*player, effect)
+			g.sendEffectEvent(player, effect)
 		}
 
 		switch effect {
@@ -45,12 +45,12 @@ func (g *Game) tick() {
 
 		if !player.is_turn && player.ball.Vel.Length() <= 1.0 {
 			player.is_turn = true
-			g.sendTurnBeginEvent(*player)
+			g.sendTurnBeginEvent(player)
 		}
 	}
 }
 
-func (g Game) getStartLocation() calc.Vector {
+func (g *Game) getStartLocation() calc.Vector {
 	start := calc.Vector{}
 	for _, col := range g.game_map.Tiles {
 		for _, tile := range col {
@@ -62,7 +62,7 @@ func (g Game) getStartLocation() calc.Vector {
 	return start.Add(calc.NewVec(TILE_SIZE/2, TILE_SIZE/2))
 }
 
-func (g Game) getClosestCollision(ball Ball) (collisionPoint, error) {
+func (g *Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 	x_start := uint32(math.Max(0, (ball.Pos.X-TILE_SIZE)/TILE_SIZE))
 	x_end := uint32(math.Min(float64(x_start+5), SIZE_X))
 
@@ -95,7 +95,7 @@ func (g Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 	return closest, nil
 }
 
-func (g Game) doGroundEffect(ball Ball) (Ball, SpecialEffect) {
+func (g *Game) doGroundEffect(ball Ball) (Ball, SpecialEffect) {
 	x := uint32(ball.Pos.X / TILE_SIZE)
 	y := uint32(ball.Pos.Y / TILE_SIZE)
 	tile := g.game_map.Tiles[x][y]
@@ -120,7 +120,7 @@ func (g Game) doGroundEffect(ball Ball) (Ball, SpecialEffect) {
 	return ball.Clone(), NoEffect
 }
 
-func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
+func (g *Game) Collide(ball Ball) (Ball, SpecialEffect) {
 	ball, effect := g.doGroundEffect(ball)
 
 	if effect == WaterEffect {
@@ -145,14 +145,14 @@ func (g Game) Collide(ball Ball) (Ball, SpecialEffect) {
 			if collision.Type == models.Hole {
 				return ball, HoleEffect
 			}
-			fmt.Printf("Seinä %f, %f\n", collision.Point.X, collision.Point.Y)
-			fmt.Printf("Pallo %f, %f\n", ball.Pos.X, ball.Pos.Y)
+			// fmt.Printf("Seinä %f, %f\n", collision.Point.X, collision.Point.Y)
+			// fmt.Printf("Pallo %f, %f\n", ball.Pos.X, ball.Pos.Y)
 			ball = doCollision(collision.Point, ball)
 			collision_effect = CollisionEffect
 		}
 		to_move := math.Max(1, math.Min(d_pos, distance_to_wall-BALL_SIZE+0.1))
 
-		fmt.Printf("adding some: %f/%f\n", to_move, ball.Vel.Length())
+		// fmt.Printf("adding some: %f/%f\n", to_move, ball.Vel.Length())
 
 		ball = ball.Move(to_move)
 		d_pos -= to_move
@@ -186,7 +186,7 @@ func (g *Game) handleHole(player *Player) {
 	player.shot_count = 0
 
 	if g.isDemo() {
-		g.sendSaveDemoMapEvent(*player)
+		g.sendSaveDemoMapEvent(player)
 	} else {
 		err := database.UpdateGameMapStats(g.game_map.Id, score)
 		if err != nil {

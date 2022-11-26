@@ -2,6 +2,7 @@ import { GameMap } from '../types';
 
 const n = (gameId: string) => `game-${gameId}-name`;
 const i = (gameId: string) => `game-${gameId}-id`;
+const t = (gameId: string) => `game-${gameId}-token`;
 const m = (mapId: string) => `gameMap-${mapId}`;
 
 // TODO: Deprecate this.
@@ -31,6 +32,17 @@ export const GameStorage = {
   removePlayerId: (gameId: string) => {
     localStorage.removeItem(i(gameId));
   },
+  // Player-id
+  setPlayerToken: (gameId: string, token: string) => {
+    localStorage.setItem(t(gameId), token);
+  },
+  getPlayerToken: (gameId: string) => {
+    return localStorage.getItem(t(gameId));
+  },
+  removePlayerToken: (gameId: string) => {
+    localStorage.removeItem(t(gameId));
+  },
+
   // Game-map
   getGameMap: (mapId = '') => {
     const mapString = localStorage.getItem(m(mapId));

@@ -2,7 +2,6 @@ import Button from 'components/Button';
 import Canvas from 'components/Canvas';
 import CanvasGroup from 'components/CanvasGroup';
 import Row from 'components/Row';
-import { rmSync } from 'fs';
 import { SpriteController, GroundController, StructureController, GameController, GameEngine } from 'game';
 import useCanvasController from 'hooks/useCanvasController';
 import { useState, useEffect } from 'react';
@@ -33,7 +32,13 @@ function Game() {
   const [gameEngine, setGameEngine] = useState<GameEngine | null>(null);
 
   useEffect(() => {
-    fetch(`/api/game/${gameId}`).then((res) => {
+    const token = GameStorage.getPlayerToken(gameId);
+    const headers: RequestInit['headers'] = token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {};
+    fetch(`/api/game/${gameId}`, { headers }).then((res) => {
       if (res.ok) {
         setGameExists(true);
       } else {
@@ -117,6 +122,9 @@ function Game() {
       <div>
         <button onClick={() => goToEdit()}>Edit</button>
       </div>
+      <Row>
+        <Button onClick={() => gameEngine?.sendMessage({ type: 'IS_READY', value: true })}>IS_READY</Button>
+      </Row>
     </>
   );
   return (
@@ -136,9 +144,6 @@ function Game() {
         <>
           <Row>
             <pre style={{ width: '50%', marginLeft: 10 }}>{JSON.stringify(gameController.debug, undefined, 2)}</pre>
-          </Row>
-          <Row>
-            <Button onClick={() => gameEngine?.sendMessage({ type: 'IS_READY', value: true })}>IS_READY</Button>
           </Row>
         </>
       )}

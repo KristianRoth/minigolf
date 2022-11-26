@@ -9,14 +9,14 @@ import (
 )
 
 type GameConn struct {
-	broadcast     chan interface{}
-	playerChannel chan playerEvent
+	broadcast     *chan interface{}
+	playerChannel *chan playerEvent
 }
 
 type PlayerConn struct {
 	playerEventsIn  *chan playerEvent
-	PlayerEventsOut chan interface{}
-	ws              websocket.Conn
+	playerEventsOut *chan interface{}
+	ws              *websocket.Conn
 }
 
 type playerEvent struct {
@@ -25,22 +25,25 @@ type playerEvent struct {
 }
 
 func (p *Player) run() {
+	p.is_connected = true
 	go func() {
-		for {
+		for p.is_connected {
 			_, message, err := p.ws.ReadMessage()
 			if err != nil {
 				//TODO: something went wrong with player disconnect him
 				log.Println("Player read json failed", err)
+				p.is_connected = false
 				break
 			}
 			*p.playerEventsIn <- playerEvent{p, message}
 		}
 	}()
 	go func() {
-		for {
-			err := p.ws.WriteJSON(<-p.PlayerEventsOut)
+		for p.is_connected {
+			err := p.ws.WriteJSON(<-*p.playerEventsOut)
 			if err != nil {
 				log.Println("Player write to failed", err)
+				p.is_connected = false
 				break
 			}
 		}
@@ -51,11 +54,11 @@ func (g *Game) startCommunications() {
 	go func() {
 		for {
 			select {
-			case message := <-g.broadcast:
+			case message := <-*g.broadcast:
 				for _, p := range g.players {
-					p.PlayerEventsOut <- message
+					*p.playerEventsOut <- message
 				}
-			case playerEvent := <-g.playerChannel:
+			case playerEvent := <-*g.playerChannel:
 				player, message := playerEvent.player, playerEvent.message
 				fmt.Println("Received message:", string(message))
 				var event event
