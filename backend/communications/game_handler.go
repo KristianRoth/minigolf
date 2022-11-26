@@ -5,18 +5,51 @@ import (
 	"backend/models"
 	"backend/util"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type GameHandler struct {
-	games map[string]*game.Game
+	isRunning bool
+	games     map[string]*game.Game
 }
 
 func NewGameHandler() GameHandler {
 	return GameHandler{
-		games: make(map[string]*game.Game),
+		games:     make(map[string]*game.Game),
+		isRunning: false,
 	}
+}
+
+func (handler *GameHandler) PrettyString() string {
+	if len(handler.games) == 0 {
+		return "No games"
+	}
+	stateStr := "Games:\n"
+	for _, game := range handler.games {
+		stateStr += game.PrettyString()
+	}
+	return stateStr
+}
+
+func (handler *GameHandler) Start() {
+	if handler.isRunning {
+		return
+	}
+	handler.isRunning = true
+	go func() {
+		for {
+			// handler.PrintState()
+			for _, game := range handler.games {
+				if game.IsIdle() {
+					game.Stop()
+					delete(handler.games, game.Id)
+				}
+			}
+			<-time.After(time.Minute)
+		}
+	}()
 }
 
 func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto, isDemo bool) string {

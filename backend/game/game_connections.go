@@ -26,6 +26,7 @@ type playerEvent struct {
 
 func (p *Player) run() {
 	p.isConnected = true
+
 	go func() {
 		for p.isConnected {
 			_, message, err := p.ws.ReadMessage()
@@ -52,7 +53,7 @@ func (p *Player) run() {
 
 func (g *Game) startCommunications() {
 	go func() {
-		for {
+		for g.status != IsStopped {
 			select {
 			case message := <-*g.broadcast:
 				for _, p := range g.players {
@@ -67,6 +68,9 @@ func (g *Game) startCommunications() {
 					fmt.Println(fmt.Errorf("unknow message from player, %v, %s", err, message))
 					break
 				}
+
+				g.setEventTime()
+
 				switch event.Type {
 				case "SHOT":
 					var shotEvent shotEvent

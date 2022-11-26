@@ -51,6 +51,10 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		}
 	})
 
+	router.GET("/api/status", func(c *gin.Context) {
+		c.String(200, gameH.PrettyString())
+	})
+
 	router.GET("/api/game/:gameId", func(c *gin.Context) {
 		gameId := c.Param("gameId")
 

@@ -3,6 +3,7 @@ package game
 import (
 	"backend/models"
 	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,15 +16,36 @@ const (
 	IsWaiting
 	IsEnd
 	IsDemo // If is testing a new map.
+	IsStopped
 )
+
+func (e GameStatus) String() string {
+	switch e {
+	case IsLobby:
+		return "Lobby"
+	case IsGame:
+		return "Game"
+	case IsWaiting:
+		return "Waiting"
+	case IsEnd:
+		return "End"
+	case IsDemo:
+		return "Demo"
+	case IsStopped:
+		return "Stopped"
+	default:
+		return fmt.Sprintf("%d", int(e))
+	}
+}
 
 type Game struct {
 	*GameConn
-	Id      string
-	players map[int64]*Player
-	gameMap GameMap
-	mesh    colliderMesh
-	status  GameStatus
+	Id        string
+	players   map[int64]*Player
+	gameMap   GameMap
+	mesh      colliderMesh
+	status    GameStatus
+	lastEvent time.Time
 }
 
 func NewGame(gameId string, gameMap GameMap, isDemo bool) *Game {
@@ -40,7 +62,9 @@ func NewGame(gameId string, gameMap GameMap, isDemo bool) *Game {
 		gameMap:  gameMap,
 		GameConn: &connections,
 		mesh:     newColliderMesh(gameMap),
+		status:   IsLobby,
 	}
+	game.setEventTime()
 	game.startCommunications()
 
 	if isDemo {
@@ -101,6 +125,31 @@ func (g *Game) isDemo() bool {
 	return g.status == IsDemo
 }
 
+func (g *Game) setEventTime() {
+	g.lastEvent = time.Now()
+}
+
+func (g *Game) Stop() {
+	fmt.Println("Stopping game", g.Id)
+	g.status = IsStopped
+	for _, p := range g.players {
+		p.isConnected = false
+		p.ws.Close()
+	}
+}
+
 func (g *Game) IsJoinable() bool {
 	return g.status == IsLobby || g.status == IsDemo
+}
+
+func (g *Game) IsIdle() bool {
+	return time.Since(g.lastEvent) > time.Hour
+}
+
+func (g *Game) PrettyString() string {
+	id := fmt.Sprintf("  %s:", g.Id)
+	players := fmt.Sprintf("    Players: %d", len(g.players))
+	status := fmt.Sprintf("    Status: %v", g.status)
+	event := fmt.Sprintf("    Event: %s", g.lastEvent.Format(time.RFC3339))
+	return fmt.Sprintf("%s\n%s\n%s\n%s\n", id, players, status, event)
 }
