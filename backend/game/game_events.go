@@ -25,7 +25,7 @@ type initEvent struct {
 }
 
 func (g *Game) sendInitEvent(p *Player) {
-	token, err := util.GeneratePlayerJWT(p.id, g.game_id)
+	token, err := util.GeneratePlayerJWT(p.id, g.Id)
 
 	if err != nil {
 		fmt.Println("failed to create token: ", err)
@@ -67,11 +67,11 @@ type reconnectEvent struct {
 func (g *Game) sendReconnectEvent(p *Player) {
 	*p.playerEventsOut <- reconnectEvent{
 		Type:     "RECONNECT",
-		GameMap:  GameMapToDto(g.game_map),
+		GameMap:  GameMapToDto(g.gameMap),
 		IsDemo:   g.isDemo(),
 		PlayerId: p.id,
 		Name:     p.name,
-		IsTurn:   p.is_turn,
+		IsTurn:   p.isTurn,
 	}
 }
 
@@ -84,7 +84,7 @@ type startMapEvent struct {
 func (g *Game) sendStartMapEvent() {
 	*g.broadcast <- startMapEvent{
 		Type:    "START_MAP",
-		GameMap: GameMapToDto(g.game_map),
+		GameMap: GameMapToDto(g.gameMap),
 		IsDemo:  g.isDemo(),
 	}
 }
@@ -133,11 +133,11 @@ type saveDemoMapEvent struct {
 }
 
 func (g *Game) sendSaveDemoMapEvent(p *Player) {
-	hash := GameMapToDto(g.game_map).Hash()
-	jwt, jwt_err := util.GenerateSaveMapJWT(hash)
+	hash := GameMapToDto(g.gameMap).Hash()
+	jwt, jwtErr := util.GenerateSaveMapJWT(hash)
 
-	if jwt_err != nil {
-		fmt.Println(jwt_err)
+	if jwtErr != nil {
+		fmt.Println(jwtErr)
 		g.sendError(p, "Something went wrong")
 		return
 	}
@@ -182,10 +182,10 @@ func (g *Game) handleIsReadyEvent(player *Player, event isReadyEvent) {
 		return
 	}
 
-	player.is_ready = event.Value
+	player.isReady = event.Value
 
 	for _, p := range g.players {
-		if !p.is_ready {
+		if !p.isReady {
 			return
 		}
 	}

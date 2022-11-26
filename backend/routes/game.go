@@ -31,8 +31,8 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 			return
 		}
 
-		player_id, auth_ok := util.ValidatePlayerJWT(c.Query("token"), gameId)
-		if !gameH.GameJoinable(gameId) && !auth_ok {
+		playerId, authOk := util.ValidatePlayerJWT(c.Query("token"), gameId)
+		if !gameH.GameJoinable(gameId) && !authOk {
 			return
 		}
 
@@ -42,9 +42,9 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 			return
 		}
 
-		if auth_ok {
-			fmt.Println("Reconnecting player:", player_id, "to game:", gameId)
-			gameH.RenewConnection(gameId, player_id, ws)
+		if authOk {
+			fmt.Println("Reconnecting player:", playerId, "to game:", gameId)
+			gameH.RenewConnection(gameId, playerId, ws)
 		} else {
 			fmt.Println("Adding player:", name, "to game:", gameId)
 			gameH.NewConnection(gameId, name, ws)
@@ -66,9 +66,9 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 		}
 
 		// Player can reconnect even if game is not joinable.
-		jwt_string := util.ParseBearerToken(c)
-		_, auth_ok := util.ValidatePlayerJWT(jwt_string, gameId)
-		if auth_ok {
+		jwtString := util.ParseBearerToken(c)
+		_, authOk := util.ValidatePlayerJWT(jwtString, gameId)
+		if authOk {
 			c.String(200, "OK")
 			return
 		}
@@ -105,23 +105,23 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 	})
 
 	router.POST("/api/game-maps", func(c *gin.Context) {
-		var game_dto models.GameMapDto
-		if err := c.BindJSON(&game_dto); err != nil {
+		var gameDto models.GameMapDto
+		if err := c.BindJSON(&gameDto); err != nil {
 			fmt.Println(err)
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})
 			return
 		}
-		game_map_hash := game_dto.Hash()
-		game_dto.Id = game_map_hash
+		gameMapHash := gameDto.Hash()
+		gameDto.Id = gameMapHash
 
-		auth_ok := util.ValidateSaveMapJWT(c.GetHeader("Authorization"), game_map_hash)
+		authOk := util.ValidateSaveMapJWT(c.GetHeader("Authorization"), gameMapHash)
 
-		if !auth_ok {
+		if !authOk {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
-		createdId, err := database.CreateGameMap(game_dto)
+		createdId, err := database.CreateGameMap(gameDto)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false})
@@ -133,12 +133,12 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 			log.Printf("Inserted map %s\n", createdId)
 		}
 
-		c.JSON(200, gin.H{"gameMap": game_dto.Id})
+		c.JSON(200, gin.H{"gameMap": gameDto.Id})
 	})
 
 	router.GET("/api/init-game/:mapId", func(c *gin.Context) {
-		map_id := c.Param("mapId")
-		result, err := database.GetGameMap(map_id)
+		mapId := c.Param("mapId")
+		result, err := database.GetGameMap(mapId)
 
 		if err != nil {
 			log.Println(err)
@@ -150,22 +150,22 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 			return
 		}
 
-		g_id := gameH.GameFromMapDto(result, false)
-		c.JSON(200, gin.H{"gameId": g_id})
+		gameId := gameH.GameFromMapDto(result, false)
+		c.JSON(200, gin.H{"gameId": gameId})
 	})
 
 	router.POST("/api/init-game", func(c *gin.Context) {
-		var game_dto models.GameMapDto
-		if err := c.BindJSON(&game_dto); err != nil {
+		var gameDto models.GameMapDto
+		if err := c.BindJSON(&gameDto); err != nil {
 			fmt.Println(err)
 			c.JSON(http.StatusBadRequest, gin.H{"data": "Invalid gamemap"})
 			return
 		}
-		game_map_hash := game_dto.Hash()
-		game_dto.Id = game_map_hash
+		gameMapHash := gameDto.Hash()
+		gameDto.Id = gameMapHash
 
-		g_id := gameH.GameFromMapDto(game_dto, true)
-		c.JSON(200, gin.H{"gameId": g_id})
+		gameId := gameH.GameFromMapDto(gameDto, true)
+		c.JSON(200, gin.H{"gameId": gameId})
 	})
 
 	router.POST("/api/create-game", func(c *gin.Context) {
@@ -176,8 +176,8 @@ func GameRoutes(router *gin.Engine, gameH *communications.GameHandler) {
 			return
 		}
 
-		g_id := gameH.CreateGame()
-		c.JSON(200, gin.H{"gameId": g_id})
+		gameId := gameH.CreateGame()
+		c.JSON(200, gin.H{"gameId": gameId})
 	})
 
 	router.GET("/api/game-options", func(c *gin.Context) {

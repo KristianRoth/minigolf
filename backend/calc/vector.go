@@ -55,8 +55,8 @@ func (a Vector) SetLength(len float64) Vector {
 
 func (a Vector) Project(b Vector) Vector {
 	dot := a.Dot(b)
-	unit_fac := dot / a.Dot(a)
-	return a.Multiply(unit_fac)
+	unitFac := dot / a.Dot(a)
+	return a.Multiply(unitFac)
 }
 
 func (a Vector) Distance(b Vector) float64 {
@@ -64,20 +64,20 @@ func (a Vector) Distance(b Vector) float64 {
 	return sub.Length()
 }
 
-func (a Vector) NormalBase(newVec_base Vector) Vector {
-	normal := newVec_base.Normal()
+func (a Vector) NormalBase(newVecBase Vector) Vector {
+	normal := newVecBase.Normal()
 	// | newVec_base.x, normal.x | x | self.x | = | newVec_base.x*self.x + normal.x*self.y |
 	// | newVec_base.y, normal.y |   | self.y |   | newVec_base.y*self.x + normal.y*self.y |
-	x := a.X*newVec_base.X + a.Y*normal.X
-	y := a.X*newVec_base.Y + a.Y*normal.Y
+	x := a.X*newVecBase.X + a.Y*normal.X
+	y := a.X*newVecBase.Y + a.Y*normal.Y
 	return NewVec(x, y)
 }
 
-func (a Vector) ChangeBase(newVec_base Vector) Vector {
-	normal := newVec_base.Normal()
-	scale := 1.0 / (normal.Y*newVec_base.X - normal.X*newVec_base.Y)
+func (a Vector) ChangeBase(newVecBase Vector) Vector {
+	normal := newVecBase.Normal()
+	scale := 1.0 / (normal.Y*newVecBase.X - normal.X*newVecBase.Y)
 
-	base := newVec_base.Multiply(scale)
+	base := newVecBase.Multiply(scale)
 	normal = normal.Multiply(scale)
 
 	// |    normal.y,  -normal.x | x | self.x | = | newVec_base.x*self.x + normal.x*self.y |

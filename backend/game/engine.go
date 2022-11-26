@@ -38,13 +38,13 @@ func (g *Game) tick() {
 		case HoleEffect:
 			g.handleHole(player)
 		case WaterEffect:
-			player.ball = newBall(player.prev_ball.Pos, calc.NewVec(0.0, 0.0))
+			player.ball = newBall(player.prevBall.Pos, calc.NewVec(0.0, 0.0))
 		default:
 			player.ball = ball
 		}
 
-		if !player.is_turn && player.ball.Vel.Length() <= 1.0 {
-			player.is_turn = true
+		if !player.isTurn && player.ball.Vel.Length() <= 1.0 {
+			player.isTurn = true
 			g.sendTurnBeginEvent(player)
 		}
 	}
@@ -52,7 +52,7 @@ func (g *Game) tick() {
 
 func (g *Game) getStartLocation() calc.Vector {
 	start := calc.Vector{}
-	for _, col := range g.game_map.Tiles {
+	for _, col := range g.gameMap.Tiles {
 		for _, tile := range col {
 			if tile.Structure.Type == models.Start {
 				start = tile.Pos
@@ -72,7 +72,7 @@ func (g *Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 	close_tiles := []GameMapTile{}
 	for x := x_start; x < x_end; x += 1 {
 		for y := y_start; y < y_end; y += 1 {
-			close_tiles = append(close_tiles, g.game_map.Tiles[x][y])
+			close_tiles = append(close_tiles, g.gameMap.Tiles[x][y])
 		}
 	}
 	// Find closest from close_tiles
@@ -98,7 +98,7 @@ func (g *Game) getClosestCollision(ball Ball) (collisionPoint, error) {
 func (g *Game) doGroundEffect(ball Ball) (Ball, SpecialEffect) {
 	x := uint32(ball.Pos.X / TILE_SIZE)
 	y := uint32(ball.Pos.Y / TILE_SIZE)
-	tile := g.game_map.Tiles[x][y]
+	tile := g.gameMap.Tiles[x][y]
 
 	ball = newBall(ball.Pos, ball.Vel.Multiply(FRICTION)) // Previously 0.97
 	switch tile.Ground.Type {
@@ -173,22 +173,22 @@ func doCollision(projectionPoint calc.Vector, ball Ball) Ball {
 }
 
 func (g *Game) doShot(p *Player, event shotEvent) {
-	p.prev_ball = p.ball.Clone()
+	p.prevBall = p.ball.Clone()
 	p.ball.Vel.X = event.X / 10
 	p.ball.Vel.Y = event.Y / 10
-	p.shot_count += 1
-	p.is_turn = false
+	p.shotCount += 1
+	p.isTurn = false
 }
 
 func (g *Game) handleHole(player *Player) {
-	score := player.shot_count
+	score := player.shotCount
 	player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
-	player.shot_count = 0
+	player.shotCount = 0
 
 	if g.isDemo() {
 		g.sendSaveDemoMapEvent(player)
 	} else {
-		err := database.UpdateGameMapStats(g.game_map.Id, score)
+		err := database.UpdateGameMapStats(g.gameMap.Id, score)
 		if err != nil {
 			fmt.Printf("Stat update failed: %s\n", err)
 		}

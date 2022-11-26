@@ -13,11 +13,11 @@ func gameMapCollection() *mongo.Collection {
 	return Client.Database("minigolf").Collection("gameMap")
 }
 
-func GetGameMap(map_id string) (models.GameMapDto, error) {
+func GetGameMap(mapId string) (models.GameMapDto, error) {
 	collection := gameMapCollection()
 
 	var result models.GameMapDto
-	err := collection.FindOne(context.Background(), bson.M{"id": map_id}).Decode(&result)
+	err := collection.FindOne(context.Background(), bson.M{"id": mapId}).Decode(&result)
 	return result, err
 }
 
@@ -48,12 +48,12 @@ func CreateGameMap(dto models.GameMapDto) (interface{}, error) {
 	return res.UpsertedID, nil
 }
 
-func UpdateGameMapStats(map_id string, score int64) error {
+func UpdateGameMapStats(mapId string, score int64) error {
 	collection := gameMapCollection()
 
 	_, err := collection.UpdateOne(
 		context.Background(),
-		bson.M{"id": map_id},
+		bson.M{"id": mapId},
 		bson.D{
 			{Key: "$inc", Value: bson.M{"stats.sum": score}},
 			{Key: "$inc", Value: bson.M{"stats.count": 1}},

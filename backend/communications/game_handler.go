@@ -19,19 +19,19 @@ func NewGameHandler() GameHandler {
 	}
 }
 
-func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto, is_demo bool) string {
-	g_id := strings.ToUpper(util.RandomString(5))
-	game_map := game.GameMapFromDto(mapDto)
-	game := game.NewGame(g_id, game_map, is_demo)
-	handler.games[g_id] = game
-	return g_id
+func (handler *GameHandler) GameFromMapDto(mapDto models.GameMapDto, isDemo bool) string {
+	gameId := strings.ToUpper(util.RandomString(5))
+	gameMap := game.GameMapFromDto(mapDto)
+	game := game.NewGame(gameId, gameMap, isDemo)
+	handler.games[gameId] = game
+	return gameId
 }
 
 func (handler *GameHandler) CreateGame() string {
-	g_id := strings.ToUpper(util.RandomString(5))
-	game := game.NewGame(g_id, game.NewGameMap(), false)
-	handler.games[g_id] = game
-	return g_id
+	gameId := strings.ToUpper(util.RandomString(5))
+	game := game.NewGame(gameId, game.NewGameMap(), false)
+	handler.games[gameId] = game
+	return gameId
 }
 
 func (handler *GameHandler) NewConnection(gameId string, name string, ws *websocket.Conn) {

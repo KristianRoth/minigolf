@@ -25,25 +25,25 @@ type playerEvent struct {
 }
 
 func (p *Player) run() {
-	p.is_connected = true
+	p.isConnected = true
 	go func() {
-		for p.is_connected {
+		for p.isConnected {
 			_, message, err := p.ws.ReadMessage()
 			if err != nil {
 				//TODO: something went wrong with player disconnect him
 				log.Println("Player read json failed", err)
-				p.is_connected = false
+				p.isConnected = false
 				break
 			}
 			*p.playerEventsIn <- playerEvent{p, message}
 		}
 	}()
 	go func() {
-		for p.is_connected {
+		for p.isConnected {
 			err := p.ws.WriteJSON(<-*p.playerEventsOut)
 			if err != nil {
 				log.Println("Player write to failed", err)
-				p.is_connected = false
+				p.isConnected = false
 				break
 			}
 		}

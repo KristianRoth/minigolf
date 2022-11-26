@@ -19,15 +19,15 @@ const (
 
 type Game struct {
 	*GameConn
-	game_id  string
-	players  map[int64]*Player
-	game_map GameMap
-	mesh     colliderMesh
-	status   GameStatus
+	Id      string
+	players map[int64]*Player
+	gameMap GameMap
+	mesh    colliderMesh
+	status  GameStatus
 }
 
-func NewGame(game_id string, game_map GameMap, is_demo bool) *Game {
-	fmt.Println("Making new game:", game_id)
+func NewGame(gameId string, gameMap GameMap, isDemo bool) *Game {
+	fmt.Println("Making new game:", gameId)
 	broadcast := make(chan interface{})
 	playerChannel := make(chan playerEvent)
 	connections := GameConn{
@@ -35,15 +35,15 @@ func NewGame(game_id string, game_map GameMap, is_demo bool) *Game {
 		playerChannel: &playerChannel,
 	}
 	game := Game{
-		game_id:  game_id,
+		Id:       gameId,
 		players:  make(map[int64]*Player),
-		game_map: game_map,
+		gameMap:  gameMap,
 		GameConn: &connections,
-		mesh:     newColliderMesh(game_map),
+		mesh:     newColliderMesh(gameMap),
 	}
 	game.startCommunications()
 
-	if is_demo {
+	if isDemo {
 		game.status = IsDemo
 		game.runGame()
 	}

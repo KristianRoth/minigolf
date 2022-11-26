@@ -23,18 +23,18 @@ func NewArc(pos Vector, radius float64, start Vector, end Vector) Arc {
 
 func (arc Arc) ProjectPoint(ball Vector, rot models.Rotation) (Vector, error) {
 	zero := NewVec(0.0, 0.0)
-	dist_vector := ball.VectorTo(arc.Pos)
-	dist_unit := dist_vector.Unit()
-	closer := dist_unit.Multiply(-arc.Radius)
+	distVector := ball.VectorTo(arc.Pos)
+	distUnit := distVector.Unit()
+	closer := distUnit.Multiply(-arc.Radius)
 
-	rot_start := arc.Start.Rotate(zero, rot)
-	rot_end := arc.End.Rotate(zero, rot)
-	if closer.IsBetween(rot_start, rot_end) {
+	rotStart := arc.Start.Rotate(zero, rot)
+	rotEnd := arc.End.Rotate(zero, rot)
+	if closer.IsBetween(rotStart, rotEnd) {
 		return arc.Pos.Add(closer), nil
 	}
-	further := dist_unit.Multiply(arc.Radius)
+	further := distUnit.Multiply(arc.Radius)
 
-	if further.IsBetween(rot_end, rot_start) {
+	if further.IsBetween(rotEnd, rotStart) {
 		return arc.Pos.Add(further), nil
 	}
 	return Vector{}, errors.New("cannot project point")

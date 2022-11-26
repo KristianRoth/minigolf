@@ -11,14 +11,14 @@ var Id int64 = 0
 
 type Player struct {
 	*PlayerConn
-	id           int64
-	name         string
-	prev_ball    Ball
-	ball         Ball
-	shot_count   int64
-	is_turn      bool
-	is_ready     bool
-	is_connected bool
+	id          int64
+	name        string
+	prevBall    Ball
+	ball        Ball
+	shotCount   int64
+	isTurn      bool
+	isReady     bool
+	isConnected bool
 }
 
 func NewPlayer(name string, ws *websocket.Conn, playerChannel *chan playerEvent) *Player {
@@ -27,16 +27,16 @@ func NewPlayer(name string, ws *websocket.Conn, playerChannel *chan playerEvent)
 	Id++
 	ball := newBall(start, vel)
 
-	events_out := make(chan interface{})
+	eventsOut := make(chan interface{})
 	return &Player{
-		name:      name,
-		id:        Id,
-		prev_ball: ball.Clone(),
-		ball:      ball,
-		is_turn:   false,
+		name:     name,
+		id:       Id,
+		prevBall: ball.Clone(),
+		ball:     ball,
+		isTurn:   false,
 		PlayerConn: &PlayerConn{
 			playerEventsIn:  playerChannel,
-			playerEventsOut: &events_out,
+			playerEventsOut: &eventsOut,
 			ws:              ws,
 		},
 	}
@@ -48,7 +48,7 @@ func PlayerToDto(player Player) models.PlayerDto {
 		Y:         player.ball.Pos.Y,
 		Dx:        player.ball.Vel.X,
 		Dy:        player.ball.Vel.Y,
-		ShotCount: int64(player.shot_count),
+		ShotCount: int64(player.shotCount),
 		Name:      player.name,
 		Id:        player.id,
 	}

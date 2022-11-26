@@ -14,7 +14,7 @@ func ParseBearerToken(c *gin.Context) string {
 	return strings.TrimSpace(strings.Split(c.GetHeader("Authorization"), "Bearer")[1])
 }
 
-var jwt_secret = []byte(os.Getenv("MINIGOLF_JWT_SECRET"))
+var jwtSecret = []byte(os.Getenv("MINIGOLF_JWT_SECRET"))
 
 type SaveMapClaims struct {
 	MapHash string `json:"mapHash"`
@@ -23,24 +23,24 @@ type SaveMapClaims struct {
 
 // https://www.sohamkamani.com/golang/jwt-authentication/
 // -
-func GenerateSaveMapJWT(map_hash string) (string, error) {
+func GenerateSaveMapJWT(mapHash string) (string, error) {
 	expiry := time.Now().Add(5 * time.Minute)
 	claims := &SaveMapClaims{
-		MapHash: map_hash,
+		MapHash: mapHash,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiry),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwt_secret)
+	return token.SignedString(jwtSecret)
 }
 
-func ValidateSaveMapJWT(auth_header string, map_hash string) bool {
-	jwt_string := strings.TrimSpace(strings.Split(auth_header, "Bearer")[1])
+func ValidateSaveMapJWT(authHeader string, mapHash string) bool {
+	jwtString := strings.TrimSpace(strings.Split(authHeader, "Bearer")[1])
 
 	claims := &SaveMapClaims{}
-	tkn, err := jwt.ParseWithClaims(jwt_string, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwt_secret, nil
+	tkn, err := jwt.ParseWithClaims(jwtString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -50,7 +50,7 @@ func ValidateSaveMapJWT(auth_header string, map_hash string) bool {
 		fmt.Println("token invalid")
 		return false
 	}
-	if claims.MapHash != map_hash {
+	if claims.MapHash != mapHash {
 		fmt.Println("maphash mismatch")
 		return false
 	}
@@ -73,17 +73,17 @@ func GeneratePlayerJWT(playerId int64, gameId string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwt_secret)
+	return token.SignedString(jwtSecret)
 }
 
-func ValidatePlayerJWT(jwt_string string, gameId string) (int64, bool) {
-	if jwt_string == "" {
+func ValidatePlayerJWT(jwtString string, gameId string) (int64, bool) {
+	if jwtString == "" {
 		return -1, false
 	}
 
 	claims := &PlayerClaims{}
-	tkn, err := jwt.ParseWithClaims(jwt_string, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwt_secret, nil
+	tkn, err := jwt.ParseWithClaims(jwtString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
 	})
 	if err != nil {
 		fmt.Println(err)
