@@ -11,7 +11,11 @@ import (
 )
 
 func ParseBearerToken(c *gin.Context) string {
-	return strings.TrimSpace(strings.Split(c.GetHeader("Authorization"), "Bearer")[1])
+	split := strings.Split(c.GetHeader("Authorization"), "Bearer")
+	if len(split) != 2 {
+		return ""
+	}
+	return strings.TrimSpace(split[1])
 }
 
 var jwtSecret = []byte(os.Getenv("MINIGOLF_JWT_SECRET"))

@@ -38,6 +38,20 @@ func (e GameStatus) String() string {
 	}
 }
 
+type MapGenerator interface {
+	next() (GameMap, bool)
+}
+
+type LoopMapGenerator struct {
+	gameMap GameMap
+}
+
+func (lmg LoopMapGenerator) next() (gameMap GameMap, hasNext bool) {
+	gameMap = lmg.gameMap
+	hasNext = true
+	return
+}
+
 type Game struct {
 	*GameConn
 	Id        string
@@ -45,7 +59,8 @@ type Game struct {
 	gameMap   GameMap
 	mesh      colliderMesh
 	status    GameStatus
-	lastEvent time.Time
+	lastEvent time.Time // TODO: This should be player specific
+	generator MapGenerator
 }
 
 func NewGame(gameId string, gameMap GameMap, isDemo bool) *Game {
@@ -63,6 +78,9 @@ func NewGame(gameId string, gameMap GameMap, isDemo bool) *Game {
 		GameConn: &connections,
 		mesh:     newColliderMesh(gameMap),
 		status:   IsLobby,
+		generator: LoopMapGenerator{
+			gameMap,
+		},
 	}
 	game.setEventTime()
 	game.startCommunications()
@@ -80,10 +98,12 @@ func (g *Game) AddPlayer(name string, ws *websocket.Conn) {
 	g.players[player.id] = player
 	player.run()
 	g.sendInitEvent(player)
-	g.sendJoinEvent(player)
+	g.broadcastJoinEvent(player)
 
-	if g.status == IsDemo {
-		g.sendStartMapEvent()
+	if g.isDemo() {
+		g.sendStartMapEvent(player)
+		player.status = IsPlayerTurn
+		g.sendStatusChangeEvent(player)
 	}
 }
 
@@ -112,13 +132,15 @@ func (g *Game) RemovePlayer(player *Player) {
 func (g *Game) getPlayerStates() []models.PlayerDto {
 	var playerStates []models.PlayerDto
 	for _, player := range g.players {
-		playerStates = append(playerStates, PlayerToDto(*player))
+		if player.status == IsPlayerTurn || player.status == IsPlayerMoving {
+			playerStates = append(playerStates, PlayerToDto(*player))
+		}
 	}
 	return playerStates
 }
 
 func (g *Game) isRunning() bool {
-	return g.status == IsGame || g.status == IsDemo
+	return g.status == IsGame || g.isDemo()
 }
 
 func (g *Game) isDemo() bool {
@@ -139,7 +161,7 @@ func (g *Game) Stop() {
 }
 
 func (g *Game) IsJoinable() bool {
-	return g.status == IsLobby || g.status == IsDemo
+	return g.status == IsLobby || g.isDemo()
 }
 
 func (g *Game) IsIdle() bool {

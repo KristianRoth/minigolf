@@ -17,21 +17,55 @@ import (
 
 func (g *Game) runGame() {
 	go func() {
+		g.broadcastStartMapEvent()
+		for _, player := range g.players {
+			player.status = IsPlayerTurn
+			g.sendStatusChangeEvent(player)
+		}
 		for g.isRunning() {
 			// TODO: Skip if there is no state-change.
-			g.sendUpdateEvent()
+			g.broadcastUpdateEvent()
 			g.tick()
+			g.checkEndMap()
 			<-time.After(time.Second / TICK)
 		}
 	}()
 }
 
+func (g *Game) checkEndMap() {
+	if g.isDemo() {
+		return
+	}
+	for _, player := range g.players {
+		if player.status != IsPlayerHole {
+			return
+		}
+	}
+	// All players have holed. Go to next.
+	for _, player := range g.players {
+		player.status = IsPlayerWaiting
+		player.scores = append(player.scores, player.shotCount)
+		player.shotCount = 0
+	}
+	nextMap, hasNext := g.generator.next()
+	if hasNext {
+		g.status = IsWaiting
+		g.gameMap = nextMap
+	} else {
+		g.status = IsEnd
+	}
+	g.broadcastEndMapEvent(!hasNext)
+}
+
 func (g *Game) tick() {
 	// defer timeTrack(time.Now(), "tick")
 	for _, player := range g.players {
+		if player.status == IsPlayerHole {
+			continue
+		}
 		ball, effect := g.Collide(player.ball)
 		if effect != NoEffect {
-			g.sendEffectEvent(player, effect)
+			g.broadcastEffectEvent(player, effect)
 		}
 
 		switch effect {
@@ -43,9 +77,9 @@ func (g *Game) tick() {
 			player.ball = ball
 		}
 
-		if !player.isTurn && player.ball.Vel.Length() <= 1.0 {
-			player.isTurn = true
-			g.sendTurnBeginEvent(player)
+		if player.status == IsPlayerMoving && player.ball.Vel.Length() <= 1.0 {
+			player.status = IsPlayerTurn
+			g.sendStatusChangeEvent(player)
 		}
 	}
 }
@@ -177,20 +211,22 @@ func (g *Game) doShot(p *Player, event shotEvent) {
 	p.ball.Vel.X = event.X / 10
 	p.ball.Vel.Y = event.Y / 10
 	p.shotCount += 1
-	p.isTurn = false
+	p.status = IsPlayerMoving
 }
 
 func (g *Game) handleHole(player *Player) {
 	score := player.shotCount
 	player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
-	player.shotCount = 0
 
-	if g.isDemo() {
-		g.sendSaveDemoMapEvent(player)
-	} else {
+	if !g.isDemo() {
+		player.status = IsPlayerHole
+		g.sendStatusChangeEvent(player)
+
 		err := database.UpdateGameMapStats(g.gameMap.Id, score)
 		if err != nil {
 			fmt.Printf("Stat update failed: %s\n", err)
 		}
+	} else {
+		g.sendSaveDemoMapEvent(player)
 	}
 }

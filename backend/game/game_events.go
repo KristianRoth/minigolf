@@ -46,7 +46,7 @@ type joinEvent struct {
 	Name     string `json:"name"`
 }
 
-func (g *Game) sendJoinEvent(p *Player) {
+func (g *Game) broadcastJoinEvent(p *Player) {
 	*g.broadcast <- joinEvent{
 		Type:     "JOIN",
 		PlayerId: p.id,
@@ -71,7 +71,7 @@ func (g *Game) sendReconnectEvent(p *Player) {
 		IsDemo:   g.isDemo(),
 		PlayerId: p.id,
 		Name:     p.name,
-		IsTurn:   p.isTurn,
+		IsTurn:   p.status == IsPlayerTurn,
 	}
 }
 
@@ -81,7 +81,15 @@ type startMapEvent struct {
 	IsDemo  bool              `json:"isDemo"`
 }
 
-func (g *Game) sendStartMapEvent() {
+func (g *Game) sendStartMapEvent(p *Player) {
+	*p.playerEventsOut <- startMapEvent{
+		Type:    "START_MAP",
+		GameMap: GameMapToDto(g.gameMap),
+		IsDemo:  g.isDemo(),
+	}
+}
+
+func (g *Game) broadcastStartMapEvent() {
 	*g.broadcast <- startMapEvent{
 		Type:    "START_MAP",
 		GameMap: GameMapToDto(g.gameMap),
@@ -89,15 +97,36 @@ func (g *Game) sendStartMapEvent() {
 	}
 }
 
-type turnBeginEvent struct {
-	Type     string `json:"type"`
-	PlayerId int64  `json:"playerId"`
+type endMapEvent struct {
+	Type       string             `json:"type"`
+	IsGameOver bool               `json:"isGameOver"`
+	Scores     map[string][]int64 `json:"scores"`
 }
 
-func (g *Game) sendTurnBeginEvent(p *Player) {
-	*p.playerEventsOut <- turnBeginEvent{
-		Type:     "TURN_BEGIN",
+func (g *Game) broadcastEndMapEvent(isGameOver bool) {
+	scores := make(map[string][]int64)
+	for _, player := range g.players {
+		scores[fmt.Sprintf("%d", player.id)] = player.scores
+	}
+
+	*g.broadcast <- endMapEvent{
+		Type:       "END_MAP",
+		IsGameOver: isGameOver,
+		Scores:     scores,
+	}
+}
+
+type statusChangeEvent struct {
+	Type     string       `json:"type"`
+	PlayerId int64        `json:"playerId"`
+	Status   PlayerStatus `json:"status"`
+}
+
+func (g *Game) sendStatusChangeEvent(p *Player) {
+	*p.playerEventsOut <- statusChangeEvent{
+		Type:     "STATUS_CHANGE",
 		PlayerId: p.id,
+		Status:   p.status,
 	}
 }
 
@@ -106,7 +135,7 @@ type updateEvent struct {
 	PlayerStates []models.PlayerDto `json:"playerStates"`
 }
 
-func (g *Game) sendUpdateEvent() {
+func (g *Game) broadcastUpdateEvent() {
 	*g.broadcast <- updateEvent{
 		Type:         "UPDATE",
 		PlayerStates: g.getPlayerStates(),
@@ -119,7 +148,7 @@ type effectEvent struct {
 	PlayerId int64         `json:"playerId"`
 }
 
-func (g *Game) sendEffectEvent(p *Player, effect SpecialEffect) {
+func (g *Game) broadcastEffectEvent(p *Player, effect SpecialEffect) {
 	*g.broadcast <- effectEvent{
 		Type:     "EFFECT",
 		PlayerId: p.id,
@@ -182,15 +211,18 @@ func (g *Game) handleIsReadyEvent(player *Player, event isReadyEvent) {
 		return
 	}
 
-	player.isReady = event.Value
+	if event.Value {
+		player.status = IsPlayerReady
+	} else {
+		player.status = IsPlayerWaiting
+	}
 
 	for _, p := range g.players {
-		if !p.isReady {
+		if p.status == IsPlayerWaiting {
 			return
 		}
 	}
 
 	g.status = IsGame
-	g.sendStartMapEvent()
 	g.runGame()
 }

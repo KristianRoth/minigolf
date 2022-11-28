@@ -9,38 +9,38 @@ const m = (mapId: string) => `gameMap-${mapId}`;
 export const GameStorage = {
   // Player-name
   setPlayerName: (gameId: string, name: string) => {
-    localStorage.setItem(n(gameId), name);
+    sessionStorage.setItem(n(gameId), name);
   },
   getPlayerName: (gameId: string) => {
-    let name = localStorage.getItem(n(gameId));
+    let name = sessionStorage.getItem(n(gameId));
     if (!name) {
       name = `Anon-${(Date.now() + '').slice(-7)}`;
-      localStorage.setItem(n(gameId), name);
+      sessionStorage.setItem(n(gameId), name);
     }
     return name;
   },
   removePlayerName: (gameId: string) => {
-    localStorage.removeItem(n(gameId));
+    sessionStorage.removeItem(n(gameId));
   },
   // Player-id
   setPlayerId: (gameId: string, id: string) => {
-    localStorage.setItem(i(gameId), id);
+    sessionStorage.setItem(i(gameId), id);
   },
   getPlayerId: (gameId: string) => {
-    return localStorage.getItem(i(gameId));
+    return sessionStorage.getItem(i(gameId));
   },
   removePlayerId: (gameId: string) => {
-    localStorage.removeItem(i(gameId));
+    sessionStorage.removeItem(i(gameId));
   },
   // Player-id
   setPlayerToken: (gameId: string, token: string) => {
-    localStorage.setItem(t(gameId), token);
+    sessionStorage.setItem(t(gameId), token);
   },
   getPlayerToken: (gameId: string) => {
-    return localStorage.getItem(t(gameId));
+    return sessionStorage.getItem(t(gameId));
   },
   removePlayerToken: (gameId: string) => {
-    localStorage.removeItem(t(gameId));
+    sessionStorage.removeItem(t(gameId));
   },
 
   // Game-map

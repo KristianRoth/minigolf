@@ -1,5 +1,13 @@
 type GameMapDto = any;
 
+export enum PlayerStatus {
+  IsWaiting,
+  IsReady,
+  IsTurn,
+  IsMoving,
+  IsHole,
+}
+
 export type InitEvent = {
   type: 'INIT';
   playerId: number;
@@ -29,6 +37,14 @@ export type StartMapEvent = {
   isDemo: boolean;
 };
 
+export type EndMapEvent = {
+  type: 'END_MAP';
+  scores: {
+    [playerId: string]: number[]; // List of scores for each player.
+  };
+  isGameOver: boolean;
+};
+
 export type IsReadyEvent = {
   type: 'IS_READY';
   value: boolean;
@@ -53,9 +69,10 @@ export type ShotEvent = {
   y: number;
 };
 
-export type TurnBeginEvent = {
-  type: 'TURN_BEGIN';
+export type StatusChangeEvent = {
+  type: 'STATUS_CHANGE';
   playerId: number;
+  status: PlayerStatus;
 };
 
 export type EffectEvent = {
@@ -83,9 +100,10 @@ export type GameEvent =
   | JoinEvent
   | ReconnectEvent
   | StartMapEvent
+  | EndMapEvent
   | UpdateEvent
   | ShotEvent
-  | TurnBeginEvent
+  | StatusChangeEvent
   | JoinEvent
   | VictoryEvent
   | ChatEvent

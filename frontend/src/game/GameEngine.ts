@@ -1,5 +1,13 @@
 import mitt from 'mitt';
-import { GameEvent, InitEvent, ReconnectEvent, StartMapEvent, UpdateEvent } from 'types';
+import {
+  GameEvent,
+  InitEvent,
+  PlayerStatus,
+  ReconnectEvent,
+  StartMapEvent,
+  StatusChangeEvent,
+  UpdateEvent,
+} from 'types';
 import { GameStorage } from 'utils/api';
 import { gameMapFromDTO } from 'utils/dto';
 import GameController from './controllers/GameController';
@@ -104,12 +112,16 @@ class GameEngine {
         this.handleStartMap(event);
         break;
       }
+      case 'END_MAP': {
+        this.gameController.setHeading('End map');
+        break;
+      }
       case 'UPDATE': {
         this.handleUpdate(event);
         break;
       }
-      case 'TURN_BEGIN': {
-        this.gameController.setHasTurn(true);
+      case 'STATUS_CHANGE': {
+        this.handleStatusChange(event);
         break;
       }
       case 'EFFECT': {
@@ -151,6 +163,7 @@ class GameEngine {
   }
 
   private handleStartMap(event: StartMapEvent) {
+    this.gameController.setHeading('');
     this.startMap(event.gameMap, event.isDemo);
   }
 
@@ -159,6 +172,15 @@ class GameEngine {
     this.gameController.setHasTurn(event.isTurn);
     this.gameController.setPlayerId(event.playerId);
     this.spriteController.setPlayerId(event.playerId);
+  }
+
+  private handleStatusChange(event: StatusChangeEvent) {
+    switch (event.status) {
+      case PlayerStatus.IsTurn: {
+        this.gameController.setHasTurn(true);
+        break;
+      }
+    }
   }
 
   private startMap(mapDto: any, isDemo: boolean) {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -17,6 +18,14 @@ type PlayerConn struct {
 	playerEventsIn  *chan playerEvent
 	playerEventsOut *chan interface{}
 	ws              *websocket.Conn
+	mutex           sync.Mutex
+}
+
+// Thread safe write to websocket.
+func (pc *PlayerConn) sendMessage(message interface{}) error {
+	pc.mutex.Lock()
+	defer pc.mutex.Unlock()
+	return pc.ws.WriteJSON(message)
 }
 
 type playerEvent struct {
@@ -41,7 +50,7 @@ func (p *Player) run() {
 	}()
 	go func() {
 		for p.isConnected {
-			err := p.ws.WriteJSON(<-*p.playerEventsOut)
+			err := p.sendMessage(<-*p.playerEventsOut)
 			if err != nil {
 				log.Println("Player write to failed", err)
 				p.isConnected = false
@@ -87,7 +96,7 @@ func (g *Game) startCommunications() {
 						fmt.Println(fmt.Errorf("unable to parse isready-event, %v, %s", err, message))
 						break
 					}
-					go g.handleIsReadyEvent(player, isReadyEvent)
+					g.handleIsReadyEvent(player, isReadyEvent)
 				}
 			}
 		}
