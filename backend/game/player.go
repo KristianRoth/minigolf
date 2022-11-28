@@ -10,25 +10,24 @@ import (
 type PlayerStatus int64
 
 const (
-	IsPlayerWaiting PlayerStatus = iota // Is not ready in lobby
-	IsPlayerReady                       // Is ready in lobby
-	IsPlayerTurn                        // Is turn
-	IsPlayerMoving                      // Is waiting for TURN_BEGIN
-	IsPlayerHole                        // Has holed and is waiting for others
+	PlayerIsWaiting PlayerStatus = iota // Is not ready in lobby
+	PlayerIsReady                       // Is ready in lobby
+	PlayerHasTurn                       // Is turn
+	PlayerIsMoving                      // Is waiting for TURN_BEGIN
+	PlayerIsInHole                      // Has holed and is waiting for others
 )
 
 var Id int64 = 0
 
 type Player struct {
 	*PlayerConn
-	id          int64
-	name        string
-	prevBall    Ball
-	ball        Ball
-	scores      []int64
-	status      PlayerStatus
-	shotCount   int64
-	isConnected bool
+	id        int64
+	name      string
+	prevBall  Ball
+	ball      Ball
+	scores    []int64
+	status    PlayerStatus
+	shotCount int64
 }
 
 func NewPlayer(name string, ws *websocket.Conn, playerChannel *chan playerEvent) *Player {
@@ -43,7 +42,7 @@ func NewPlayer(name string, ws *websocket.Conn, playerChannel *chan playerEvent)
 		id:       Id,
 		prevBall: ball.Clone(),
 		ball:     ball,
-		status:   IsPlayerWaiting,
+		status:   PlayerIsWaiting,
 		PlayerConn: &PlayerConn{
 			playerEventsIn:  playerChannel,
 			playerEventsOut: &eventsOut,

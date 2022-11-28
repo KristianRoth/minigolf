@@ -71,7 +71,7 @@ func (g *Game) sendReconnectEvent(p *Player) {
 		IsDemo:   g.isDemo(),
 		PlayerId: p.id,
 		Name:     p.name,
-		IsTurn:   p.status == IsPlayerTurn,
+		IsTurn:   p.status == PlayerHasTurn,
 	}
 }
 
@@ -212,13 +212,13 @@ func (g *Game) handleIsReadyEvent(player *Player, event isReadyEvent) {
 	}
 
 	if event.Value {
-		player.status = IsPlayerReady
+		player.status = PlayerIsReady
 	} else {
-		player.status = IsPlayerWaiting
+		player.status = PlayerIsWaiting
 	}
 
 	for _, p := range g.players {
-		if p.status == IsPlayerWaiting {
+		if p.status == PlayerIsWaiting {
 			return
 		}
 	}

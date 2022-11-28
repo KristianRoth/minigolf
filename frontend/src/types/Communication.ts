@@ -5,7 +5,7 @@ export enum PlayerStatus {
   IsReady,
   IsTurn,
   IsMoving,
-  IsHole,
+  IsInHole,
 }
 
 export type InitEvent = {

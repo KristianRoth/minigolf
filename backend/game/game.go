@@ -102,7 +102,7 @@ func (g *Game) AddPlayer(name string, ws *websocket.Conn) {
 
 	if g.isDemo() {
 		g.sendStartMapEvent(player)
-		player.status = IsPlayerTurn
+		player.status = PlayerHasTurn
 		g.sendStatusChangeEvent(player)
 	}
 }
@@ -111,10 +111,9 @@ func (g *Game) ReconnectPlayer(id int64, ws *websocket.Conn) {
 	// TODO: what if player not found?
 	player := g.players[id]
 
-	// TODO: ?
-	// if player.is_connected {
-	//  what?
-	// }
+	if player.isRunning {
+		player.stop()
+	}
 	player.PlayerConn.ws = ws
 	player.run()
 
@@ -132,7 +131,7 @@ func (g *Game) RemovePlayer(player *Player) {
 func (g *Game) getPlayerStates() []models.PlayerDto {
 	var playerStates []models.PlayerDto
 	for _, player := range g.players {
-		if player.status == IsPlayerTurn || player.status == IsPlayerMoving {
+		if player.status == PlayerHasTurn || player.status == PlayerIsMoving {
 			playerStates = append(playerStates, PlayerToDto(*player))
 		}
 	}
@@ -155,8 +154,7 @@ func (g *Game) Stop() {
 	fmt.Println("Stopping game", g.Id)
 	g.status = IsStopped
 	for _, p := range g.players {
-		p.isConnected = false
-		p.ws.Close()
+		p.stop()
 	}
 }
 

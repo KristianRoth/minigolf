@@ -19,7 +19,7 @@ func (g *Game) runGame() {
 	go func() {
 		g.broadcastStartMapEvent()
 		for _, player := range g.players {
-			player.status = IsPlayerTurn
+			player.status = PlayerHasTurn
 			g.sendStatusChangeEvent(player)
 		}
 		for g.isRunning() {
@@ -37,13 +37,13 @@ func (g *Game) checkEndMap() {
 		return
 	}
 	for _, player := range g.players {
-		if player.status != IsPlayerHole {
+		if player.status != PlayerIsInHole {
 			return
 		}
 	}
 	// All players have holed. Go to next.
 	for _, player := range g.players {
-		player.status = IsPlayerWaiting
+		player.status = PlayerIsWaiting
 		player.scores = append(player.scores, player.shotCount)
 		player.shotCount = 0
 	}
@@ -60,7 +60,7 @@ func (g *Game) checkEndMap() {
 func (g *Game) tick() {
 	// defer timeTrack(time.Now(), "tick")
 	for _, player := range g.players {
-		if player.status == IsPlayerHole {
+		if player.status == PlayerIsInHole {
 			continue
 		}
 		ball, effect := g.Collide(player.ball)
@@ -77,8 +77,8 @@ func (g *Game) tick() {
 			player.ball = ball
 		}
 
-		if player.status == IsPlayerMoving && player.ball.Vel.Length() <= 1.0 {
-			player.status = IsPlayerTurn
+		if player.status == PlayerIsMoving && player.ball.Vel.Length() <= 1.0 {
+			player.status = PlayerHasTurn
 			g.sendStatusChangeEvent(player)
 		}
 	}
@@ -211,7 +211,7 @@ func (g *Game) doShot(p *Player, event shotEvent) {
 	p.ball.Vel.X = event.X / 10
 	p.ball.Vel.Y = event.Y / 10
 	p.shotCount += 1
-	p.status = IsPlayerMoving
+	p.status = PlayerIsMoving
 }
 
 func (g *Game) handleHole(player *Player) {
@@ -219,7 +219,7 @@ func (g *Game) handleHole(player *Player) {
 	player.ball = newBall(g.getStartLocation(), calc.NewVec(0.0, 0.0))
 
 	if !g.isDemo() {
-		player.status = IsPlayerHole
+		player.status = PlayerIsInHole
 		g.sendStatusChangeEvent(player)
 
 		err := database.UpdateGameMapStats(g.gameMap.Id, score)

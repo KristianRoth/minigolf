@@ -132,6 +132,10 @@ var circleColliders []collider = []collider{
 	circleCollider{Pos: calc.NewVec(50, 50), Radius: 24},
 }
 
+var holeColliders []collider = []collider{
+	circleCollider{Pos: calc.NewVec(50, 50), Radius: HOLE_SIZE - BALL_SIZE},
+}
+
 func getBaseColliders(structureType models.StructureType) []collider {
 	switch structureType {
 	case models.Wall:
@@ -145,7 +149,7 @@ func getBaseColliders(structureType models.StructureType) []collider {
 	case models.InvertedRoundedCorner:
 		return invertedRoundedCornerColliders
 	case models.Hole:
-		return circleColliders
+		return holeColliders
 	}
 	return []collider{}
 }

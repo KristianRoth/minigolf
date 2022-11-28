@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -18,14 +17,7 @@ type PlayerConn struct {
 	playerEventsIn  *chan playerEvent
 	playerEventsOut *chan interface{}
 	ws              *websocket.Conn
-	mutex           sync.Mutex
-}
-
-// Thread safe write to websocket.
-func (pc *PlayerConn) sendMessage(message interface{}) error {
-	pc.mutex.Lock()
-	defer pc.mutex.Unlock()
-	return pc.ws.WriteJSON(message)
+	isRunning       bool
 }
 
 type playerEvent struct {
@@ -33,30 +25,38 @@ type playerEvent struct {
 	message []byte
 }
 
+func (p *Player) stop() {
+	if !p.isRunning {
+		return
+	}
+	p.isRunning = false
+	p.ws.Close()
+}
+
 func (p *Player) run() {
-	p.isConnected = true
+	p.isRunning = true
 
 	go func() {
-		for p.isConnected {
+		for p.isRunning {
 			_, message, err := p.ws.ReadMessage()
 			if err != nil {
 				//TODO: something went wrong with player disconnect him
 				log.Println("Player read json failed", err)
-				p.isConnected = false
 				break
 			}
 			*p.playerEventsIn <- playerEvent{p, message}
 		}
+		p.stop()
 	}()
 	go func() {
-		for p.isConnected {
-			err := p.sendMessage(<-*p.playerEventsOut)
+		for p.isRunning {
+			err := p.ws.WriteJSON(<-*p.playerEventsOut)
 			if err != nil {
 				log.Println("Player write to failed", err)
-				p.isConnected = false
 				break
 			}
 		}
+		p.stop()
 	}()
 }
 
