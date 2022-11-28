@@ -6,6 +6,7 @@ const SIZE_X = 49
 const SIZE_Y = 25
 const TILE_SIZE = 100.0
 const BALL_SIZE = 40.0
+const HOLE_SIZE = 50.0
 
 const FRICTION = 0.983 // Previously 0.97
 const GRAVEL_FRICTION = 0.8

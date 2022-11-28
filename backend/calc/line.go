@@ -18,11 +18,11 @@ func NewLine(pos Vector, dir Vector) Line {
 }
 
 func (line Line) ProjectPoint(point Vector) (Vector, error) {
-	translated_point := point.Subtract(line.Pos)
-	projected_vec := line.Dir.Project(translated_point)
+	translatedPoint := point.Subtract(line.Pos)
+	projectedVec := line.Dir.Project(translatedPoint)
 
-	if projected_vec.Dot(line.Dir) > 0.0 && projected_vec.Length() < line.Dir.Length() {
-		return projected_vec.Add(line.Pos), nil
+	if projectedVec.Dot(line.Dir) > 0.0 && projectedVec.Length() < line.Dir.Length() {
+		return projectedVec.Add(line.Pos), nil
 	}
 	return Vector{}, errors.New("cannot project point")
 }

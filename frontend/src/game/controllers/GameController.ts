@@ -11,6 +11,7 @@ type GameControllerEvents = {
 class GameController extends CanvasController {
   private balls: Ball[] = [];
   private hasTurn = false;
+  private gameHeading = '';
   private playerId = 0;
   private playerName = '';
   private playerColor = '';
@@ -142,6 +143,18 @@ class GameController extends CanvasController {
     this.context.restore();
   }
 
+  protected renderHeading() {
+    if (!this.gameHeading) return;
+    this.context.save();
+    this.context.textBaseline = 'middle';
+    this.context.textAlign = 'center';
+    this.context.font = `${5 * this.blockSize}px serif`;
+
+    this.context.fillText(this.gameHeading, this.canvas.width / 2, this.canvas.height / 2);
+
+    this.context.restore();
+  }
+
   protected render() {
     this.clear();
     this.fpsCounter.add();
@@ -150,6 +163,7 @@ class GameController extends CanvasController {
 
     this.renderCursor();
     this.renderStatus();
+    this.renderHeading();
   }
 
   setBalls(balls: Ball[]) {
@@ -163,7 +177,10 @@ class GameController extends CanvasController {
 
   setPlayerId(playerId: number) {
     this.playerId = playerId;
-    this.hasTurn = true;
+  }
+
+  setHeading(heading: string) {
+    this.gameHeading = heading;
   }
 
   get ball(): Ball | null {

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var next_id = 1
+var nextId = 1
 
 type GameMapTile struct {
 	Pos       calc.Vector
@@ -25,11 +25,11 @@ func tileToString(tile GameMapTile) string {
 }
 
 // TODO: Add validation.
-func tileFromString(tile_string string, pos calc.Vector) GameMapTile {
+func tileFromString(tileString string, pos calc.Vector) GameMapTile {
 	var result []int
-	for _, val := range strings.Split(tile_string, ",") {
-		as_int, _ := strconv.Atoi(val)
-		result = append(result, as_int)
+	for _, val := range strings.Split(tileString, ",") {
+		asInt, _ := strconv.Atoi(val)
+		result = append(result, asInt)
 	}
 	return GameMapTile{
 		Pos: pos,
@@ -52,31 +52,31 @@ type GameMap struct {
 
 func NewGameMap() GameMap {
 	tiles := [][]GameMapTile{}
-	id := next_id
-	next_id += 1
+	id := nextId
+	nextId += 1
 
 	for x := 0; x < SIZE_X; x += 1 {
-		tiles_col := []GameMapTile{}
+		tilesCol := []GameMapTile{}
 		for y := 0; y < SIZE_Y; y += 1 {
-			is_border := x == 0 || y == 0 || x == SIZE_X-1 || y == SIZE_Y-1
-			var structure_type models.StructureType = models.None
-			if is_border {
-				structure_type = models.Wall
+			isBorder := x == 0 || y == 0 || x == SIZE_X-1 || y == SIZE_Y-1
+			var structureType models.StructureType = models.None
+			if isBorder {
+				structureType = models.Wall
 			}
 			if x == 1 && y == 1 {
-				structure_type = models.Start
+				structureType = models.Start
 			}
 			if x == SIZE_X-2 && y == SIZE_Y-2 {
-				structure_type = models.Hole
+				structureType = models.Hole
 			}
 			tile := GameMapTile{
 				Pos:       calc.NewVec(float64(x)*TILE_SIZE, float64(y)*TILE_SIZE),
 				Ground:    models.Ground{Type: models.Grass, Rotation: models.North},
-				Structure: models.Structure{Type: structure_type, Rotation: models.North},
+				Structure: models.Structure{Type: structureType, Rotation: models.North},
 			}
-			tiles_col = append(tiles_col, tile)
+			tilesCol = append(tilesCol, tile)
 		}
-		tiles = append(tiles, tiles_col)
+		tiles = append(tiles, tilesCol)
 	}
 	return GameMap{
 		Id:    strconv.Itoa(id),
@@ -85,17 +85,17 @@ func NewGameMap() GameMap {
 }
 
 func GameMapToDto(gameMap GameMap) models.GameMapDto {
-	var tile_dtos [][]string
+	var tileDtos [][]string
 	for _, col := range gameMap.Tiles {
-		new_col := []string{}
+		newCol := []string{}
 		for _, tile := range col {
-			new_col = append(new_col, tileToString(tile))
+			newCol = append(newCol, tileToString(tile))
 		}
-		tile_dtos = append(tile_dtos, new_col)
+		tileDtos = append(tileDtos, newCol)
 	}
 	return models.GameMapDto{
 		Id:    gameMap.Id,
-		Tiles: tile_dtos,
+		Tiles: tileDtos,
 		Stats: gameMap.Stats,
 	}
 }
@@ -103,10 +103,10 @@ func GameMapToDto(gameMap GameMap) models.GameMapDto {
 func GameMapFromDto(gdto models.GameMapDto) GameMap {
 	tiles := [][]GameMapTile{}
 
-	for i, col_tiles := range gdto.Tiles {
+	for i, colTiles := range gdto.Tiles {
 		col := []GameMapTile{}
-		for j, tile_str := range col_tiles {
-			tile := tileFromString(tile_str, calc.NewVec(float64(i*TILE_SIZE), float64(j*TILE_SIZE)))
+		for j, tileStr := range colTiles {
+			tile := tileFromString(tileStr, calc.NewVec(float64(i*TILE_SIZE), float64(j*TILE_SIZE)))
 			col = append(col, tile)
 		}
 		tiles = append(tiles, col)

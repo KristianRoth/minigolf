@@ -9,7 +9,7 @@ var mid = calc.NewVec(TILE_SIZE/2, TILE_SIZE/2)
 
 type collider interface {
 	toTilePosition(tile GameMapTile) collider
-	projectionPoint(ball_pos calc.Vector) (calc.Vector, error)
+	projectionPoint(ballPos calc.Vector) (calc.Vector, error)
 }
 
 // Point
@@ -23,7 +23,7 @@ func (pc pointCollider) toTilePosition(tile GameMapTile) collider {
 	}
 }
 
-func (pc pointCollider) projectionPoint(ball_pos calc.Vector) (calc.Vector, error) {
+func (pc pointCollider) projectionPoint(ballPos calc.Vector) (calc.Vector, error) {
 	return pc.Pos, nil
 }
 
@@ -40,9 +40,9 @@ func (cc circleCollider) toTilePosition(tile GameMapTile) collider {
 	}
 }
 
-func (cc circleCollider) projectionPoint(ball_pos calc.Vector) (calc.Vector, error) {
+func (cc circleCollider) projectionPoint(ballPos calc.Vector) (calc.Vector, error) {
 	centre := cc.Pos
-	dir := ball_pos.Subtract(centre).SetLength(cc.Radius)
+	dir := ballPos.Subtract(centre).SetLength(cc.Radius)
 	return centre.Add(dir), nil
 }
 
@@ -60,9 +60,9 @@ func (lc lineCollider) toTilePosition(tile GameMapTile) collider {
 	}
 }
 
-func (lc lineCollider) projectionPoint(ball_pos calc.Vector) (calc.Vector, error) {
+func (lc lineCollider) projectionPoint(ballPos calc.Vector) (calc.Vector, error) {
 	line := calc.NewLine(lc.Pos, lc.Dir)
-	return line.ProjectPoint(ball_pos)
+	return line.ProjectPoint(ballPos)
 }
 
 // Arc
@@ -85,9 +85,9 @@ func (ac arcCollider) toTilePosition(tile GameMapTile) collider {
 	}
 }
 
-func (ac arcCollider) projectionPoint(ball_pos calc.Vector) (calc.Vector, error) {
+func (ac arcCollider) projectionPoint(ballPos calc.Vector) (calc.Vector, error) {
 	arc := calc.NewArc(ac.Pos, ac.Radius, ac.Start, ac.End)
-	return arc.ProjectPoint(ball_pos, ac.Rotation)
+	return arc.ProjectPoint(ballPos, ac.Rotation)
 }
 
 var boxColliders []collider = []collider{
@@ -132,8 +132,12 @@ var circleColliders []collider = []collider{
 	circleCollider{Pos: calc.NewVec(50, 50), Radius: 24},
 }
 
-func getBaseColliders(structure_type models.StructureType) []collider {
-	switch structure_type {
+var holeColliders []collider = []collider{
+	circleCollider{Pos: calc.NewVec(50, 50), Radius: HOLE_SIZE - BALL_SIZE},
+}
+
+func getBaseColliders(structureType models.StructureType) []collider {
+	switch structureType {
 	case models.Wall:
 		return boxColliders
 	case models.Circle:
@@ -145,7 +149,7 @@ func getBaseColliders(structure_type models.StructureType) []collider {
 	case models.InvertedRoundedCorner:
 		return invertedRoundedCornerColliders
 	case models.Hole:
-		return circleColliders
+		return holeColliders
 	}
 	return []collider{}
 }
@@ -173,9 +177,9 @@ func newColliderMesh(gm GameMap) colliderMesh {
 
 // Converts base-colliders to correct rotations and positions.
 func (cm *colliderMesh) createColliders(tile GameMapTile) {
-	base_colliders := getBaseColliders(tile.Structure.Type)
+	baseColliders := getBaseColliders(tile.Structure.Type)
 	colliders := []collider{}
-	for _, bc := range base_colliders {
+	for _, bc := range baseColliders {
 		colliders = append(colliders, bc.toTilePosition(tile))
 	}
 

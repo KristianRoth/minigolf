@@ -1,5 +1,13 @@
 import mitt from 'mitt';
-import { GameEvent, InitEvent, StartMapEvent, UpdateEvent } from 'types';
+import {
+  GameEvent,
+  InitEvent,
+  PlayerStatus,
+  ReconnectEvent,
+  StartMapEvent,
+  StatusChangeEvent,
+  UpdateEvent,
+} from 'types';
 import { GameStorage } from 'utils/api';
 import { gameMapFromDTO } from 'utils/dto';
 import GameController from './controllers/GameController';
@@ -11,19 +19,20 @@ const colors = ['red', 'blue', 'cyan', 'green', 'yellow', 'orange', 'maroon'];
 const getUrl = (gameId: string) => {
   const name = GameStorage.getPlayerName(gameId);
   const id = GameStorage.getPlayerId(gameId);
+  const token = GameStorage.getPlayerToken(gameId);
 
   const protocol = window.location.protocol === 'https' ? 'wss' : 'ws';
   const { host } = window.location;
 
   let url = `${protocol}://${host}/ws/game/${gameId}?name=${name}`;
-  if (id) {
-    url = `${url}&id=${id}`;
-  }
+
+  if (id) url = `${url}&id=${id}`;
+  if (token) url = `${url}&token=${token}`;
   return url;
 };
 
 type GameEngineEvents = {
-  'start-map': any;
+  'start-map': { isDemo: boolean };
   'save-demo': any;
   connected: undefined;
   disconnected: undefined;
@@ -48,6 +57,7 @@ class GameEngine {
     this.socket.addEventListener('open', this.onOpen.bind(this));
     this.socket.addEventListener('message', this.onMessage.bind(this));
     this.socket.addEventListener('close', this.onClose.bind(this));
+    this.socket.addEventListener('error', this.onError.bind(this));
   }
 
   public destroy() {
@@ -56,6 +66,7 @@ class GameEngine {
     this.socket.removeEventListener('open', this.onOpen);
     this.socket.removeEventListener('message', this.onMessage);
     this.socket.removeEventListener('close', this.onClose);
+    this.socket.removeEventListener('error', this.onError);
     if (this.socket.readyState === this.socket.OPEN) this.socket.close(1000);
     this.socket = null;
   }
@@ -70,6 +81,10 @@ class GameEngine {
 
   private onClose() {
     this.emitter.emit('disconnected');
+  }
+
+  private onError(error: any) {
+    console.log('WebSocket error: ', error);
   }
 
   private onMessage(payload: any) {
@@ -89,16 +104,24 @@ class GameEngine {
         this.handleInit(event);
         break;
       }
+      case 'RECONNECT': {
+        this.handleReconnect(event);
+        break;
+      }
       case 'START_MAP': {
         this.handleStartMap(event);
+        break;
+      }
+      case 'END_MAP': {
+        this.gameController.setHeading('End map');
         break;
       }
       case 'UPDATE': {
         this.handleUpdate(event);
         break;
       }
-      case 'TURN_BEGIN': {
-        this.gameController.setHasTurn(true);
+      case 'STATUS_CHANGE': {
+        this.handleStatusChange(event);
         break;
       }
       case 'EFFECT': {
@@ -134,15 +157,37 @@ class GameEngine {
 
   private handleInit(event: InitEvent) {
     GameStorage.setPlayerId(this.gameId, event.playerId.toString());
+    GameStorage.setPlayerToken(this.gameId, event.token);
     this.gameController.setPlayerId(event.playerId);
     this.spriteController.setPlayerId(event.playerId);
   }
 
   private handleStartMap(event: StartMapEvent) {
-    const map = gameMapFromDTO(event.gameMap);
+    this.gameController.setHeading('');
+    this.startMap(event.gameMap, event.isDemo);
+  }
+
+  private handleReconnect(event: ReconnectEvent) {
+    this.startMap(event.gameMap, event.isDemo);
+    this.gameController.setHasTurn(event.isTurn);
+    this.gameController.setPlayerId(event.playerId);
+    this.spriteController.setPlayerId(event.playerId);
+  }
+
+  private handleStatusChange(event: StatusChangeEvent) {
+    switch (event.status) {
+      case PlayerStatus.IsTurn: {
+        this.gameController.setHasTurn(true);
+        break;
+      }
+    }
+  }
+
+  private startMap(mapDto: any, isDemo: boolean) {
+    const map = gameMapFromDTO(mapDto);
     this.groundController?.setGameMap(map);
     this.structController?.setGameMap(map);
-    this.emitter.emit('start-map', event);
+    this.emitter.emit('start-map', { isDemo });
   }
 }
 

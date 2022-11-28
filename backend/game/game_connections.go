@@ -9,14 +9,15 @@ import (
 )
 
 type GameConn struct {
-	broadcast     chan interface{}
-	playerChannel chan playerEvent
+	broadcast     *chan interface{}
+	playerChannel *chan playerEvent
 }
 
 type PlayerConn struct {
 	playerEventsIn  *chan playerEvent
-	PlayerEventsOut chan interface{}
-	ws              websocket.Conn
+	playerEventsOut *chan interface{}
+	ws              *websocket.Conn
+	isRunning       bool
 }
 
 type playerEvent struct {
@@ -24,9 +25,19 @@ type playerEvent struct {
 	message []byte
 }
 
+func (p *Player) stop() {
+	if !p.isRunning {
+		return
+	}
+	p.isRunning = false
+	p.ws.Close()
+}
+
 func (p *Player) run() {
+	p.isRunning = true
+
 	go func() {
-		for {
+		for p.isRunning {
 			_, message, err := p.ws.ReadMessage()
 			if err != nil {
 				//TODO: something went wrong with player disconnect him
@@ -35,27 +46,29 @@ func (p *Player) run() {
 			}
 			*p.playerEventsIn <- playerEvent{p, message}
 		}
+		p.stop()
 	}()
 	go func() {
-		for {
-			err := p.ws.WriteJSON(<-p.PlayerEventsOut)
+		for p.isRunning {
+			err := p.ws.WriteJSON(<-*p.playerEventsOut)
 			if err != nil {
 				log.Println("Player write to failed", err)
 				break
 			}
 		}
+		p.stop()
 	}()
 }
 
 func (g *Game) startCommunications() {
 	go func() {
-		for {
+		for g.status != IsStopped {
 			select {
-			case message := <-g.broadcast:
+			case message := <-*g.broadcast:
 				for _, p := range g.players {
-					p.PlayerEventsOut <- message
+					*p.playerEventsOut <- message
 				}
-			case playerEvent := <-g.playerChannel:
+			case playerEvent := <-*g.playerChannel:
 				player, message := playerEvent.player, playerEvent.message
 				fmt.Println("Received message:", string(message))
 				var event event
@@ -64,6 +77,9 @@ func (g *Game) startCommunications() {
 					fmt.Println(fmt.Errorf("unknow message from player, %v, %s", err, message))
 					break
 				}
+
+				g.setEventTime()
+
 				switch event.Type {
 				case "SHOT":
 					var shotEvent shotEvent
@@ -80,7 +96,7 @@ func (g *Game) startCommunications() {
 						fmt.Println(fmt.Errorf("unable to parse isready-event, %v, %s", err, message))
 						break
 					}
-					go g.handleIsReadyEvent(player, isReadyEvent)
+					g.handleIsReadyEvent(player, isReadyEvent)
 				}
 			}
 		}

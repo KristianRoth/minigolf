@@ -16,6 +16,7 @@ func main() {
 	fmt.Printf("TEST-ENV-VAR: %s\n\n", testEnvVariable)
 
 	gameH := communications.NewGameHandler()
+	gameH.Start()
 
 	router := gin.Default()
 	router.Use(gzip.Gzip(gzip.DefaultCompression))

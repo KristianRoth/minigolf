@@ -1,9 +1,18 @@
-import { GameMap } from './GameMap';
+type GameMapDto = any;
+
+export enum PlayerStatus {
+  IsWaiting,
+  IsReady,
+  IsTurn,
+  IsMoving,
+  IsInHole,
+}
 
 export type InitEvent = {
   type: 'INIT';
   playerId: number;
   name: string;
+  token: string;
 };
 
 export type JoinEvent = {
@@ -12,11 +21,28 @@ export type JoinEvent = {
   name: string;
 };
 
+export type ReconnectEvent = {
+  type: 'RECONNECT';
+  playerId: number;
+  name: string;
+  gameMap: GameMapDto;
+  isDemo: boolean;
+  isTurn: boolean;
+};
+
 export type StartMapEvent = {
   type: 'START_MAP';
   playerId: number;
-  gameMap: GameMap;
+  gameMap: GameMapDto;
   isDemo: boolean;
+};
+
+export type EndMapEvent = {
+  type: 'END_MAP';
+  scores: {
+    [playerId: string]: number[]; // List of scores for each player.
+  };
+  isGameOver: boolean;
 };
 
 export type IsReadyEvent = {
@@ -43,9 +69,10 @@ export type ShotEvent = {
   y: number;
 };
 
-export type TurnBeginEvent = {
-  type: 'TURN_BEGIN';
+export type StatusChangeEvent = {
+  type: 'STATUS_CHANGE';
   playerId: number;
+  status: PlayerStatus;
 };
 
 export type EffectEvent = {
@@ -71,10 +98,12 @@ export type ChatEvent = {
 export type GameEvent =
   | InitEvent
   | JoinEvent
+  | ReconnectEvent
   | StartMapEvent
+  | EndMapEvent
   | UpdateEvent
   | ShotEvent
-  | TurnBeginEvent
+  | StatusChangeEvent
   | JoinEvent
   | VictoryEvent
   | ChatEvent
