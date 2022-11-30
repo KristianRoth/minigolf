@@ -78,6 +78,7 @@ export type StatusChangeEvent = {
 export type EffectEvent = {
   type: 'EFFECT';
   value: string;
+  playerId: number;
 };
 
 export type SaveDemoMapEvent = {

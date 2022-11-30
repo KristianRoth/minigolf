@@ -24,9 +24,9 @@ func (g *Game) runGame() {
 		}
 		for g.isRunning() {
 			// TODO: Skip if there is no state-change.
+			g.checkEndMap()
 			g.broadcastUpdateEvent()
 			g.tick()
-			g.checkEndMap()
 			<-time.After(time.Second / TICK)
 		}
 	}()

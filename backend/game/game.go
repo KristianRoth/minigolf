@@ -129,7 +129,7 @@ func (g *Game) RemovePlayer(player *Player) {
 }
 
 func (g *Game) getPlayerStates() []models.PlayerDto {
-	var playerStates []models.PlayerDto
+	var playerStates []models.PlayerDto = make([]models.PlayerDto, 0)
 	for _, player := range g.players {
 		if player.status == PlayerHasTurn || player.status == PlayerIsMoving {
 			playerStates = append(playerStates, PlayerToDto(*player))

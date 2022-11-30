@@ -1,11 +1,13 @@
 import mitt from 'mitt';
 import {
+  EffectEvent,
   GameEvent,
   InitEvent,
   PlayerStatus,
   ReconnectEvent,
   StartMapEvent,
   StatusChangeEvent,
+  StructureType,
   UpdateEvent,
 } from 'types';
 import { GameStorage } from 'utils/api';
@@ -125,7 +127,7 @@ class GameEngine {
         break;
       }
       case 'EFFECT': {
-        this.gameController.doEffect(event.value);
+        this.handleEffectEvent(event);
         break;
       }
       case 'SAVE_DEMO_MAP': {
@@ -181,6 +183,16 @@ class GameEngine {
         break;
       }
     }
+  }
+
+  private handleEffectEvent(event: EffectEvent) {
+    if (event.value == 'HOLE') {
+      const hole = this.groundController.getMap()?.tiles.find((tile) => tile.structure.type === StructureType.Hole);
+      const ball = this.spriteController.getBalls().find((b) => b.id === event.playerId);
+      if (!hole || !ball) return;
+      this.spriteController.animateHole(hole.pos, ball);
+    }
+    this.gameController.doEffect(event.value);
   }
 
   private startMap(mapDto: any, isDemo: boolean) {

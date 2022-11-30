@@ -151,12 +151,14 @@ class CanvasController {
     this.context.closePath();
   }
 
-  protected renderElement(callback: () => void, middle: Point, rotation = Rotation.North) {
+  protected renderElement(callback: () => void, middle: Point, rotation?: Rotation) {
     this.context.save();
     const scale = this.canvas.width / GAME_WIDTH;
     this.context.scale(scale, scale);
     this.context.translate(middle.x + HALF_BLOCK, middle.y + HALF_BLOCK);
-    this.context.rotate(this.getRotationAngle(rotation));
+    if (rotation !== undefined) {
+      this.context.rotate(this.getRotationAngle(rotation));
+    }
     callback();
     this.context.restore();
   }
